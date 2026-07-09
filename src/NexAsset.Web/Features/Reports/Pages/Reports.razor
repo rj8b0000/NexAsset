@@ -1,0 +1,19 @@
+@page "/reports"
+@using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Models
+@inject NotificationState NotificationState
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Custom Asset Reporting</h1>
+            <span class="text-caption text-secondary">Export operational reporting indexes, audit logs, and capital depreciation assets ledger.</span>
+        </div>
+    </div>
+
+    <EmptyState Title="Custom Asset Reporting" 
+                Description="Operational report lists, audit trails, capital depreciation graphs, and vendor purchase logs are ready to compile." 
+                IconClass="lucide-bar-chart-3" 
+                ActionLabel="Compile Asset Audit" 
+                OnActionClick='() => NotificationState.AddToast("Report Compiled", "Successfully compiled custom asset capital report.", ToastType.Success)' />
+</div>

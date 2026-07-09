@@ -1,0 +1,186 @@
+<div class="card-custom animate-fade-in h-100 d-flex flex-column">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="h2-title">@Title</h3>
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <span class="text-caption text-muted-custom">@Subtitle</span>
+            }
+        </div>
+        @if (ShowFilters)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn-custom btn-custom-secondary py-1 px-2 text-caption">1M</button>
+                <button class="btn-custom btn-custom-primary py-1 px-2 text-caption">6M</button>
+                <button class="btn-custom btn-custom-secondary py-1 px-2 text-caption">1Y</button>
+            </div>
+        }
+    </div>
+
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height: 250px; position: relative;">
+        @if (Type == "area")
+        {
+            <!-- Responsive Area Chart -->
+            <svg viewBox="0 0 500 200" width="100%" height="100%" style="overflow: visible;">
+                <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.3"/>
+                        <stop offset="100%" stop-color="var(--primary)" stop-opacity="0.0"/>
+                    </linearGradient>
+                </defs>
+                <!-- Grid Lines -->
+                <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="70" x2="480" y2="70" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="120" x2="480" y2="120" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="170" x2="480" y2="170" stroke="var(--border-color)" stroke-width="1.5"/>
+
+                <!-- Y Axis labels -->
+                <text x="30" y="24" font-size="10" fill="var(--text-secondary)" text-anchor="end">$50k</text>
+                <text x="30" y="74" font-size="10" fill="var(--text-secondary)" text-anchor="end">$30k</text>
+                <text x="30" y="124" font-size="10" fill="var(--text-secondary)" text-anchor="end">$10k</text>
+                <text x="30" y="174" font-size="10" fill="var(--text-secondary)" text-anchor="end">$0</text>
+
+                <!-- Data Line & Area -->
+                <polygon points="40,170 110,130 180,140 250,90 320,110 390,60 460,40 460,170" fill="url(#areaGrad)" />
+                <path d="M40,170 L110,130 L180,140 L250,90 L320,110 L390,60 L460,40" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Data Dots -->
+                <circle cx="110" cy="130" r="4" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2"/>
+                <circle cx="180" cy="140" r="4" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2"/>
+                <circle cx="250" cy="90" r="4" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2"/>
+                <circle cx="320" cy="110" r="4" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2"/>
+                <circle cx="390" cy="60" r="4" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2"/>
+                <circle cx="460" cy="40" r="4" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2"/>
+
+                <!-- X Axis Labels -->
+                <text x="40" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Jan</text>
+                <text x="110" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Feb</text>
+                <text x="180" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Mar</text>
+                <text x="250" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Apr</text>
+                <text x="320" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">May</text>
+                <text x="390" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Jun</text>
+                <text x="460" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Jul</text>
+            </svg>
+        }
+        else if (Type == "bar")
+        {
+            <!-- Responsive Bar Chart -->
+            <svg viewBox="0 0 500 200" width="100%" height="100%" style="overflow: visible;">
+                <!-- Grid Lines -->
+                <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="70" x2="480" y2="70" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="120" x2="480" y2="120" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="170" x2="480" y2="170" stroke="var(--border-color)" stroke-width="1.5"/>
+
+                <!-- Y Axis labels -->
+                <text x="30" y="24" font-size="10" fill="var(--text-secondary)" text-anchor="end">$20k</text>
+                <text x="30" y="74" font-size="10" fill="var(--text-secondary)" text-anchor="end">$12k</text>
+                <text x="30" y="124" font-size="10" fill="var(--text-secondary)" text-anchor="end">$4k</text>
+                <text x="30" y="174" font-size="10" fill="var(--text-secondary)" text-anchor="end">$0</text>
+
+                <!-- Bars (6 series) -->
+                <!-- Bar width = 30, Gap = 45 -->
+                <!-- Value 1: $8k (y = 110, h = 60) -->
+                <rect x="75" y="110" width="30" height="60" rx="4" fill="var(--primary)" opacity="0.85" style="transition: all 0.3s; cursor: pointer;" />
+                
+                <!-- Value 2: $14k (y = 65, h = 105) -->
+                <rect x="150" y="65" width="30" height="105" rx="4" fill="var(--primary)" style="transition: all 0.3s; cursor: pointer;" />
+                
+                <!-- Value 3: $5k (y = 135, h = 35) -->
+                <rect x="225" y="135" width="30" height="35" rx="4" fill="var(--info)" style="transition: all 0.3s; cursor: pointer;" />
+
+                <!-- Value 4: $18k (y = 35, h = 135) -->
+                <rect x="300" y="35" width="30" height="135" rx="4" fill="var(--primary)" style="transition: all 0.3s; cursor: pointer;" />
+
+                <!-- Value 5: $11k (y = 85, h = 85) -->
+                <rect x="375" y="85" width="30" height="85" rx="4" fill="var(--primary)" opacity="0.85" style="transition: all 0.3s; cursor: pointer;" />
+
+                <!-- Value 6: $15k (y = 60, h = 110) -->
+                <rect x="450" y="60" width="30" height="110" rx="4" fill="var(--success)" style="transition: all 0.3s; cursor: pointer;" />
+
+                <!-- X Axis Labels -->
+                <text x="90" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Feb</text>
+                <text x="165" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Mar</text>
+                <text x="240" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Apr</text>
+                <text x="315" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">May</text>
+                <text x="390" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Jun</text>
+                <text x="465" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Jul</text>
+            </svg>
+        }
+        else if (Type == "donut")
+        {
+            <!-- Donut Chart -->
+            <svg viewBox="0 0 200 200" width="240" height="240" style="overflow: visible; margin-left: -60px;">
+                <!-- Circle Circumference = 2 * PI * r = 2 * 3.14159 * 80 = 502.65 -->
+                <circle cx="100" cy="100" r="80" fill="transparent" stroke="var(--primary)" stroke-width="16" stroke-dasharray="226.19 276.46" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="transparent" stroke="var(--info)" stroke-width="16" stroke-dasharray="125.66 376.99" stroke-dashoffset="-226.19" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="transparent" stroke="var(--warning)" stroke-width="16" stroke-dasharray="75.40 427.25" stroke-dashoffset="-351.85" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="transparent" stroke="var(--success)" stroke-width="16" stroke-dasharray="50.27 452.38" stroke-dashoffset="-427.25" transform="rotate(-90 100 100)"/>
+                <circle cx="100" cy="100" r="80" fill="transparent" stroke="var(--danger)" stroke-width="16" stroke-dasharray="25.13 477.52" stroke-dashoffset="-477.52" transform="rotate(-90 100 100)"/>
+
+                <circle cx="100" cy="100" r="72" fill="var(--bg-surface)" />
+                <text x="100" y="92" text-anchor="middle" font-size="11" font-weight="500" fill="var(--text-secondary)" style="letter-spacing: 0.05em;">TOTAL</text>
+                <text x="100" y="118" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text-primary)">$95.4k</text>
+            </svg>
+
+            <!-- Legend for Donut Chart -->
+            <div class="position-absolute end-0 top-50 translate-middle-y d-flex flex-column gap-2 text-start px-2" style="font-size: 11px;">
+                <div class="d-flex align-items-center gap-2"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: var(--primary);"></span><span>IT Equipment (45%)</span></div>
+                <div class="d-flex align-items-center gap-2"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: var(--info);"></span><span>Mobile (25%)</span></div>
+                <div class="d-flex align-items-center gap-2"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: var(--warning);"></span><span>Networking (15%)</span></div>
+                <div class="d-flex align-items-center gap-2"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: var(--success);"></span><span>Office Eq. (10%)</span></div>
+                <div class="d-flex align-items-center gap-2"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: var(--danger);"></span><span>Vehicles (5%)</span></div>
+            </div>
+        }
+        else if (Type == "line")
+        {
+            <!-- Line Chart (Maintenance Trends: Open vs Resolved) -->
+            <svg viewBox="0 0 500 200" width="100%" height="100%" style="overflow: visible;">
+                <!-- Grid Lines -->
+                <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="70" x2="480" y2="70" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="120" x2="480" y2="120" stroke="var(--border-color)" stroke-dasharray="4"/>
+                <line x1="40" y1="170" x2="480" y2="170" stroke="var(--border-color)" stroke-width="1.5"/>
+
+                <!-- Y Axis labels -->
+                <text x="30" y="24" font-size="10" fill="var(--text-secondary)" text-anchor="end">40</text>
+                <text x="30" y="74" font-size="10" fill="var(--text-secondary)" text-anchor="end">20</text>
+                <text x="30" y="124" font-size="10" fill="var(--text-secondary)" text-anchor="end">10</text>
+                <text x="30" y="174" font-size="10" fill="var(--text-secondary)" text-anchor="end">0</text>
+
+                <!-- Series 1: Raised Tickets (Danger Line) -->
+                <!-- Data: 12, 18, 15, 25, 20, 32, 28 -->
+                <!-- y formula: 170 - (val * 3.75) -->
+                <path d="M40,125 L110,102.5 L180,113.75 L250,76.25 L320,95 L390,50 L460,65" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Series 2: Resolved Tickets (Success Line) -->
+                <!-- Data: 8, 14, 16, 22, 24, 28, 35 -->
+                <path d="M40,140 L110,117.5 L180,110 L250,87.5 L320,80 L390,65 L460,38.75" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Legend inside svg -->
+                <g transform="translate(320, 10)">
+                    <circle cx="0" cy="0" r="4" fill="var(--danger)" />
+                    <text x="8" y="3" font-size="9" fill="var(--text-secondary)">Issues Raised</text>
+                    <circle cx="85" cy="0" r="4" fill="var(--success)" />
+                    <text x="93" y="3" font-size="9" fill="var(--text-secondary)">Resolved</text>
+                </g>
+
+                <!-- X Axis Labels -->
+                <text x="40" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Mon</text>
+                <text x="110" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Tue</text>
+                <text x="180" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Wed</text>
+                <text x="250" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Thu</text>
+                <text x="320" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Fri</text>
+                <text x="390" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Sat</text>
+                <text x="460" y="190" font-size="10" fill="var(--text-secondary)" text-anchor="middle">Sun</text>
+            </svg>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public string Type { get; set; } = "area"; // area, bar, donut, line
+    [Parameter] public bool ShowFilters { get; set; } = true;
+}

@@ -1,0 +1,109 @@
+@page "/employees"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IEmployeeApiClient EmployeeApiClient
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Employees Directory</h1>
+            <span class="text-caption text-secondary">Manage and organize staff member profiles and asset custody details.</span>
+        </div>
+        <div>
+            <button type="button" class="btn-custom btn-custom-primary" @onclick='() => NavigationManager.NavigateTo("/employees/create")'>
+                <i class="lucide-plus"></i> Register Employee
+            </button>
+        </div>
+    </div>
+
+    @if (Employees == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="EmployeeMock" Items="Employees" Type="Employee" Columns="EmployeeColumns"
+                   IdSelector="e => e.Id" CategorySelector="e => e.Department" StatusSelector="e => e.Status"
+                   OnViewDetails="HandleViewDetails" OnEdit="HandleEdit" OnDelete="HandleOpenDeleteDialog"
+                   OnBulkDelete="HandleBulkDelete">
+        </DataTable>
+    }
+</div>
+
+<!-- Delete Confirm Dialog -->
+<Dialog IsOpen="IsDeleteDialogOpen" Title="Confirm Delete Operation" Size="sm" OnClose="() => IsDeleteDialogOpen = false">
+    <ChildContent>
+        <div class="text-center py-3">
+            <div class="p-3 bg-danger-light text-danger rounded-circle d-inline-block mb-3 animate-bounce">
+                <i class="lucide-trash-2 fs-2"></i>
+            </div>
+            <h4 class="h2-title">Permanently delete this record?</h4>
+            <p class="text-caption text-secondary mt-2">This operational action is irreversible. The employee directory record will be permanently purged.</p>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary flex-grow-1" @onclick="() => IsDeleteDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-danger flex-grow-1" @onclick="ConfirmDelete">Delete</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    private List<EmployeeMock>? Employees;
+    private List<ColumnDefinition<EmployeeMock>> EmployeeColumns = new();
+
+    private EmployeeMock? SelectedEmployee;
+    private bool IsDeleteDialogOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Employees = await EmployeeApiClient.GetEmployeesAsync();
+
+        EmployeeColumns = new()
+        {
+            new() { Header = "Employee ID", PropertySelector = e => e.Id, SortColumn = "Id" },
+            new() { Header = "Name", PropertySelector = e => e.Name, SortColumn = "Name" },
+            new() { Header = "Department", PropertySelector = e => e.Department, SortColumn = "Department" },
+            new() { Header = "Email", PropertySelector = e => e.Email, SortColumn = "Email" },
+            new() { Header = "Role", PropertySelector = e => e.Role, SortColumn = "Role" },
+            new() { Header = "Assets Assigned", PropertySelector = e => e.AssetsAssigned.ToString(), SortColumn = "AssetsAssigned" },
+            new() { Header = "Status", PropertySelector = e => e.Status, SortColumn = "Status",
+                    Template = emp => @<span class="badge-custom @(emp.Status == "Active" ? "badge-custom-success" : emp.Status == "On Leave" ? "badge-custom-warning" : "badge-custom-danger")">@emp.Status</span> }
+        };
+    }
+
+    private void HandleViewDetails(EmployeeMock emp)
+    {
+        NavigationManager.NavigateTo($"/employees/details/{emp.Id}");
+    }
+
+    private void HandleEdit(EmployeeMock emp)
+    {
+        NavigationManager.NavigateTo($"/employees/edit/{emp.Id}");
+    }
+
+    private void HandleOpenDeleteDialog(EmployeeMock emp)
+    {
+        SelectedEmployee = emp;
+        IsDeleteDialogOpen = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (SelectedEmployee != null)
+        {
+            await EmployeeApiClient.DeleteEmployeeAsync(SelectedEmployee.Id);
+            Employees = await EmployeeApiClient.GetEmployeesAsync();
+        }
+        IsDeleteDialogOpen = false;
+    }
+
+    private async Task HandleBulkDelete(List<EmployeeMock> items)
+    {
+        foreach (var item in items)
+        {
+            await EmployeeApiClient.DeleteEmployeeAsync(item.Id);
+        }
+        Employees = await EmployeeApiClient.GetEmployeesAsync();
+    }
+}

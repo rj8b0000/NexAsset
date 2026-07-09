@@ -1,0 +1,46 @@
+@page "/notifications"
+@using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Models
+@inject NotificationState NotificationState
+
+<div class="animate-fade-in">
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h2-title">Notification Logs</h3>
+            @if (NotificationState.Notifications.Any())
+            {
+                <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick="ClearNotifications">Clear Logs</button>
+            }
+        </div>
+        <div class="d-flex flex-column gap-3 mt-3">
+            @if (NotificationState.Notifications.Any())
+            {
+                @foreach (var not in NotificationState.Notifications)
+                {
+                    <div class="p-3 border rounded-3 d-flex align-items-start gap-3 @(not.IsRead ? "" : "bg-light-custom")" style="background-color: @(not.IsRead ? "transparent" : "var(--primary-light)"); transition: background-color var(--transition-fast);">
+                        <div class="p-2 rounded-circle" style="background-color: var(--primary-light); color: var(--primary);">
+                            <i class="lucide-bell"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@not.Title</div>
+                            <p class="text-caption text-secondary mb-1 mt-0.5" style="line-height: 1.4;">@not.Message</p>
+                            <span class="text-caption text-muted-custom" style="font-size: 10px;">@not.Timestamp.ToString("g") (Urgency: @not.Urgency)</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="py-5 text-center text-secondary text-caption">No notifications yet</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private void ClearNotifications()
+    {
+        NotificationState.ClearNotifications();
+        NotificationState.AddToast("Logs Cleared", "System notifications list cleared.", ToastType.Info);
+    }
+}

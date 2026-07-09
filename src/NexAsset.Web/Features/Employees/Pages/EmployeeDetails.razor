@@ -1,0 +1,152 @@
+@page "/employees/details/{id}"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@using NexAsset.Web.State
+@inject IEmployeeApiClient EmployeeApiClient
+@inject MockDatabaseService Db
+@inject NotificationState NotificationState
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <!-- Back buttons -->
+    <button class="btn-custom btn-custom-secondary mb-4" @onclick='() => NavigationManager.NavigateTo("/employees")'>
+        <i class="lucide-arrow-left"></i> Back to Employees List
+    </button>
+
+    @if (Employee == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Left Core Details Block -->
+            <div class="col-lg-8">
+                <div class="card-custom mb-4">
+                    <div class="border-bottom pb-3 mb-4 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-label">Employee Profile Details</span>
+                            <h2 class="h1-title mt-1">@Employee.Name</h2>
+                        </div>
+                        <span class="badge-custom @(Employee.Status == "Active" ? "badge-custom-success" : Employee.Status == "On Leave" ? "badge-custom-warning" : "badge-custom-danger")">
+                            @Employee.Status
+                        </span>
+                    </div>
+
+                    <!-- Property details fields -->
+                    <div class="row g-3">
+                        <div class="col-md-6"><strong>Employee ID:</strong> <span class="text-secondary">@Employee.Id</span></div>
+                        <div class="col-md-6"><strong>Email:</strong> <span class="text-secondary">@Employee.Email</span></div>
+                        <div class="col-md-6"><strong>Job Title:</strong> <span class="text-secondary">@Employee.Role</span></div>
+                        <div class="col-md-6"><strong>Department:</strong> <span class="text-secondary">@Employee.Department</span></div>
+                        <div class="col-md-6"><strong>Status:</strong> <span class="text-secondary">@Employee.Status</span></div>
+                        <div class="col-md-6"><strong>Equipment Count Assigned:</strong> <span class="text-secondary">@Employee.AssetsAssigned items</span></div>
+                    </div>
+                </div>
+
+                <!-- Secondary Tab Sections: Assignment history / Documents -->
+                <div class="tabs-container">
+                    <div class="tab-item @(DetailSubView == "history" ? "active" : "")" @onclick='() => SetDetailSubView("history")'>History Trail</div>
+                    <div class="tab-item @(DetailSubView == "documents" ? "active" : "")" @onclick='() => SetDetailSubView("documents")'>Attachments (2)</div>
+                </div>
+
+                @if (DetailSubView == "history")
+                {
+                    <Timeline Title="Audit & Operations History" Subtitle="State logs captured for this record" 
+                              Events="GetItemAuditEvents()" />
+                }
+                else
+                {
+                    <div class="card-custom">
+                        <h4 class="h2-title mb-3">Documents & Image Attachments</h4>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="p-3 border rounded-3 d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="lucide-file-text text-primary fs-4"></i>
+                                    <div>
+                                        <div class="fw-semibold text-caption">Employment_Agreement.pdf</div>
+                                        <span class="text-secondary" style="font-size: 10px;">PDF Document • 1.4 MB</span>
+                                    </div>
+                                </div>
+                                <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick='() => NotificationState.AddToast("File Downloaded", "Employment contract copy downloaded.", ToastType.Success)'>Download</button>
+                            </div>
+                            <div class="p-3 border rounded-3 d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="lucide-file-text text-success fs-4"></i>
+                                    <div>
+                                        <div class="fw-semibold text-caption">Equipment_Receipt.pdf</div>
+                                        <span class="text-secondary" style="font-size: 10px;">PDF Document • 840 KB</span>
+                                    </div>
+                                </div>
+                                <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick='() => NotificationState.AddToast("File Downloaded", "Assigned equipment receipt downloaded.", ToastType.Success)'>Download</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Side Context Sidebar -->
+            <div class="col-lg-4">
+                <div class="card-custom bg-light-custom" style="background-color: var(--bg-surface-hover);">
+                    <h3 class="h2-title border-bottom pb-3 mb-3">Lifecycle State</h3>
+                    <p class="text-caption text-secondary mb-4">Quickly toggle state parameters or manage assignments directly.</p>
+                    
+                    <button class="btn-custom btn-custom-primary w-100 py-2" @onclick="SendPortalInvite">
+                        <i class="lucide-mail"></i> Send Portal Invite
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    private EmployeeMock? Employee;
+    private string DetailSubView = "history";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Employee = await EmployeeApiClient.GetEmployeeAsync(Id);
+        if (Employee == null)
+        {
+            NavigationManager.NavigateTo("/employees");
+        }
+    }
+
+    private void SetDetailSubView(string view)
+    {
+        DetailSubView = view;
+    }
+
+    private List<Timeline.TimelineEvent> GetItemAuditEvents()
+    {
+        var list = new List<Timeline.TimelineEvent>();
+        foreach (var log in Db.AuditLogs.Where(l => l.EntityId == Id))
+        {
+            list.Add(new Timeline.TimelineEvent
+            {
+                Timestamp = log.Timestamp,
+                Title = log.Action.ToUpper() + " Event",
+                Details = log.Details,
+                User = log.User
+            });
+        }
+        if (!list.Any())
+        {
+            list.Add(new Timeline.TimelineEvent
+            {
+                Timestamp = DateTime.Now.AddMonths(-1),
+                Title = "RECORD CREATION",
+                Details = "Resource registered and integrated into NexAsset ledger.",
+                User = "System Seed"
+            });
+        }
+        return list;
+    }
+
+    private void SendPortalInvite()
+    {
+        NotificationState.AddToast("Profile Dispatched", "Dispatched employee portal access token link.", ToastType.Info);
+    }
+}

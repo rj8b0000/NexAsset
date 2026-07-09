@@ -1,0 +1,30 @@
+<div class="card-custom text-center py-5 animate-fade-in d-flex flex-column align-items-center justify-content-center" style="min-height: 350px;">
+    <!-- Icon Illustration -->
+    <div class="p-4 rounded-circle mb-4 animate-bounce" style="background-color: var(--primary-light); color: var(--primary);">
+        <i class="@IconClass fs-1"></i>
+    </div>
+    
+    <h3 class="h1-title mb-2">@Title</h3>
+    <p class="text-secondary mb-4" style="max-width: 400px; font-size: 13px; line-height: 1.6;">@Description</p>
+    
+    @if (!string.IsNullOrEmpty(ActionLabel))
+    {
+        <button type="button" class="btn-custom btn-custom-primary px-4 py-2" @onclick="HandleAction">
+            <i class="@ActionIconClass"></i> @ActionLabel
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "No Data Found";
+    [Parameter] public string Description { get; set; } = "There are no records in this workspace yet. Get started by creating your first item.";
+    [Parameter] public string IconClass { get; set; } = "lucide-folder-open";
+    [Parameter] public string ActionLabel { get; set; } = "";
+    [Parameter] public string ActionIconClass { get; set; } = "lucide-plus";
+    [Parameter] public EventCallback OnActionClick { get; set; }
+
+    private void HandleAction()
+    {
+        OnActionClick.InvokeAsync();
+    }
+}

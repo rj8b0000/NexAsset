@@ -1,0 +1,78 @@
+@page "/maintenance"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IMaintenanceApiClient MaintenanceApiClient
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Maintenance Tickets</h1>
+            <span class="text-caption text-secondary">Manage equipment repair logs, support tickets, and corrective schedules.</span>
+        </div>
+        <div>
+            <button type="button" class="btn-custom btn-custom-primary" @onclick='() => NavigationManager.NavigateTo("/maintenance/create")'>
+                <i class="lucide-plus"></i> Open Ticket
+            </button>
+        </div>
+    </div>
+
+    @if (Tickets == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="MaintenanceMock" Items="Tickets" Type="Maintenance" Columns="MaintenanceColumns"
+                   IdSelector="t => t.Id" CategorySelector="t => t.Type" StatusSelector="t => t.Status"
+                   OnDelete="HandleDelete">
+            <CustomRowActions Context="t">
+                @if (t.Status != "Resolved")
+                {
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-success" @onclick="() => ResolveTicket(t.Id)">
+                        <i class="lucide-check me-2"></i> Resolve Ticket
+                    </button>
+                }
+            </CustomRowActions>
+        </DataTable>
+    }
+</div>
+
+@code {
+    private List<MaintenanceMock>? Tickets;
+    private List<ColumnDefinition<MaintenanceMock>> MaintenanceColumns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTickets();
+
+        MaintenanceColumns = new()
+        {
+            new() { Header = "Ticket ID", PropertySelector = t => t.Id, SortColumn = "Id" },
+            new() { Header = "Asset Name", PropertySelector = t => t.AssetName, SortColumn = "AssetName" },
+            new() { Header = "Issue Details", PropertySelector = t => t.Issue, SortColumn = "Issue" },
+            new() { Header = "Type", PropertySelector = t => t.Type, SortColumn = "Type" },
+            new() { Header = "Urgency", PropertySelector = t => t.Urgency, SortColumn = "Urgency",
+                    Template = t => @<span class="badge-custom @(t.Urgency == "High" ? "badge-custom-danger" : t.Urgency == "Medium" ? "badge-custom-warning" : "badge-custom-info")">@t.Urgency</span> },
+            new() { Header = "Status", PropertySelector = t => t.Status, SortColumn = "Status",
+                    Template = t => @<span class="badge-custom @(t.Status == "Resolved" ? "badge-custom-success" : t.Status == "In Progress" ? "badge-custom-info" : "badge-custom-warning")">@t.Status</span> }
+        };
+    }
+
+    private async Task LoadTickets()
+    {
+        Tickets = await MaintenanceApiClient.GetMaintenanceTicketsAsync();
+    }
+
+    private async Task ResolveTicket(string id)
+    {
+        await MaintenanceApiClient.ResolveMaintenanceTicketAsync(id);
+        await LoadTickets();
+    }
+
+    private async Task HandleDelete(MaintenanceMock t)
+    {
+        await MaintenanceApiClient.DeleteMaintenanceTicketAsync(t.Id);
+        await LoadTickets();
+    }
+}

@@ -1,0 +1,197 @@
+is_global = true
+build_property.EnableAotAnalyzer = 
+build_property.EnableSingleFileAnalyzer = 
+build_property.EnableTrimAnalyzer = false
+build_property.IncludeAllContentForSelfExtract = 
+build_property.VerifyReferenceTrimCompatibility = 
+build_property.VerifyReferenceAotCompatibility = 
+build_property.TargetFramework = net10.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v10.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = false
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = browser
+build_property.RootNamespace = NexAsset.Web
+build_property.RootNamespace = NexAsset.Web
+build_property.ProjectDir = /Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = false
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = /Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 10.0
+build_property.EnableCodeStyleSeverity = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/App.razor]
+build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/ChartCard.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9DaGFydENhcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/DataTable.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhVGFibGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/Dialog.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EaWFsb2cucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/Drawer.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EcmF3ZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/EmptyState.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9FbXB0eVN0YXRlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/FormSection.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Gb3JtU2VjdGlvbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/LoadingState.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Mb2FkaW5nU3RhdGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/StatCard.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9TdGF0Q2FyZC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/Timeline.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9UaW1lbGluZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Components/Toast.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Ub2FzdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Administration/Pages/Administration.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQWRtaW5pc3RyYXRpb24vUGFnZXMvQWRtaW5pc3RyYXRpb24ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Administration/Pages/AdministrationTimeline.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQWRtaW5pc3RyYXRpb24vUGFnZXMvQWRtaW5pc3RyYXRpb25UaW1lbGluZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/ApprovalCenter/Pages/ApprovalCenter.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQXBwcm92YWxDZW50ZXIvUGFnZXMvQXBwcm92YWxDZW50ZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Assets/Pages/AssetCreate.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQXNzZXRzL1BhZ2VzL0Fzc2V0Q3JlYXRlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Assets/Pages/AssetDetails.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQXNzZXRzL1BhZ2VzL0Fzc2V0RGV0YWlscy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Assets/Pages/AssetEdit.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQXNzZXRzL1BhZ2VzL0Fzc2V0RWRpdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Assets/Pages/AssetList.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvQXNzZXRzL1BhZ2VzL0Fzc2V0TGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Dashboard/Components/LoginPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvRGFzaGJvYXJkL0NvbXBvbmVudHMvTG9naW5QYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Employees/Pages/EmployeeCreate.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvRW1wbG95ZWVzL1BhZ2VzL0VtcGxveWVlQ3JlYXRlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Employees/Pages/EmployeeDetails.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvRW1wbG95ZWVzL1BhZ2VzL0VtcGxveWVlRGV0YWlscy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Employees/Pages/EmployeeEdit.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvRW1wbG95ZWVzL1BhZ2VzL0VtcGxveWVlRWRpdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Employees/Pages/EmployeeList.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvRW1wbG95ZWVzL1BhZ2VzL0VtcGxveWVlTGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Finance/Pages/FinanceList.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvRmluYW5jZS9QYWdlcy9GaW5hbmNlTGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Inventory/Pages/Inventory.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvSW52ZW50b3J5L1BhZ2VzL0ludmVudG9yeS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Maintenance/Pages/MaintenanceCreate.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvTWFpbnRlbmFuY2UvUGFnZXMvTWFpbnRlbmFuY2VDcmVhdGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Maintenance/Pages/MaintenanceList.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvTWFpbnRlbmFuY2UvUGFnZXMvTWFpbnRlbmFuY2VMaXN0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Notifications/Pages/Notifications.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvTm90aWZpY2F0aW9ucy9QYWdlcy9Ob3RpZmljYXRpb25zLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Organizations/Pages/OrganizationList.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvT3JnYW5pemF0aW9ucy9QYWdlcy9Pcmdhbml6YXRpb25MaXN0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Procurement/Pages/ProcurementCreate.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvUHJvY3VyZW1lbnQvUGFnZXMvUHJvY3VyZW1lbnRDcmVhdGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Procurement/Pages/ProcurementList.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvUHJvY3VyZW1lbnQvUGFnZXMvUHJvY3VyZW1lbnRMaXN0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Reports/Pages/Reports.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvUmVwb3J0cy9QYWdlcy9SZXBvcnRzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Features/Settings/Pages/Settings.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXMvU2V0dGluZ3MvUGFnZXMvU2V0dGluZ3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Layout/Sidebar.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L1NpZGViYXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Layout/Topbar.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L1RvcGJhci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Pages/Counter.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ291bnRlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Pages/Home.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSG9tZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Pages/NotFound.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTm90Rm91bmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Pages/Weather.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2VhdGhlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Layout/MainLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L01haW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-xs6gmkzkrm
+
+[/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Web/Layout/NavMenu.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L05hdk1lbnUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-k1fuf9stvl

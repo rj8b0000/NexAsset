@@ -1,0 +1,29 @@
+@page "/settings"
+@using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Services
+@inject NavigationState NavigationState
+@inject MockDatabaseService Db
+
+<div class="animate-fade-in">
+    <div class="card-custom" style="max-width: 600px;">
+        <h3 class="h2-title border-bottom pb-3 mb-3">System Preferences</h3>
+        <div class="form-group-custom mb-3">
+            <label class="form-label-custom">Operating Organization</label>
+            <select class="form-control-custom" value="@NavigationState.ActiveOrganization" @onchange="@(e => NavigationState.SwitchOrganization(e.Value?.ToString() ?? ""))">
+                @foreach (var org in Db.Organizations)
+                {
+                    <option value="@org">@org</option>
+                }
+            </select>
+        </div>
+        <div class="form-group-custom">
+            <label class="form-label-custom">Operations Branch Office</label>
+            <select class="form-control-custom" value="@NavigationState.ActiveBranch" @onchange="@(e => NavigationState.SwitchBranch(e.Value?.ToString() ?? ""))">
+                @foreach (var br in Db.Branches)
+                {
+                    <option value="@br">@br</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>

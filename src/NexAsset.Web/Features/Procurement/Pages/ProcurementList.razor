@@ -1,0 +1,87 @@
+@page "/procurement"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IProcurementApiClient ProcurementApiClient
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Procurement Requests</h1>
+            <span class="text-caption text-secondary">Manage capital purchases, equipment quantities, and approval records.</span>
+        </div>
+        <div>
+            <button type="button" class="btn-custom btn-custom-primary" @onclick='() => NavigationManager.NavigateTo("/procurement/create")'>
+                <i class="lucide-plus"></i> New Request
+            </button>
+        </div>
+    </div>
+
+    @if (Requests == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="ProcurementMock" Items="Requests" Type="Procurement" Columns="ProcurementColumns"
+                   IdSelector="pr => pr.Id" CategorySelector="pr => pr.Requester" StatusSelector="pr => pr.Status"
+                   OnDelete="HandleDelete">
+            <CustomRowActions Context="pr">
+                @if (pr.Status == "Pending")
+                {
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-success" @onclick="() => ApproveRequest(pr.Id)">
+                        <i class="lucide-check me-2"></i> Approve
+                    </button>
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-danger" @onclick="() => RejectRequest(pr.Id)">
+                        <i class="lucide-x me-2"></i> Reject
+                    </button>
+                }
+            </CustomRowActions>
+        </DataTable>
+    }
+</div>
+
+@code {
+    private List<ProcurementMock>? Requests;
+    private List<ColumnDefinition<ProcurementMock>> ProcurementColumns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRequests();
+
+        ProcurementColumns = new()
+        {
+            new() { Header = "Request ID", PropertySelector = p => p.Id, SortColumn = "Id" },
+            new() { Header = "Item Name", PropertySelector = p => p.ItemName, SortColumn = "ItemName" },
+            new() { Header = "Quantity", PropertySelector = p => p.Quantity.ToString(), SortColumn = "Quantity" },
+            new() { Header = "Unit Price", PropertySelector = p => p.UnitPrice.ToString(), SortColumn = "UnitPrice" },
+            new() { Header = "Total Value", PropertySelector = p => p.TotalValue.ToString(), SortColumn = "TotalValue" },
+            new() { Header = "Requester", PropertySelector = p => p.Requester, SortColumn = "Requester" },
+            new() { Header = "Status", PropertySelector = p => p.Status, SortColumn = "Status",
+                    Template = pr => @<span class="badge-custom @(pr.Status == "Approved" ? "badge-custom-success" : pr.Status == "Pending" ? "badge-custom-warning" : "badge-custom-danger")">@pr.Status</span> }
+        };
+    }
+
+    private async Task LoadRequests()
+    {
+        Requests = await ProcurementApiClient.GetProcurementRequestsAsync();
+    }
+
+    private async Task ApproveRequest(string id)
+    {
+        await ProcurementApiClient.ApproveProcurementRequestAsync(id);
+        await LoadRequests();
+    }
+
+    private async Task RejectRequest(string id)
+    {
+        await ProcurementApiClient.RejectProcurementRequestAsync(id);
+        await LoadRequests();
+    }
+
+    private async Task HandleDelete(ProcurementMock pr)
+    {
+        await ProcurementApiClient.DeleteProcurementRequestAsync(pr.Id);
+        await LoadRequests();
+    }
+}

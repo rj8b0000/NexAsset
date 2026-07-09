@@ -1,0 +1,44 @@
+@page "/finance"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IFinanceApiClient FinanceApiClient
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Finance Ledgers</h1>
+            <span class="text-caption text-secondary">Manage and organize capital acquisition invoices, overdue alerts, and vendor balances.</span>
+        </div>
+    </div>
+
+    @if (Invoices == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="InvoiceMock" Items="Invoices" Type="Invoice" Columns="InvoiceColumns"
+                   IdSelector="inv => inv.Id" CategorySelector="inv => inv.Vendor" StatusSelector="inv => inv.Status">
+        </DataTable>
+    }
+</div>
+
+@code {
+    private List<InvoiceMock>? Invoices;
+    private List<ColumnDefinition<InvoiceMock>> InvoiceColumns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Invoices = await FinanceApiClient.GetInvoicesAsync();
+
+        InvoiceColumns = new()
+        {
+            new() { Header = "Invoice ID", PropertySelector = i => i.Id, SortColumn = "Id" },
+            new() { Header = "Vendor", PropertySelector = i => i.Vendor, SortColumn = "Vendor" },
+            new() { Header = "Amount", PropertySelector = i => i.Amount.ToString(), SortColumn = "Amount" },
+            new() { Header = "Due Date", PropertySelector = i => i.DueDate.ToString(), SortColumn = "DueDate" },
+            new() { Header = "Status", PropertySelector = i => i.Status, SortColumn = "Status",
+                    Template = inv => @<span class="badge-custom @(inv.Status == "Paid" ? "badge-custom-success" : inv.Status == "Unpaid" ? "badge-custom-info" : "badge-custom-danger")">@inv.Status</span> }
+        };
+    }
+}

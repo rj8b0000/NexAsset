@@ -1,0 +1,113 @@
+@using NexAsset.Web.State
+@inject AuthenticationState AuthenticationState
+@implements IDisposable
+
+<div class="d-flex align-items-center justify-content-center min-vh-100 position-relative" style="background-color: var(--bg-app); padding: var(--space-24); overflow: hidden;">
+    <!-- Premium background blobs -->
+    <div class="auth-bg-blobs">
+        <div class="auth-blob-1"></div>
+        <div class="auth-blob-2"></div>
+    </div>
+
+    <div class="card-custom animate-fade-in w-100 position-relative" style="max-width: 450px; box-shadow: var(--shadow-lg); border-radius: var(--radius-24) !important; padding: var(--space-32); z-index: 1;">
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-primary rounded-3 text-white mb-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
+                <i class="lucide-box fs-3"></i>
+            </div>
+            <h2 class="h1-title mb-1" style="color: var(--text-primary); font-size: 26px; font-weight: 700; letter-spacing: -0.03em;">Welcome to NexAsset</h2>
+            <p class="text-caption text-muted-custom" style="font-size: 13px;">Enterprise Asset & Equipment Management</p>
+        </div>
+
+        @if (AuthenticationState.AuthView == "login")
+        {
+            <form @onsubmit:preventDefault>
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Email Address</label>
+                    <div class="position-relative">
+                        <i class="lucide-mail position-absolute text-muted-custom" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; z-index: 10;"></i>
+                        <input type="email" class="form-control-custom" style="padding-left: 40px !important;" placeholder="admin@nexasset.com" @bind="AuthenticationState.AuthEmail" />
+                    </div>
+                </div>
+                <div class="form-group-custom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <label class="form-label-custom">Password</label>
+                        <button type="button" class="btn-custom-link text-caption" style="font-size: 12px;" @onclick='() => AuthenticationState.SetAuthView("forgot")'>Forgot Password?</button>
+                    </div>
+                    <div class="position-relative">
+                        <i class="lucide-lock position-absolute text-muted-custom" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; z-index: 10;"></i>
+                        <input type="password" class="form-control-custom" style="padding-left: 40px !important;" placeholder="••••••••" @bind="AuthenticationState.AuthPassword" />
+                    </div>
+                </div>
+
+                @if (AuthenticationState.ShowAuthError)
+                {
+                    <div class="alert alert-danger py-2 px-3 text-caption border-0 rounded-3 mb-3 d-flex align-items-center gap-2" style="background-color: var(--danger-light); color: var(--danger); border-radius: var(--radius-12);">
+                        <i class="lucide-alert-circle"></i> Invalid email or password credentials.
+                    </div>
+                }
+
+                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5 mt-3" style="height: 44px; border-radius: var(--radius-12) !important; font-size: 14px;" @onclick="HandleLogin">
+                    <i class="lucide-log-in"></i> Sign In
+                </button>
+            </form>
+        }
+        else if (AuthenticationState.AuthView == "forgot")
+        {
+            <form @onsubmit:preventDefault>
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Enter Account Email</label>
+                    <div class="position-relative">
+                        <i class="lucide-mail position-absolute text-muted-custom" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; z-index: 10;"></i>
+                        <input type="email" class="form-control-custom" style="padding-left: 40px !important;" placeholder="admin@nexasset.com" @bind="AuthenticationState.AuthEmail" />
+                    </div>
+                </div>
+                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5 mt-3" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick="HandleForgotPassword">
+                    Send Reset Link
+                </button>
+                <button type="button" class="btn-custom btn-custom-secondary w-100 py-2.5 mt-2" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick='() => AuthenticationState.SetAuthView("login")'>
+                    Back to Sign In
+                </button>
+            </form>
+        }
+        else if (AuthenticationState.AuthView == "reset")
+        {
+            <div>
+                <div class="text-center py-4">
+                    <div class="p-3 bg-success-light text-success rounded-circle d-inline-block mb-3 animate-bounce" style="background-color: var(--success-light);">
+                        <i class="lucide-mail-check fs-2"></i>
+                    </div>
+                    <h4 class="h2-title">Check Your Email</h4>
+                    <p class="text-caption text-muted-custom mt-2" style="max-width: 320px; margin: 0 auto;">We have dispatched password recovery instructions to <strong>@AuthenticationState.AuthEmail</strong>.</p>
+                </div>
+                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick='() => AuthenticationState.SetAuthView("login")'>
+                    Return to Log In
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthenticationState.OnChange += StateHasChanged;
+    }
+
+    private void HandleLogin()
+    {
+        AuthenticationState.Login(AuthenticationState.AuthEmail, AuthenticationState.AuthPassword);
+    }
+
+    private void HandleForgotPassword()
+    {
+        if (!string.IsNullOrEmpty(AuthenticationState.AuthEmail))
+        {
+            AuthenticationState.SetAuthView("reset");
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthenticationState.OnChange -= StateHasChanged;
+    }
+}

@@ -1,0 +1,43 @@
+@page "/organizations"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IOrganizationApiClient OrganizationApiClient
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Organizations</h1>
+            <span class="text-caption text-secondary">Manage and organize operational branches, workspaces, and headcounts.</span>
+        </div>
+    </div>
+
+    @if (Organizations == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="OrganizationMock" Items="Organizations" Type="Organization" Columns="OrgColumns"
+                   IdSelector="o => o.Id" CategorySelector="o => o.Location">
+        </DataTable>
+    }
+</div>
+
+@code {
+    private List<OrganizationMock>? Organizations;
+    private List<ColumnDefinition<OrganizationMock>> OrgColumns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Organizations = await OrganizationApiClient.GetOrganizationsAsync();
+
+        OrgColumns = new()
+        {
+            new() { Header = "Organization ID", PropertySelector = o => o.Id, SortColumn = "Id" },
+            new() { Header = "Name", PropertySelector = o => o.Name, SortColumn = "Name" },
+            new() { Header = "Head Count", PropertySelector = o => o.HeadCount.ToString(), SortColumn = "HeadCount" },
+            new() { Header = "Location", PropertySelector = o => o.Location, SortColumn = "Location" },
+            new() { Header = "Created Date", PropertySelector = o => o.CreatedDate.ToString(), SortColumn = "CreatedDate" }
+        };
+    }
+}

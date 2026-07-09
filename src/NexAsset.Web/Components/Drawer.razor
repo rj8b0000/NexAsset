@@ -1,0 +1,44 @@
+@if (IsOpen)
+{
+    <!-- Backdrop -->
+    <div class="drawer-backdrop" style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 2000; animation: fadeIn 0.15s ease-out forwards;" @onclick="Close">
+        <!-- Drawer Container -->
+        <div class="drawer-content d-flex flex-column" style="position: absolute; right: 0; top: 0; bottom: 0; width: 100%; max-width: 460px; background-color: var(--bg-surface); border-left: 1px solid var(--border-color); box-shadow: var(--shadow-lg); animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;" @onclick:stopPropagation>
+            <!-- Header -->
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background-color: var(--bg-surface-hover); height: var(--topbar-height);">
+                <div>
+                    <h3 class="h2-title mb-0">@Title</h3>
+                </div>
+                <button type="button" class="btn-custom btn-custom-secondary p-1" style="border-radius: 50%; border-color: transparent; width: 32px; height: 32px;" @onclick="Close">
+                    <i class="lucide-x"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="flex-grow-1 p-4" style="overflow-y: auto;">
+                @ChildContent
+            </div>
+
+            <!-- Footer -->
+            @if (FooterContent != null)
+            {
+                <div class="p-3 border-top d-flex align-items-center justify-content-end gap-2" style="background-color: var(--bg-surface-hover);">
+                    @FooterContent
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; } = false;
+    [Parameter] public string Title { get; set; } = "Details";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? FooterContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private void Close()
+    {
+        OnClose.InvokeAsync();
+    }
+}

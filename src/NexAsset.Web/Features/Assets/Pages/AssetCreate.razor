@@ -1,0 +1,85 @@
+@page "/assets/create"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IAssetApiClient AssetApiClient
+@inject MockDatabaseService Db
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <FormSection Title="Register New Asset" 
+                 Breadcrumbs='(new List<string> { "Assets", "Create" })' 
+                 OnCancel="HandleCancel" OnSave="HandleSave" OnReset="HandleReset">
+        <div class="col-md-6">
+            <div class="form-group-custom">
+                <label class="form-label-custom">Asset Name</label>
+                <input type="text" class="form-control-custom" placeholder="e.g. MacBook Pro M3" @bind="NewAsset.Name" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group-custom">
+                <label class="form-label-custom">Serial Code</label>
+                <input type="text" class="form-control-custom" placeholder="e.g. C02GXXXX" @bind="NewAsset.Serial" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group-custom">
+                <label class="form-label-custom">Equipment Category</label>
+                <select class="form-control-custom" @bind="NewAsset.Category">
+                    <option value="IT Equipment">IT Equipment</option>
+                    <option value="Mobile Devices">Mobile Devices</option>
+                    <option value="Networking">Networking</option>
+                    <option value="Office Equipment">Office Equipment</option>
+                    <option value="Vehicles">Vehicles</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group-custom">
+                <label class="form-label-custom">Acquisition Value (USD)</label>
+                <input type="number" class="form-control-custom" placeholder="0.00" @bind="NewAsset.Value" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group-custom">
+                <label class="form-label-custom">Operations Location</label>
+                <select class="form-control-custom" @bind="NewAsset.Location">
+                    @foreach (var br in Db.Branches)
+                    {
+                        <option value="@br">@br</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </FormSection>
+</div>
+
+@code {
+    private AssetMock NewAsset = new() 
+    { 
+        Category = "IT Equipment", 
+        Location = "HQ - New York",
+        Status = "Available"
+    };
+
+    private void HandleSave()
+    {
+        if (string.IsNullOrEmpty(NewAsset.Name)) return;
+        AssetApiClient.CreateAssetAsync(NewAsset);
+        NavigationManager.NavigateTo("/assets");
+    }
+
+    private void HandleCancel()
+    {
+        NavigationManager.NavigateTo("/assets");
+    }
+
+    private void HandleReset()
+    {
+        NewAsset = new AssetMock
+        {
+            Category = "IT Equipment",
+            Location = "HQ - New York",
+            Status = "Available"
+        };
+    }
+}

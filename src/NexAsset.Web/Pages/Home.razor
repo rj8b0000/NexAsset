@@ -1,0 +1,119 @@
+@page "/"
+@page "/dashboard"
+@using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject MockDatabaseService Db
+@inject NotificationState NotificationState
+@inject NavigationManager NavigationManager
+
+<!-- DASHBOARD VIEW -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <StatCard Title="Total Assets" Value="@($"${Db.Assets.Sum(a => a.Value):#,0}")" IconClass="lucide-box" TrendLabel="+14%" Trend="up" Subtext="from last quarter" Status="primary" />
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <StatCard Title="Assigned Assets" Value="@Db.Assets.Count(a => a.Status == "Assigned").ToString()" IconClass="lucide-user-check" TrendLabel="@($"{Db.Assets.Count(a => a.Status == "Assigned") * 100 / Math.Max(1, Db.Assets.Count)}% util")" Trend="neutral" Subtext="of total stock" Status="success" />
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <StatCard Title="Available Assets" Value="@Db.Assets.Count(a => a.Status == "Available").ToString()" IconClass="lucide-box-select" TrendLabel="Ready" Trend="neutral" Subtext="in warehouses" Status="info" />
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <StatCard Title="Pending Approvals" Value="@Db.ProcurementRequests.Count(r => r.Status == "Pending").ToString()" IconClass="lucide-check-square" TrendLabel="Urgent" Trend="down" Subtext="require review" Status="warning" />
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6 col-md-12">
+        <ChartCard Title="Asset Growth" Subtitle="Capital valuation trends ($k) over last 6 months" Type="area" />
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <ChartCard Title="Asset Categories" Subtitle="Breakdown of physical assets by type" Type="donut" />
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6 col-md-12">
+        <ChartCard Title="Monthly Procurement" Subtitle="Operational expense compared to budget limits" Type="bar" />
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <ChartCard Title="Maintenance Tickets Trend" Subtitle="Support requests logged vs resolved issues" Type="line" />
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Side: Recent Activities -->
+    <div class="col-lg-7 col-md-12">
+        <div class="card-custom h-100">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
+                <h3 class="h2-title"><i class="lucide-history me-1 text-primary"></i> Recent System Activity</h3>
+                <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick='() => NavigationManager.NavigateTo("/administration/timeline")'>Full Log</button>
+            </div>
+            
+            <div class="d-flex flex-column gap-3" style="max-height: 380px; overflow-y: auto;">
+                @foreach (var act in NotificationState.Activities.Take(5))
+                {
+                    <div class="d-flex gap-3 align-items-start py-2 timeline-activity-item">
+                        <div class="position-relative">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-caption" style="width: 32px; height: 32px; background-color: var(--primary-light); color: var(--primary); font-size: 11px;">
+                                @(act.User.Substring(0, Math.Min(2, act.User.Length)).ToUpper())
+                            </div>
+                            <!-- Colored status dot -->
+                            <span class="position-absolute bottom-0 end-0 rounded-circle border border-white" style="width: 8px; height: 8px; background-color: @(act.Title.Contains("Created") || act.Title.Contains("Added") || act.Title.Contains("Success") ? "var(--success)" : act.Title.Contains("Deleted") || act.Title.Contains("Error") ? "var(--danger)" : "var(--info)");"></span>
+                        </div>
+                        <div class="flex-grow-1" style="line-height: 1.3;">
+                            <div class="fw-semibold text-caption" style="color: var(--text-primary);">@act.Title</div>
+                            <span class="text-caption text-secondary" style="font-size: 12px;">@act.Details</span>
+                            <div class="d-flex align-items-center gap-2 mt-1" style="font-size: 10px; color: var(--text-muted);">
+                                <span><i class="lucide-user" style="font-size: 10px;"></i> @act.User</span>
+                                <span>•</span>
+                                <span><i class="lucide-clock" style="font-size: 10px;"></i> @act.Timestamp.ToString("MM-dd HH:mm")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side: Quick Action Panel + Quick Stats -->
+    <div class="col-lg-5 col-md-12">
+        <div class="card-custom h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h3 class="h2-title border-bottom pb-3 mb-3"><i class="lucide-zap me-1 text-warning"></i> Operational Shortcuts</h3>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <button type="button" class="dashboard-shortcut-btn w-100" @onclick='() => NavigationManager.NavigateTo("/assets/create")'>
+                            <i class="lucide-plus-circle fs-3 text-primary"></i>
+                            <span class="fw-semibold">Add Asset</span>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="dashboard-shortcut-btn w-100" @onclick='() => NavigationManager.NavigateTo("/assets")'>
+                            <i class="lucide-user-plus fs-3 text-success"></i>
+                            <span class="fw-semibold">Assign Item</span>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="dashboard-shortcut-btn w-100" @onclick='() => NavigationManager.NavigateTo("/procurement/create")'>
+                            <i class="lucide-file-text fs-3 text-info"></i>
+                            <span class="fw-semibold">New PR</span>
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="dashboard-shortcut-btn w-100" @onclick='() => NavigationManager.NavigateTo("/maintenance/create")'>
+                            <i class="lucide-wrench fs-3 text-warning"></i>
+                            <span class="fw-semibold">Maint. Ticket</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-4 border-top mt-4">
+                <div class="d-flex align-items-center justify-content-between text-caption text-secondary">
+                    <span>Operations database status:</span>
+                    <span class="badge-custom badge-custom-success"><i class="lucide-check-circle-2 me-1"></i> Synchronized</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

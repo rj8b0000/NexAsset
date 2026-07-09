@@ -1,0 +1,78 @@
+@page "/approvalcenter"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IProcurementApiClient ProcurementApiClient
+
+<div class="animate-fade-in">
+    <div class="mb-4">
+        <h1 class="h1-title">Approval Center</h1>
+        <span class="text-caption text-secondary">Review and authorize pending procurement purchase requests.</span>
+    </div>
+
+    <!-- Approval Requests List -->
+    <div class="row g-4">
+        @if (PendingRequests == null)
+        {
+            <LoadingState />
+        }
+        else
+        {
+            @foreach (var pr in PendingRequests)
+            {
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                            <div>
+                                <span class="badge-custom badge-custom-info mb-2">Procurement Request</span>
+                                <h4 class="h2-title">@pr.ItemName</h4>
+                                <span class="text-caption text-muted-custom">Requested by: @pr.Requester</span>
+                            </div>
+                            <h3 class="h2-title text-primary">@((pr.TotalValue).ToString("C"))</h3>
+                        </div>
+                        <div class="d-flex justify-content-between text-caption mb-3">
+                            <span>Quantity: <strong>@pr.Quantity</strong></span>
+                            <span>Unit Price: <strong>@((pr.UnitPrice).ToString("C"))</strong></span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn-custom btn-custom-danger py-1 px-3 text-caption flex-grow-1" @onclick="() => RejectProcurement(pr.Id)">Reject</button>
+                            <button class="btn-custom btn-custom-primary py-1 px-3 text-caption flex-grow-1" @onclick="() => ApproveProcurement(pr.Id)">Approve</button>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (!PendingRequests.Any())
+            {
+                <div class="col-12">
+                    <EmptyState Title="Zero Pending Requests" Description="No pending procurement approval items require action. All requests have been settled." IconClass="lucide-thumbs-up" />
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private List<ProcurementMock>? PendingRequests;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingRequests();
+    }
+
+    private async Task LoadPendingRequests()
+    {
+        var all = await ProcurementApiClient.GetProcurementRequestsAsync();
+        PendingRequests = all.Where(r => r.Status == "Pending").ToList();
+    }
+
+    private async Task ApproveProcurement(string id)
+    {
+        await ProcurementApiClient.ApproveProcurementRequestAsync(id);
+        await LoadPendingRequests();
+    }
+
+    private async Task RejectProcurement(string id)
+    {
+        await ProcurementApiClient.RejectProcurementRequestAsync(id);
+        await LoadPendingRequests();
+    }
+}

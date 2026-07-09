@@ -1,0 +1,235 @@
+@page "/assets"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IAssetApiClient AssetApiClient
+@inject IEmployeeApiClient EmployeeApiClient
+@inject MockDatabaseService Db
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Assets Ledger</h1>
+            <span class="text-caption text-secondary">Manage and organize physical hardware and equipment records.</span>
+        </div>
+        <div>
+            <button type="button" class="btn-custom btn-custom-primary" @onclick='() => NavigationManager.NavigateTo("/assets/create")'>
+                <i class="lucide-plus"></i> Create Asset
+            </button>
+        </div>
+    </div>
+
+    @if (Assets == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="AssetMock" Items="Assets" Type="Asset" Columns="AssetColumns"
+                   IdSelector="a => a.Id" CategorySelector="a => a.Category" StatusSelector="a => a.Status"
+                   OnViewDetails="HandleViewDetails" OnEdit="HandleEdit" OnDelete="HandleOpenDeleteDialog"
+                   OnBulkDelete="HandleBulkDelete">
+            <CustomRowActions Context="asset">
+                @if (asset.Status == "Available")
+                {
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--primary);" @onclick="() => OpenAssignDialog(asset)">
+                        <i class="lucide-user-plus me-2"></i> Assign
+                    </button>
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--warning);" @onclick="() => ToggleMaintenance(asset, true)">
+                        <i class="lucide-wrench me-2"></i> Maintenance
+                    </button>
+                }
+                else if (asset.Status == "Assigned")
+                {
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--info);" @onclick="() => ReturnAsset(asset)">
+                        <i class="lucide-undo-2 me-2"></i> Return
+                    </button>
+                }
+                else if (asset.Status == "Maintenance")
+                {
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--success);" @onclick="() => ToggleMaintenance(asset, false)">
+                        <i class="lucide-check me-2"></i> Resolve Maint.
+                    </button>
+                }
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => OpenTransferDialog(asset)">
+                    <i class="lucide-send me-2"></i> Transfer
+                </button>
+            </CustomRowActions>
+        </DataTable>
+    }
+</div>
+
+<!-- Delete Confirm Dialog -->
+<Dialog IsOpen="IsDeleteDialogOpen" Title="Confirm Delete Operation" Size="sm" OnClose="() => IsDeleteDialogOpen = false">
+    <ChildContent>
+        <div class="text-center py-3">
+            <div class="p-3 bg-danger-light text-danger rounded-circle d-inline-block mb-3 animate-bounce">
+                <i class="lucide-trash-2 fs-2"></i>
+            </div>
+            <h4 class="h2-title">Permanently delete this record?</h4>
+            <p class="text-caption text-secondary mt-2">This operational action is irreversible. The asset ledger record will be permanently purged.</p>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary flex-grow-1" @onclick="() => IsDeleteDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-danger flex-grow-1" @onclick="ConfirmDelete">Delete</button>
+    </FooterContent>
+</Dialog>
+
+<!-- Assign Custody Dialog -->
+<Dialog IsOpen="IsAssignDialogOpen" Title="Assign Asset Custody" Size="md" OnClose="() => IsAssignDialogOpen = false">
+    <ChildContent>
+        <div class="form-group-custom mb-3">
+            <label class="form-label-custom">Select Employee for Assignment</label>
+            <select class="form-control-custom" @bind="SelectedEmployeeForAssignment">
+                <option value="">-- Choose Employee --</option>
+                @if (Employees != null)
+                {
+                    @foreach (var emp in Employees)
+                    {
+                        <option value="@emp.Name">@emp.Name (@emp.Department)</option>
+                    }
+                }
+            </select>
+        </div>
+        <p class="text-caption text-secondary">The asset condition is logged as 'Verifiable Good'. This worker will receive an automated email request to confirm custody.</p>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => IsAssignDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="ConfirmAssign">Assign Custody</button>
+    </FooterContent>
+</Dialog>
+
+<!-- Transfer Branch Dialog -->
+<Dialog IsOpen="IsTransferDialogOpen" Title="Transfer Operations Branch" Size="md" OnClose="() => IsTransferDialogOpen = false">
+    <ChildContent>
+        <div class="form-group-custom mb-3">
+            <label class="form-label-custom">Target Branch Destination</label>
+            <select class="form-control-custom" @bind="SelectedBranchForTransfer">
+                <option value="">-- Select Branch --</option>
+                @foreach (var br in Db.Branches)
+                {
+                    <option value="@br">@br</option>
+                }
+            </select>
+        </div>
+        <p class="text-caption text-secondary">A logistics transit request will be flagged. Estimated branch asset migration time: 24 hours.</p>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => IsTransferDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="ConfirmTransfer">Transfer</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    private new List<AssetMock>? Assets;
+    private List<EmployeeMock>? Employees;
+    private List<ColumnDefinition<AssetMock>> AssetColumns = new();
+
+    private AssetMock? SelectedAsset;
+    private bool IsDeleteDialogOpen = false;
+    private bool IsAssignDialogOpen = false;
+    private bool IsTransferDialogOpen = false;
+
+    private string SelectedEmployeeForAssignment = "";
+    private string SelectedBranchForTransfer = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Assets = await AssetApiClient.GetAssetsAsync();
+        Employees = await EmployeeApiClient.GetEmployeesAsync();
+
+        AssetColumns = new()
+        {
+            new() { Header = "Asset ID", PropertySelector = a => a.Id, SortColumn = "Id" },
+            new() { Header = "Name", PropertySelector = a => a.Name, SortColumn = "Name" },
+            new() { Header = "Category", PropertySelector = a => a.Category, SortColumn = "Category" },
+            new() { Header = "Location", PropertySelector = a => a.Location, SortColumn = "Location" },
+            new() { Header = "Status", PropertySelector = a => a.Status, SortColumn = "Status",
+                    Template = asset => @<span class="badge-custom @(asset.Status == "Available" ? "badge-custom-success" : asset.Status == "Assigned" ? "badge-custom-primary" : "badge-custom-warning")">@asset.Status</span> },
+            new() { Header = "Value", PropertySelector = a => a.Value.ToString(), SortColumn = "Value" },
+            new() { Header = "AssignedTo", PropertySelector = a => a.AssignedTo ?? "Unassigned", SortColumn = "AssignedTo" }
+        };
+    }
+
+    private void HandleViewDetails(AssetMock asset)
+    {
+        NavigationManager.NavigateTo($"/assets/details/{asset.Id}");
+    }
+
+    private void HandleEdit(AssetMock asset)
+    {
+        NavigationManager.NavigateTo($"/assets/edit/{asset.Id}");
+    }
+
+    private void HandleOpenDeleteDialog(AssetMock asset)
+    {
+        SelectedAsset = asset;
+        IsDeleteDialogOpen = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (SelectedAsset != null)
+        {
+            await AssetApiClient.DeleteAssetAsync(SelectedAsset.Id);
+            Assets = await AssetApiClient.GetAssetsAsync();
+        }
+        IsDeleteDialogOpen = false;
+    }
+
+    private async Task HandleBulkDelete(List<AssetMock> items)
+    {
+        foreach (var item in items)
+        {
+            await AssetApiClient.DeleteAssetAsync(item.Id);
+        }
+        Assets = await AssetApiClient.GetAssetsAsync();
+    }
+
+    private void OpenAssignDialog(AssetMock asset)
+    {
+        SelectedAsset = asset;
+        SelectedEmployeeForAssignment = "";
+        IsAssignDialogOpen = true;
+    }
+
+    private async Task ConfirmAssign()
+    {
+        if (SelectedAsset != null && !string.IsNullOrEmpty(SelectedEmployeeForAssignment))
+        {
+            await AssetApiClient.AssignAssetAsync(SelectedAsset.Id, SelectedEmployeeForAssignment);
+            Assets = await AssetApiClient.GetAssetsAsync();
+        }
+        IsAssignDialogOpen = false;
+    }
+
+    private void OpenTransferDialog(AssetMock asset)
+    {
+        SelectedAsset = asset;
+        SelectedBranchForTransfer = "";
+        IsTransferDialogOpen = true;
+    }
+
+    private async Task ConfirmTransfer()
+    {
+        if (SelectedAsset != null && !string.IsNullOrEmpty(SelectedBranchForTransfer))
+        {
+            await AssetApiClient.TransferAssetAsync(SelectedAsset.Id, SelectedBranchForTransfer);
+            Assets = await AssetApiClient.GetAssetsAsync();
+        }
+        IsTransferDialogOpen = false;
+    }
+
+    private async Task ReturnAsset(AssetMock asset)
+    {
+        await AssetApiClient.ReturnAssetAsync(asset.Id);
+        Assets = await AssetApiClient.GetAssetsAsync();
+    }
+
+    private async Task ToggleMaintenance(AssetMock asset, bool inMaintenance)
+    {
+        await AssetApiClient.SetMaintenanceStatusAsync(asset.Id, inMaintenance);
+        Assets = await AssetApiClient.GetAssetsAsync();
+    }
+}

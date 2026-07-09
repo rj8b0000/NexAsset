@@ -1,0 +1,80 @@
+<div class="card-custom animate-fade-in stat-card-premium" style="position: relative; border-radius: 24px !important; padding: var(--space-24); overflow: hidden; height: 100%;">
+    <!-- Ambient glow element in background -->
+    <div class="stat-card-glow" style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, var(--@(GetStatusColor())-light) 0%, transparent 60%); opacity: 0.12; pointer-events: none;"></div>
+    
+    <div class="d-flex justify-content-between align-items-start position-relative" style="z-index: 1;">
+        <div>
+            <span class="text-label" style="font-size: 11.5px; letter-spacing: 0.05em; font-weight: 600; text-transform: uppercase;">@Title</span>
+            <h2 class="h1-title mt-2 mb-1" style="font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--text-primary);">@Value</h2>
+        </div>
+        <div class="p-2.5 rounded-4 d-flex align-items-center justify-content-center" 
+             style="background: linear-gradient(135deg, var(--@(GetStatusColor())-light), rgba(255, 255, 255, 0)); color: var(--@(GetStatusColor())); border: 1px solid var(--@(GetStatusColor())-border); border-radius: 12px; width: 42px; height: 42px;">
+            <i class="@IconClass fs-4"></i>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(TrendLabel))
+    {
+        <div class="d-flex align-items-center justify-content-between mt-4 position-relative" style="z-index: 1; min-height: 24px;">
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                @if (Trend == "up")
+                {
+                    <span class="badge-custom badge-custom-success py-1 px-2.5" style="font-size: 11px; font-weight: 600; border-radius: 99px;">
+                        <i class="lucide-trending-up me-1" style="font-size: 10px;"></i> @TrendLabel
+                    </span>
+                }
+                else if (Trend == "down")
+                {
+                    <span class="badge-custom badge-custom-danger py-1 px-2.5" style="font-size: 11px; font-weight: 600; border-radius: 99px;">
+                        <i class="lucide-trending-down me-1" style="font-size: 10px;"></i> @TrendLabel
+                    </span>
+                }
+                else
+                {
+                    <span class="badge-custom badge-custom-muted py-1 px-2.5" style="font-size: 11px; font-weight: 600; border-radius: 99px;">
+                        @TrendLabel
+                    </span>
+                }
+                <span class="text-caption text-muted-custom ms-1" style="font-size: 11px; font-weight: 400;">@Subtext</span>
+            </div>
+            
+            <!-- Sparkline Dynamic Curve -->
+            <svg class="mini-sparkline" viewBox="0 0 100 30" style="width: 62px; height: 20px; fill: none; stroke: var(--@(GetStatusColor())); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; filter: drop-shadow(0px 2px 4px var(--@(GetStatusColor())-light));">
+                @if (Trend == "up")
+                {
+                    <path d="M0,24 Q15,21 30,22 T60,11 T90,5 T100,2" />
+                }
+                else if (Trend == "down")
+                {
+                    <path d="M0,2 Q15,5 30,13 T60,17 T90,23 T100,28" />
+                }
+                else
+                {
+                    <path d="M0,16 Q15,14 30,17 T60,13 T90,15 T100,14" />
+                }
+            </svg>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public string IconClass { get; set; } = "lucide-box";
+    [Parameter] public string TrendLabel { get; set; } = "";
+    [Parameter] public string Trend { get; set; } = "neutral"; // up, down, neutral
+    [Parameter] public string Subtext { get; set; } = "";
+    [Parameter] public string Status { get; set; } = "primary"; // primary, success, warning, danger, info
+
+    private string GetStatusColor()
+    {
+        return Status.ToLower() switch
+        {
+            "success" => "success",
+            "warning" => "warning",
+            "danger" => "danger",
+            "info" => "info",
+            _ => "primary"
+        };
+    }
+}

@@ -1,0 +1,52 @@
+@page "/administration"
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject IAuditLogApiClient AuditLogApiClient
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">System Administration</h1>
+            <span class="text-caption text-secondary">Review system operations logs, user audit trails, and configuration events.</span>
+        </div>
+    </div>
+
+    <!-- Admin tabs list -->
+    <div class="tabs-container mb-3">
+        <div class="tab-item active">Audit Trails</div>
+        <div class="tab-item" @onclick='() => NavigationManager.NavigateTo("/administration/timeline")'>System Timeline</div>
+    </div>
+
+    @if (Logs == null)
+    {
+        <LoadingState />
+    }
+    else
+    {
+        <DataTable TItem="AuditLogMock" Items="Logs" Type="AuditLog" ShowFilterPanel="false" Columns="AuditColumns"
+                   IdSelector="log => log.Id">
+        </DataTable>
+    }
+</div>
+
+@code {
+    private List<AuditLogMock>? Logs;
+    private List<ColumnDefinition<AuditLogMock>> AuditColumns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logs = await AuditLogApiClient.GetAuditLogsAsync();
+
+        AuditColumns = new()
+        {
+            new() { Header = "Audit ID", PropertySelector = l => l.Id, SortColumn = "Id" },
+            new() { Header = "Timestamp", PropertySelector = l => l.Timestamp.ToString("g"), SortColumn = "Timestamp" },
+            new() { Header = "Entity ID", PropertySelector = l => l.EntityId, SortColumn = "EntityId" },
+            new() { Header = "Entity Type", PropertySelector = l => l.EntityType, SortColumn = "EntityType" },
+            new() { Header = "Action Type", PropertySelector = l => l.Action, SortColumn = "Action" },
+            new() { Header = "Details", PropertySelector = l => l.Details, SortColumn = "Details" },
+            new() { Header = "User", PropertySelector = l => l.User, SortColumn = "User" }
+        };
+    }
+}

@@ -1,0 +1,271 @@
+@using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Models
+@using NexAsset.Web.Infrastructure.Services
+@inject NavigationState NavigationState
+@inject AuthenticationState AuthenticationState
+@inject NotificationState NotificationState
+@inject MockDatabaseService Db
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<div class="sidebar-slot h-100 d-flex flex-column" style="background-color: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); color: var(--sidebar-text); transition: width var(--transition-normal); width: @(NavigationState.SidebarCollapsed ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)");">
+    
+    <!-- Sidebar Header (Logo + Title) -->
+    <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="border-color: var(--sidebar-border); height: var(--topbar-height);">
+        @if (!NavigationState.SidebarCollapsed)
+        {
+            <div class="d-flex align-items-center gap-2 animate-fade-in">
+                <div class="d-flex align-items-center justify-content-center bg-primary rounded-3 text-white" style="width: 32px; height: 32px;">
+                    <i class="lucide-box fs-5"></i>
+                </div>
+                <span class="fs-5 fw-bold" style="letter-spacing: -0.03em; color: var(--sidebar-text);">NexAsset</span>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex align-items-center justify-content-center bg-primary rounded-3 text-white mx-auto" style="width: 32px; height: 32px;">
+                <i class="lucide-box fs-5"></i>
+            </div>
+        }
+        
+        @if (!NavigationState.SidebarCollapsed)
+        {
+            <button type="button" class="btn-custom p-1 border-0" style="background: transparent; color: var(--sidebar-text-muted);" @onclick="ToggleSidebar">
+                <i class="lucide-chevron-left fs-5"></i>
+            </button>
+        }
+    </div>
+
+    <!-- Organization Switch (only visible when expanded) -->
+    @if (!NavigationState.SidebarCollapsed)
+    {
+        <div class="px-3 py-3 border-bottom" style="border-color: var(--sidebar-border);">
+            <div class="dropdown">
+                <button class="btn-custom w-100 text-start d-flex align-items-center justify-content-between py-2 px-3 border-0" 
+                        style="background-color: var(--sidebar-active-bg); color: var(--sidebar-text); border-radius: var(--radius-8);" 
+                        @onclick="ToggleOrgDropdown">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="lucide-building-2" style="color: var(--primary);"></i>
+                        <span class="text-caption fw-semibold">@NavigationState.ActiveOrganization</span>
+                    </div>
+                    <i class="lucide-chevrons-up-down text-muted-custom" style="font-size: 12px;"></i>
+                </button>
+                
+                <div class="dropdown-menu p-1 w-100 @(OrgDropdownOpen ? "show" : "")" 
+                     style="display: @(OrgDropdownOpen ? "block" : "none"); background-color: var(--sidebar-active-bg); border: 1px solid var(--sidebar-border); border-radius: var(--radius-8); position: absolute; left: 0; right: 0; z-index: 1010; margin-top: 4px;">
+                    @foreach (var org in Db.Organizations)
+                    {
+                        <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" 
+                                style="color: @(NavigationState.ActiveOrganization == org ? "var(--primary)" : "var(--sidebar-text)");"
+                                @onclick="() => SwitchOrg(org)">
+                            @org
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Sidebar Search -->
+    @if (!NavigationState.SidebarCollapsed)
+    {
+        <div class="p-3 border-bottom" style="border-color: var(--sidebar-border);">
+            <div class="position-relative w-100">
+                <i class="lucide-search position-absolute text-muted-custom" style="left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px;"></i>
+                <input type="text" class="form-control-custom border-0 py-1.5" 
+                       style="padding-left: 32px; background-color: var(--sidebar-active-bg); color: var(--sidebar-text); font-size: 12px;" 
+                       placeholder="Quick jump..." @bind-value="QuickSearchQuery" @bind-value:event="oninput" @onkeyup="HandleQuickSearch" />
+            </div>
+        </div>
+    }
+
+    <!-- Navigation Scrollable -->
+    <div class="flex-grow-1 overflow-auto py-3">
+        <!-- Main Section Header -->
+        @if (!NavigationState.SidebarCollapsed)
+        {
+            <div class="px-4 mb-2 text-label" style="font-size: 10px; color: var(--sidebar-text-muted);">Primary Navigation</div>
+        }
+
+        <nav class="d-flex flex-column gap-1 px-2">
+            @foreach (var nav in PrimaryNavItems)
+            {
+                <NavLink href="@GetNavUrl(nav.Module)" Match="@(nav.Module == "Dashboard" ? NavLinkMatch.All : NavLinkMatch.Prefix)" class="nav-btn-custom py-2 px-3 rounded-3 w-100 border-0 bg-transparent text-start d-flex align-items-center justify-content-between text-decoration-none" ActiveClass="active" style="cursor: pointer; transition: all var(--transition-fast);">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="@nav.Icon fs-5"></i>
+                        @if (!NavigationState.SidebarCollapsed)
+                        {
+                            <span class="text-caption font-weight-semibold animate-fade-in">@nav.Name</span>
+                        }
+                    </div>
+                    
+                    @if (!NavigationState.SidebarCollapsed)
+                    {
+                        @if (nav.Module == "Maintenance" && GetActiveMaintenanceCount() > 0)
+                        {
+                            <span class="badge-custom badge-custom-warning py-0.5 px-1.5" style="font-size: 10px;">@GetActiveMaintenanceCount()</span>
+                        }
+                        else if (nav.Module == "Administration" && GetPendingApprovalsCount() > 0)
+                        {
+                            <span class="badge-custom badge-custom-info py-0.5 px-1.5" style="font-size: 10px;">@GetPendingApprovalsCount()</span>
+                        }
+                    }
+                </NavLink>
+            }
+
+            <!-- Expandable Secondary Nav header (only visible when expanded) -->
+            @if (!NavigationState.SidebarCollapsed)
+            {
+                <div class="px-4 mt-4 mb-2 text-label" style="font-size: 10px; color: var(--sidebar-text-muted);">Secondary Operations</div>
+            }
+
+            @foreach (var nav in SecondaryNavItems)
+            {
+                <NavLink href="@GetNavUrl(nav.Module)" Match="NavLinkMatch.Prefix" class="nav-btn-custom py-2 px-3 rounded-3 w-100 border-0 bg-transparent text-start d-flex align-items-center justify-content-between text-decoration-none" ActiveClass="active" style="cursor: pointer; transition: all var(--transition-fast);">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="@nav.Icon fs-5"></i>
+                        @if (!NavigationState.SidebarCollapsed)
+                        {
+                            <span class="text-caption font-weight-semibold animate-fade-in">@nav.Name</span>
+                        }
+                    </div>
+                </NavLink>
+            }
+        </nav>
+    </div>
+
+    <!-- Sidebar Collapse Toggle for Collapsed View -->
+    @if (NavigationState.SidebarCollapsed)
+    {
+        <div class="p-3 border-top text-center" style="border-color: var(--sidebar-border);">
+            <button type="button" class="btn-custom p-1 border-0 mx-auto" style="background: transparent; color: var(--sidebar-text-muted);" @onclick="ToggleSidebar">
+                <i class="lucide-chevron-right fs-5"></i>
+            </button>
+        </div>
+    }
+
+    <!-- Sidebar Footer Profile (Avatar + Details) -->
+    <div class="p-3 border-top d-flex align-items-center gap-3 sidebar-profile-footer" style="border-color: var(--sidebar-border); background-color: var(--bg-surface-hover);">
+        <div class="position-relative">
+            <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" 
+                 style="width: 38px; height: 38px; background-color: var(--primary); color: #ffffff; font-size: 14px;">
+                AD
+            </div>
+            <span class="position-absolute bottom-0 end-0 rounded-circle border border-dark" 
+                  style="width: 10px; height: 10px; background-color: var(--success);"></span>
+        </div>
+        
+        @if (!NavigationState.SidebarCollapsed)
+        {
+            <div class="flex-grow-1 overflow-hidden animate-fade-in" style="line-height: 1.2;">
+                <div class="fw-semibold text-caption text-truncate" style="color: var(--sidebar-text);">Admin Administrator</div>
+                <span class="text-muted-custom text-truncate d-block" style="font-size: 11px;">admin@nexasset.com</span>
+            </div>
+            
+            <button type="button" class="btn-custom p-1 border-0 bg-transparent text-muted-custom" @onclick="HandleLogout">
+                <i class="lucide-log-out" style="font-size: 14px;"></i>
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private bool OrgDropdownOpen = false;
+    private string QuickSearchQuery = "";
+
+    protected override void OnInitialized()
+    {
+        NavigationState.OnChange += StateHasChanged;
+        AuthenticationState.OnChange += StateHasChanged;
+    }
+
+    private void ToggleSidebar()
+    {
+        NavigationState.SetSidebarCollapsed(!NavigationState.SidebarCollapsed);
+    }
+
+    private void ToggleOrgDropdown()
+    {
+        OrgDropdownOpen = !OrgDropdownOpen;
+    }
+
+    private void SwitchOrg(string org)
+    {
+        NavigationState.SwitchOrganization(org);
+        OrgDropdownOpen = false;
+    }
+
+    private string GetNavUrl(string module)
+    {
+        return module.ToLower() switch
+        {
+            "dashboard" => "/",
+            _ => $"/{module.ToLower()}"
+        };
+    }
+
+    private int GetActiveMaintenanceCount()
+    {
+        return Db.MaintenanceTickets.Count(t => t.Status != "Resolved");
+    }
+
+    private int GetPendingApprovalsCount()
+    {
+        return Db.ProcurementRequests.Count(t => t.Status == "Pending");
+    }
+
+    private void HandleLogout()
+    {
+        AuthenticationState.Logout();
+    }
+
+    private void HandleQuickSearch()
+    {
+        if (string.IsNullOrEmpty(QuickSearchQuery)) return;
+        
+        // Find matching module
+        var match = PrimaryNavItems.Concat(SecondaryNavItems)
+            .FirstOrDefault(n => n.Name.Contains(QuickSearchQuery, StringComparison.OrdinalIgnoreCase));
+            
+        if (match != null)
+        {
+            NavigationManager.NavigateTo(GetNavUrl(match.Module));
+            QuickSearchQuery = "";
+            NotificationState.AddToast("Module Jumped", $"Navigated directly to: {match.Name}", ToastType.Info);
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationState.OnChange -= StateHasChanged;
+        AuthenticationState.OnChange -= StateHasChanged;
+    }
+
+    private List<NavItem> PrimaryNavItems = new()
+    {
+        new NavItem { Name = "Dashboard", Module = "Dashboard", Icon = "lucide-layout-dashboard" },
+        new NavItem { Name = "Organizations", Module = "Organizations", Icon = "lucide-building-2" },
+        new NavItem { Name = "Employees", Module = "Employees", Icon = "lucide-users" },
+        new NavItem { Name = "Assets", Module = "Assets", Icon = "lucide-box" },
+        new NavItem { Name = "Inventory", Module = "Inventory", Icon = "lucide-warehouse" },
+        new NavItem { Name = "Procurement", Module = "Procurement", Icon = "lucide-shopping-cart" },
+        new NavItem { Name = "Maintenance", Module = "Maintenance", Icon = "lucide-wrench" },
+        new NavItem { Name = "Finance", Module = "Finance", Icon = "lucide-credit-card" },
+        new NavItem { Name = "Reports", Module = "Reports", Icon = "lucide-bar-chart-3" },
+        new NavItem { Name = "Administration", Module = "Administration", Icon = "lucide-settings" }
+    };
+
+    private List<NavItem> SecondaryNavItems = new()
+    {
+        new NavItem { Name = "Notifications", Module = "Notifications", Icon = "lucide-bell" },
+        new NavItem { Name = "Approval Center", Module = "ApprovalCenter", Icon = "lucide-check-square" },
+        new NavItem { Name = "Settings", Module = "Settings", Icon = "lucide-sliders" }
+    };
+
+    private class NavItem
+    {
+        public string Name { get; set; } = "";
+        public string Module { get; set; } = "";
+        public string Icon { get; set; } = "";
+    }
+}

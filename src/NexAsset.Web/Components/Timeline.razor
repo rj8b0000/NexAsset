@@ -1,0 +1,57 @@
+<div class="card-custom animate-fade-in">
+    <div class="border-bottom pb-3 mb-4">
+        <h3 class="h2-title">@Title</h3>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <span class="text-caption text-muted-custom">@Subtitle</span>
+        }
+    </div>
+
+    @if (Events != null && Events.Any())
+    {
+        <div class="timeline-list">
+            @foreach (var ev in Events)
+            {
+                <div class="timeline-item animate-fade-in">
+                    <div class="timeline-item-date d-flex align-items-center gap-2">
+                        <i class="lucide-calendar fs-6"></i>
+                        <span>@ev.Timestamp.ToString("MMMM dd, yyyy 'at' hh:mm tt")</span>
+                    </div>
+                    <div class="timeline-item-title text-primary d-flex align-items-center gap-2 mt-1">
+                        <span class="fw-semibold">@ev.Title</span>
+                        @if (!string.IsNullOrEmpty(ev.User))
+                        {
+                            <span class="badge-custom badge-custom-muted" style="font-size: 10px; font-weight: 500;">
+                                <i class="lucide-user me-1" style="font-size: 10px;"></i> @ev.User
+                            </span>
+                        }
+                    </div>
+                    <p class="timeline-item-desc mt-1">@ev.Details</p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-4">
+            <div class="text-muted-custom mb-2">
+                <i class="lucide-history fs-3"></i>
+            </div>
+            <div class="text-caption text-muted-custom">No history events logged yet for this item.</div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Activity Timeline";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public IEnumerable<TimelineEvent>? Events { get; set; }
+
+    public class TimelineEvent
+    {
+        public DateTime Timestamp { get; set; }
+        public string Title { get; set; } = "";
+        public string Details { get; set; } = "";
+        public string User { get; set; } = "";
+    }
+}

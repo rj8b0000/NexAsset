@@ -1,0 +1,17 @@
+@page "/administration/timeline"
+@using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Models
+@inject NotificationState NotificationState
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="mb-4">
+        <button class="btn-custom btn-custom-secondary mb-3" @onclick='() => NavigationManager.NavigateTo("/administration")'>
+            <i class="lucide-arrow-left"></i> Back to Logs
+        </button>
+        <h1 class="h1-title">System Activity Timeline</h1>
+    </div>
+    
+    <Timeline Title="Operational Logs" Subtitle="Raw audit logs sorted by trigger chronology" 
+              Events="NotificationState.Activities.Select(a => new NexAsset.Web.Components.Timeline.TimelineEvent { Timestamp = a.Timestamp, Title = a.Title, Details = a.Details, User = a.User })" />
+</div>

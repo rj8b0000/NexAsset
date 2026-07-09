@@ -1,0 +1,103 @@
+<div class="animate-fade-in">
+    <!-- Breadcrumb -->
+    @if (Breadcrumbs != null && Breadcrumbs.Any())
+    {
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb" style="font-size: 12px; margin: 0; padding: 0; background: transparent;">
+                <li class="breadcrumb-item">
+                    <a href="" style="color: var(--primary); text-decoration: none;" @onclick:preventDefault @onclick="HandleHomeClick">Home</a>
+                </li>
+                @foreach (var crumb in Breadcrumbs.SkipLast(1))
+                {
+                    <li class="breadcrumb-item">
+                        <a href="" style="color: var(--primary); text-decoration: none;" @onclick:preventDefault @onclick="() => HandleCrumbClick(crumb)">@crumb</a>
+                    </li>
+                }
+                <li class="breadcrumb-item active text-muted-custom" aria-current="page">
+                    @Breadcrumbs.Last()
+                </li>
+            </ol>
+        </nav>
+    }
+
+    <!-- Form Container -->
+    <div class="form-section-wrapper" style="max-width: 1100px; margin: 0 auto; width: 100%;">
+        <!-- Header -->
+        <div class="border-bottom pb-3 mb-4">
+            <h2 class="h1-title">@Title</h2>
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <span class="text-caption text-muted-custom">@Subtitle</span>
+            }
+        </div>
+
+        <!-- Validation Summary Alert -->
+        @if (ShowValidationAlert)
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-4" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i>
+                <div>Please resolve the highlighted field errors below.</div>
+            </div>
+        }
+
+        <!-- Fields Grid -->
+        <form @onsubmit:preventDefault class="row g-4">
+            @ChildContent
+        </form>
+
+        <!-- Footer Actions -->
+        <div class="border-top pt-4 mt-5 d-flex align-items-center justify-content-between flex-wrap gap-3 form-footer-actions">
+            <div>
+                <button type="button" class="btn-custom btn-custom-secondary" @onclick="HandleReset">
+                    <i class="lucide-refresh-ccw"></i> Reset
+                </button>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="button" class="btn-custom btn-custom-secondary" @onclick="HandleCancel">
+                    Cancel
+                </button>
+                @if (ShowSaveAndNew)
+                {
+                    <button type="button" class="btn-custom btn-custom-secondary" style="border-color: var(--primary); color: var(--primary);" @onclick="HandleSaveAndNew">
+                        Save & New
+                    </button>
+                }
+                <button type="button" class="btn-custom btn-custom-primary" @onclick="HandleSave">
+                    <i class="lucide-save"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public List<string>? Breadcrumbs { get; set; }
+    [Parameter] public bool ShowSaveAndNew { get; set; } = true;
+    [Parameter] public bool ShowValidationAlert { get; set; } = false;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnSaveAndNew { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    
+    [Parameter] public EventCallback<string> OnCrumbNavigation { get; set; }
+
+    private void HandleSave() => OnSave.InvokeAsync();
+    private void HandleSaveAndNew() => OnSaveAndNew.InvokeAsync();
+    private void HandleCancel() => OnCancel.InvokeAsync();
+    private void HandleReset() => OnReset.InvokeAsync();
+
+    private void HandleHomeClick()
+    {
+        OnCrumbNavigation.InvokeAsync("Dashboard");
+    }
+
+    private void HandleCrumbClick(string module)
+    {
+        OnCrumbNavigation.InvokeAsync(module);
+    }
+}
