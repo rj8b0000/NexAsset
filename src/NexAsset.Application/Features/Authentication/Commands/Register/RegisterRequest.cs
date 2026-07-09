@@ -1,6 +1,7 @@
 namespace NexAsset.Application.Features.Authentication.Commands.Register;
 
-public class RegisterRequest
-{
-    
-}
+public sealed record RegisterRequest(
+    string FirstName,
+    string LastName,
+    string Email,
+    string Password);

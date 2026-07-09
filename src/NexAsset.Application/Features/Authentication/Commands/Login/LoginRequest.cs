@@ -1,6 +1,6 @@
 namespace NexAsset.Application.Features.Authentication.Commands.Login;
 
-public class LoginRequest
-{
-    
-}
+public sealed record LoginRequest(
+    string Email,
+    string Password,
+    bool RememberMe);

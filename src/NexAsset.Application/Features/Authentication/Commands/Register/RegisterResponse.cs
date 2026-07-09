@@ -1,6 +1,5 @@
 namespace NexAsset.Application.Features.Authentication.Commands.Register;
 
-public class RegisterResponse
-{
-    
-}
+public sealed record RegisterResponse(
+    Guid UserId,
+    string Email);

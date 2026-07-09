@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "ndOzeoRFWB8=",
+  "dgSpecHash": "GmbYi7ipg6Y=",
   "success": true,
   "projectFilePath": "/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Application/NexAsset.Application.csproj",
   "expectedPackageFiles": [
     "/Users/rudrakshjani/.nuget/packages/fluentvalidation/12.1.1/fluentvalidation.12.1.1.nupkg.sha512",
+    "/Users/rudrakshjani/.nuget/packages/fluentvalidation.dependencyinjectionextensions/12.1.1/fluentvalidation.dependencyinjectionextensions.12.1.1.nupkg.sha512",
     "/Users/rudrakshjani/.nuget/packages/mediatr/14.2.0/mediatr.14.2.0.nupkg.sha512",
     "/Users/rudrakshjani/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
     "/Users/rudrakshjani/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.0/microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",

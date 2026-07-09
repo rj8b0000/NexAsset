@@ -1,0 +1,12 @@
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/bin/Debug/net10.0/NexAsset.Domain.deps.json
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/bin/Debug/net10.0/NexAsset.Domain.dll
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/bin/Debug/net10.0/NexAsset.Domain.pdb
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.AssemblyInfoInputs.cache
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.AssemblyInfo.cs
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.csproj.CoreCompileInputs.cache
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.sourcelink.json
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.dll
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/refint/NexAsset.Domain.dll
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/NexAsset.Domain.pdb
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.Domain/obj/Debug/net10.0/ref/NexAsset.Domain.dll

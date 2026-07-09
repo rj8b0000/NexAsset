@@ -12,14 +12,25 @@
 
     <ItemGroup>
       <PackageReference Include="FluentValidation" Version="12.1.1" />
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
       <PackageReference Include="MediatR" Version="14.2.0" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Abstractions\" />
-      <Folder Include="Behaviours\" />
-      <Folder Include="Common\" />
-      <Folder Include="Features\" />
+      <Folder Include="Common\Behaviours\" />
+      <Folder Include="Common\Mappings\" />
+      <Folder Include="Common\Models\" />
+      <Folder Include="Features\Assets\" />
+      <Folder Include="Features\Authentication\Queries\" />
+      <Folder Include="Features\Branches\" />
+      <Folder Include="Features\Departments\" />
+      <Folder Include="Features\Employees\" />
+      <Folder Include="Features\inventory\" />
+      <Folder Include="Features\Maintenance\" />
+      <Folder Include="Features\Organizations\" />
+      <Folder Include="Features\Procurement\" />
+      <Folder Include="Features\Reports\" />
       <Folder Include="Interfaces\" />
     </ItemGroup>
 

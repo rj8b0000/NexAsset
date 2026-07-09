@@ -1,6 +1,6 @@
 namespace NexAsset.Application.Features.Authentication.Commands.Login;
 
-public class LoginResponse
-{
-    
-}
+public sealed record LoginResponse(
+    Guid UserId,
+    string Email,
+    string FullName);

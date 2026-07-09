@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NexAsset.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+edd0d3762e768dea2fd1c35e9831dc07b607dc1e")]
 [assembly: System.Reflection.AssemblyProductAttribute("NexAsset.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NexAsset.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
