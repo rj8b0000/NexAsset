@@ -1,0 +1,6 @@
+namespace NexAsset.Application.Features.Authentication.Commands.Logout;
+
+public class LogoutCommand
+{
+    
+}
