@@ -139,3 +139,4 @@
 /Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.API/bin/Debug/net10.0/tr/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 /Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.API/bin/Debug/net10.0/zh-Hans/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 /Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.API/bin/Debug/net10.0/zh-Hant/Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+/Volumes/RudrSSD/Projects/RiderProjects/NexAsset/src/NexAsset.API/bin/Debug/net10.0/Riok.Mapperly.Abstractions.dll

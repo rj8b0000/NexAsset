@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "NexAsset.Web",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-sHtacnkCgBeIU5iwVjWjY4cXeM1fRaLzUsUUQr1m0ps=",
+    "hash": "sha256-ps5iBTobcSXnT00cO/VbsZyb8eFZlYuNrnoIGNxG6dI=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.87vtjjdetb.js"
@@ -1242,16 +1242,16 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "NexAsset.Web.wasm",
-        "name": "NexAsset.Web.fp96oocrd7.wasm",
-        "integrity": "sha256-o24J55+PkE9+tTmEL9Zu/m3reDterVGCA9TNcbQPBSU=",
+        "name": "NexAsset.Web.h14wt038tk.wasm",
+        "integrity": "sha256-i7a1gU+EduDb7Sj6SUvdr7DD2kL89xuAe1VGcLrSrhI=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "NexAsset.Web.pdb",
-        "name": "NexAsset.Web.smhv05mnzk.pdb",
-        "integrity": "sha256-/ECOphkzp0q7sr9jvQGJbaIMxFLiUVsAOAoLb/RBFhM=",
+        "name": "NexAsset.Web.j4fi1v2mfd.pdb",
+        "integrity": "sha256-EzrLhGok5fQP0PBnzMniLH6Dvaz7bxTlfHjnJMw8GbY=",
         "cache": "force-cache"
       }
     ],

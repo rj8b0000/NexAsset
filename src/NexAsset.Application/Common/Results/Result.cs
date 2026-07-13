@@ -12,10 +12,10 @@ public class Result
         Error = error;
     }
     
-    protected static Result Success()
+    public static Result Success()
     => new(true, null);
     
-    protected static Result Failure(string error)
+    public static Result Failure(string error)
     => new(false, error);
 }
 

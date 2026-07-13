@@ -4,7 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexAsset.Application.Common.Interfaces;
 using NexAsset.Infrastructure.Identity;
+using NexAsset.Infrastructure.Identity.Services;
 using NexAsset.Infrastructure.Persistence;
+using NexAsset.Infrastructure.Persistence.Repositories;
 
 namespace NexAsset.Infrastructure;
 
@@ -30,8 +32,12 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
-        
-        services.AddScoped<IIdentityService, IIdentityService>();
+        services.AddHttpContextAccessor();
+
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         
 
         return services;

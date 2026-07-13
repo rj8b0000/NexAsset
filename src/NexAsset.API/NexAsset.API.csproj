@@ -23,9 +23,7 @@
 
     <ItemGroup>
       <Folder Include="Configurations\" />
-      <Folder Include="Endpoints\Authentication\" />
       <Folder Include="Extensions\" />
-      <Folder Include="Middlewares\" />
     </ItemGroup>
 
 </Project>

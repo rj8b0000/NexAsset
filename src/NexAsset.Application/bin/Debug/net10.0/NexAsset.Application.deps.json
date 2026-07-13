@@ -11,7 +11,8 @@
           "FluentValidation": "12.1.1",
           "FluentValidation.DependencyInjectionExtensions": "12.1.1",
           "MediatR": "14.2.0",
-          "NexAsset.Domain": "1.0.0"
+          "NexAsset.Domain": "1.0.0",
+          "Riok.Mapperly": "4.3.1"
         },
         "runtime": {
           "NexAsset.Application.dll": {}
@@ -120,6 +121,14 @@
           }
         }
       },
+      "Riok.Mapperly/4.3.1": {
+        "runtime": {
+          "lib/netstandard2.0/Riok.Mapperly.Abstractions.dll": {
+            "assemblyVersion": "4.3.1.0",
+            "fileVersion": "4.3.1.0"
+          }
+        }
+      },
       "NexAsset.Domain/1.0.0": {
         "runtime": {
           "NexAsset.Domain.dll": {
@@ -205,6 +214,13 @@
       "sha512": "sha512-lKIZiBiGd36k02TCdMHp1KlNWisyIvQxcYJvIkz7P4gSQ9zi8dgh6S5Grj8NNG7HWYIPfQymGyoZ6JB5d1Lo1g==",
       "path": "microsoft.identitymodel.tokens/8.14.0",
       "hashPath": "microsoft.identitymodel.tokens.8.14.0.nupkg.sha512"
+    },
+    "Riok.Mapperly/4.3.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-oSE+OVLHyiojrws0QVbQaAT2YKsYbyHqJXPdV7EhGseR/dYgeWS2x1T5qY5I4E+RJkJqMSG+FyZOq4SljWgJWQ==",
+      "path": "riok.mapperly/4.3.1",
+      "hashPath": "riok.mapperly.4.3.1.nupkg.sha512"
     },
     "NexAsset.Domain/1.0.0": {
       "type": "project",
