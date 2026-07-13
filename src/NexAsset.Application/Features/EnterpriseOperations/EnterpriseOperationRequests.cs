@@ -4,6 +4,7 @@ using NexAsset.Application.Common.Interfaces;
 using NexAsset.Application.Common.Mappings;
 using NexAsset.Application.Common.Models.Paging;
 using NexAsset.Application.Common.Results;
+using NexAsset.Domain.Common;
 using NexAsset.Domain.Entities;
 using NexAsset.Domain.Enums;
 
@@ -384,7 +385,7 @@ public sealed class EnterpriseOperationHandler :
     }
 
     private async Task<Result> SoftDelete<TEntity>(Guid id, CancellationToken ct, string notFound)
-        where TEntity : NexAsset.Domain.Common.BaseEntity
+        where TEntity : BaseEntity
     {
         var entity = await _repository.GetByIdAsync<TEntity>(id, ct);
         if (entity is null) return Result.Failure(notFound);
@@ -394,14 +395,14 @@ public sealed class EnterpriseOperationHandler :
     }
 
     private async Task<Result<TDto>> Get<TEntity, TDto>(Guid id, Func<TEntity, TDto> mapper, CancellationToken ct, string notFound)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         var entity = await _repository.GetByIdAsync<TEntity>(id, ct);
         return entity is null ? Result<TDto>.Failure(notFound) : Result<TDto>.Success(mapper(entity));
     }
 
     private async Task<Result<PagedResponse<TDto>>> Page<TEntity, TDto>(PagedRequest request, Func<TEntity, TDto> mapper, CancellationToken ct)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         var page = await _repository.GetPagedAsync<TEntity>(request, ct);
         return Result<PagedResponse<TDto>>.Success(page.Map(mapper));

@@ -20,7 +20,7 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
         Guid organizationId,
         string code,
         CancellationToken cancellationToken)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         var queryable = _context.Set<TEntity>().AsNoTracking();
 
@@ -39,7 +39,7 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
     public async Task AddAsync<TEntity>(
         TEntity entity,
         CancellationToken cancellationToken)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
     }
@@ -47,36 +47,20 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
     public async Task<TEntity?> GetByIdAsync<TEntity>(
         Guid id,
         CancellationToken cancellationToken)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
-        IQueryable<TEntity> queryable = _context.Set<TEntity>();
-
-        if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
-        {
-            return await queryable
-                .Cast<BaseEntity>()
-                .Where(x => x.Id == id && !x.IsDeleted)
-                .Cast<TEntity>()
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-
-        return await queryable.FirstOrDefaultAsync(cancellationToken);
+        return await _context.Set<TEntity>()
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
     }
 
     public async Task<PagedResponse<TEntity>> GetPagedAsync<TEntity>(
         PagedRequest request,
         CancellationToken cancellationToken)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
-        IQueryable<TEntity> queryable = _context.Set<TEntity>().AsNoTracking();
-
-        if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
-        {
-            queryable = queryable
-                .Cast<BaseEntity>()
-                .Where(x => !x.IsDeleted)
-                .Cast<TEntity>();
-        }
+        IQueryable<TEntity> queryable = _context.Set<TEntity>()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted);
 
         queryable = ApplySearch(queryable, request.Search);
         queryable = ApplySorting(queryable, request.SortBy, request.Descending);
@@ -98,7 +82,7 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
     }
 
     public void Update<TEntity>(TEntity entity)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         _context.Set<TEntity>().Update(entity);
     }
@@ -171,7 +155,7 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
     public Task<int> CountAsync<TEntity>(
         Func<IQueryable<TEntity>, IQueryable<TEntity>> filter,
         CancellationToken cancellationToken)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         return filter(_context.Set<TEntity>().AsNoTracking())
             .CountAsync(cancellationToken);
@@ -180,7 +164,7 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
     private static IQueryable<TEntity> ApplySearch<TEntity>(
         IQueryable<TEntity> queryable,
         string? search)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         if (string.IsNullOrWhiteSpace(search))
             return queryable;
@@ -230,15 +214,129 @@ public sealed class EnterpriseOperationsRepository : IEnterpriseOperationsReposi
         IQueryable<TEntity> queryable,
         string? sortBy,
         bool descending)
-        where TEntity : class
+        where TEntity : BaseEntity
     {
-        if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
+        if (string.IsNullOrWhiteSpace(sortBy))
         {
-            return descending
-                ? queryable.Cast<BaseEntity>().OrderByDescending(x => x.CreatedAtUtc).Cast<TEntity>()
-                : queryable.Cast<BaseEntity>().OrderBy(x => x.CreatedAtUtc).Cast<TEntity>();
+            return SortByCreatedAt(queryable, descending);
         }
 
-        return queryable;
+        var normalizedSort = sortBy.Trim().ToLowerInvariant();
+
+        return typeof(TEntity).Name switch
+        {
+            nameof(Vendor) => SortVendor(queryable.Cast<Vendor>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(Customer) => SortCustomer(queryable.Cast<Customer>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(PurchaseRequest) => SortPurchaseRequest(queryable.Cast<PurchaseRequest>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(PurchaseOrder) => SortPurchaseOrder(queryable.Cast<PurchaseOrder>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(InventoryItem) => SortInventoryItem(queryable.Cast<InventoryItem>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(Consumable) => SortConsumable(queryable.Cast<Consumable>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(MaintenanceRecord) => SortMaintenanceRecord(queryable.Cast<MaintenanceRecord>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(ServiceTicket) => SortServiceTicket(queryable.Cast<ServiceTicket>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(Notification) => SortNotification(queryable.Cast<Notification>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(AuditLog) => SortAuditLog(queryable.Cast<AuditLog>(), normalizedSort, descending).Cast<TEntity>(),
+            nameof(SystemSetting) => SortSystemSetting(queryable.Cast<SystemSetting>(), normalizedSort, descending).Cast<TEntity>(),
+            _ => SortByCreatedAt(queryable, descending)
+        };
     }
+
+    private static IQueryable<TEntity> SortByCreatedAt<TEntity>(
+        IQueryable<TEntity> queryable,
+        bool descending)
+        where TEntity : BaseEntity
+    {
+        return descending
+            ? queryable.OrderByDescending(x => x.CreatedAtUtc)
+            : queryable.OrderBy(x => x.CreatedAtUtc);
+    }
+
+    private static IQueryable<Vendor> SortVendor(IQueryable<Vendor> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "code" => descending ? queryable.OrderByDescending(x => x.Code) : queryable.OrderBy(x => x.Code),
+            "name" => descending ? queryable.OrderByDescending(x => x.Name) : queryable.OrderBy(x => x.Name),
+            "email" => descending ? queryable.OrderByDescending(x => x.Email) : queryable.OrderBy(x => x.Email),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<Customer> SortCustomer(IQueryable<Customer> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "code" => descending ? queryable.OrderByDescending(x => x.Code) : queryable.OrderBy(x => x.Code),
+            "name" => descending ? queryable.OrderByDescending(x => x.Name) : queryable.OrderBy(x => x.Name),
+            "email" => descending ? queryable.OrderByDescending(x => x.Email) : queryable.OrderBy(x => x.Email),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<PurchaseRequest> SortPurchaseRequest(IQueryable<PurchaseRequest> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "requestnumber" => descending ? queryable.OrderByDescending(x => x.RequestNumber) : queryable.OrderBy(x => x.RequestNumber),
+            "title" => descending ? queryable.OrderByDescending(x => x.Title) : queryable.OrderBy(x => x.Title),
+            "estimatedamount" => descending ? queryable.OrderByDescending(x => x.EstimatedAmount) : queryable.OrderBy(x => x.EstimatedAmount),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<PurchaseOrder> SortPurchaseOrder(IQueryable<PurchaseOrder> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "ordernumber" => descending ? queryable.OrderByDescending(x => x.OrderNumber) : queryable.OrderBy(x => x.OrderNumber),
+            "totalamount" => descending ? queryable.OrderByDescending(x => x.TotalAmount) : queryable.OrderBy(x => x.TotalAmount),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<InventoryItem> SortInventoryItem(IQueryable<InventoryItem> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "itemcode" => descending ? queryable.OrderByDescending(x => x.ItemCode) : queryable.OrderBy(x => x.ItemCode),
+            "itemname" => descending ? queryable.OrderByDescending(x => x.ItemName) : queryable.OrderBy(x => x.ItemName),
+            "currentstock" => descending ? queryable.OrderByDescending(x => x.CurrentStock) : queryable.OrderBy(x => x.CurrentStock),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<Consumable> SortConsumable(IQueryable<Consumable> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "consumablecode" => descending ? queryable.OrderByDescending(x => x.ConsumableCode) : queryable.OrderBy(x => x.ConsumableCode),
+            "name" => descending ? queryable.OrderByDescending(x => x.Name) : queryable.OrderBy(x => x.Name),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<MaintenanceRecord> SortMaintenanceRecord(IQueryable<MaintenanceRecord> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "title" => descending ? queryable.OrderByDescending(x => x.Title) : queryable.OrderBy(x => x.Title),
+            "cost" => descending ? queryable.OrderByDescending(x => x.Cost) : queryable.OrderBy(x => x.Cost),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<ServiceTicket> SortServiceTicket(IQueryable<ServiceTicket> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "ticketnumber" => descending ? queryable.OrderByDescending(x => x.TicketNumber) : queryable.OrderBy(x => x.TicketNumber),
+            "title" => descending ? queryable.OrderByDescending(x => x.Title) : queryable.OrderBy(x => x.Title),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<Notification> SortNotification(IQueryable<Notification> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "title" => descending ? queryable.OrderByDescending(x => x.Title) : queryable.OrderBy(x => x.Title),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<AuditLog> SortAuditLog(IQueryable<AuditLog> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "entityname" => descending ? queryable.OrderByDescending(x => x.EntityName) : queryable.OrderBy(x => x.EntityName),
+            "action" => descending ? queryable.OrderByDescending(x => x.Action) : queryable.OrderBy(x => x.Action),
+            _ => SortByCreatedAt(queryable, descending)
+        };
+
+    private static IQueryable<SystemSetting> SortSystemSetting(IQueryable<SystemSetting> queryable, string sortBy, bool descending) =>
+        sortBy switch
+        {
+            "key" => descending ? queryable.OrderByDescending(x => x.Key) : queryable.OrderBy(x => x.Key),
+            _ => SortByCreatedAt(queryable, descending)
+        };
 }
