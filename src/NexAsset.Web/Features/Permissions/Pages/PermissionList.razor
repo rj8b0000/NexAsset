@@ -1,0 +1,117 @@
+@page "/permissions"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.HR
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.HR
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Permissions.Components
+@inject IPermissionApiClient PermissionApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Permissions</h1>
+            <span class="text-caption text-secondary">Define system permissions and map them to roles.</span>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+            <i class="lucide-plus"></i> New Permission
+        </button>
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading permissions..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load permissions" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="PermissionListItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Permission"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="p => p.Id.ToString()"
+                   OnEdit="OpenEdit"
+                   OnDelete="AskDelete" />
+    }
+</div>
+
+<PermissionFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+<ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="permission"
+                     OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />
+
+@code {
+    private PagedResult<PermissionListItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private Guid? _editId;
+    private PermissionListItem? _deleteTarget;
+
+    private readonly List<ColumnDefinition<PermissionListItem>> _columns = new()
+    {
+        new() { Header = "Code", PropertySelector = p => p.Code, SortColumn = "Code" },
+        new() { Header = "Name", PropertySelector = p => p.Name, SortColumn = "Name" },
+        new() { Header = "Status", SortColumn = "IsActive", Template = p =>
+            @<span class="badge-custom @(p.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(p.IsActive ? "Active" : "Inactive")</span> }
+    };
+
+    protected override Task OnInitializedAsync() => LoadAsync(_query);
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await PermissionApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading permissions.";
+    }
+
+    private void OpenCreate() { _editId = null; _formOpen = true; }
+    private void OpenEdit(PermissionListItem item) { _editId = item.Id; _formOpen = true; }
+
+    private async Task OnSaved()
+    {
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "Permission saved successfully.");
+        await LoadAsync(_query);
+    }
+
+    private void AskDelete(PermissionListItem item) => _deleteTarget = item;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteTarget is null) return;
+        var target = _deleteTarget;
+        _deleteTarget = null;
+        _busy = true;
+        var result = await PermissionApiClient.DeleteAsync(target.Id);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Deleted", $"Permission \"{target.Name}\" was deleted.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Delete failed", result.Error?.Message ?? "Could not delete this permission.");
+        }
+    }
+}

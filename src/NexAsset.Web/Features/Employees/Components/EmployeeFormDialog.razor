@@ -1,0 +1,217 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Models.HR
+@using NexAsset.Web.Shared.Models
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+@inject IBranchApiClient BranchApiClient
+@inject IDepartmentApiClient DepartmentApiClient
+@inject IDesignationApiClient DesignationApiClient
+
+<Dialog IsOpen="IsOpen" Title="@(IsEdit ? "Edit Employee" : "New Employee")" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading employee..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_generalError))
+            {
+                <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                    <i class="lucide-alert-circle"></i> @_generalError
+                </div>
+            }
+            <div class="row g-3">
+                <TextField Label="Employee Code" Required="true" Value="@_model.EmployeeCode" ValueChanged="@(v => _model.EmployeeCode = v)" Error='@Err("EmployeeCode")' />
+                <TextField Label="Email" Required="true" Type="email" Value="@_model.Email" ValueChanged="@(v => _model.Email = v)" Error='@Err("Email")' />
+                <TextField Label="First Name" Required="true" Value="@_model.FirstName" ValueChanged="@(v => _model.FirstName = v)" Error='@Err("FirstName")' />
+                <TextField Label="Last Name" Required="true" Value="@_model.LastName" ValueChanged="@(v => _model.LastName = v)" Error='@Err("LastName")' />
+                @if (!IsEdit)
+                {
+                    <TextField Label="Password" Required="true" Type="password" Value="@_model.Password" ValueChanged="@(v => _model.Password = v)" Error='@Err("Password")' />
+                }
+                <TextField Label="Phone" Value="@_model.Phone" ValueChanged="@(v => _model.Phone = v)" Error='@Err("Phone")' />
+
+                <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
+                             Value="@GuidStr(_model.OrganizationId)" ValueChanged="OnOrgChanged" Error='@Err("OrganizationId")' />
+                <SelectField Label="Employment Status" Required="true" Options="_statusOptions" Placeholder="Select status"
+                             Value="@_model.EmploymentStatus.ToString()" ValueChanged="@(v => _model.EmploymentStatus = int.TryParse(v, out var s) ? s : NexAsset.Web.Models.HR.EmploymentStatus.Active)" Error='@Err("EmploymentStatus")' />
+
+                <SelectField Label="Branch" Options="BranchOptions" Placeholder="(None)"
+                             Value="@GuidStr(_model.BranchId)" ValueChanged="@(v => _model.BranchId = ParseGuid(v))" Error='@Err("BranchId")' />
+                <SelectField Label="Department" Options="DeptOptions" Placeholder="(None)"
+                             Value="@GuidStr(_model.DepartmentId)" ValueChanged="@(v => _model.DepartmentId = ParseGuid(v))" Error='@Err("DepartmentId")' />
+                <SelectField Label="Designation" Options="DesignationOptions" Placeholder="(None)"
+                             Value="@GuidStr(_model.DesignationId)" ValueChanged="@(v => _model.DesignationId = ParseGuid(v))" Error='@Err("DesignationId")' />
+                <SelectField Label="Reporting Manager" Options="_managerOptions" Placeholder="(None)"
+                             Value="@GuidStr(_model.ReportingManagerId)" ValueChanged="@(v => _model.ReportingManagerId = ParseGuid(v))" Error='@Err("ReportingManagerId")' />
+
+                <TextField Label="Joining Date" Required="true" Type="date" Value="@_model.JoiningDate" ValueChanged="@(v => _model.JoiningDate = v)" Error='@Err("JoiningDate")' />
+                @if (IsEdit)
+                {
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emp-active" checked="@_model.IsActive" @onchange="e => _model.IsActive = (bool)e.Value!" />
+                            <label class="form-check-label text-caption" for="emp-active">Active</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? EditId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private EmployeeFormModel _model = new();
+    private List<SelectField.Option> _orgOptions = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _branches = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _departments = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _designations = new();
+    private List<SelectField.Option> _managerOptions = new();
+    private readonly List<SelectField.Option> _statusOptions =
+        NexAsset.Web.Models.HR.EmploymentStatus.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
+
+    private bool _loading;
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private bool IsEdit => EditId.HasValue;
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+    private static string GuidStr(Guid g) => g == Guid.Empty ? "" : g.ToString();
+    private static string GuidStr(Guid? g) => g?.ToString() ?? "";
+    private static Guid? ParseGuid(string v) => Guid.TryParse(v, out var g) ? g : null;
+
+    private IReadOnlyList<SelectField.Option> BranchOptions => Filtered(_branches);
+    private IReadOnlyList<SelectField.Option> DeptOptions => Filtered(_departments);
+    private IReadOnlyList<SelectField.Option> DesignationOptions => Filtered(_designations);
+
+    private IReadOnlyList<SelectField.Option> Filtered(List<(Guid Id, Guid OrgId, string Label)> src) =>
+        src.Where(x => x.OrgId == _model.OrganizationId).Select(x => new SelectField.Option(x.Id.ToString(), x.Label)).ToList();
+
+    private void OnOrgChanged(string v)
+    {
+        _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty;
+        // Clear child selections that no longer belong to the chosen organization.
+        if (_model.BranchId is { } b && !_branches.Any(x => x.Id == b && x.OrgId == _model.OrganizationId)) _model.BranchId = null;
+        if (_model.DepartmentId is { } d && !_departments.Any(x => x.Id == d && x.OrgId == _model.OrganizationId)) _model.DepartmentId = null;
+        if (_model.DesignationId is { } s && !_designations.Any(x => x.Id == s && x.OrgId == _model.OrganizationId)) _model.DesignationId = null;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await InitializeAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task InitializeAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        _model = new EmployeeFormModel();
+        _loading = true;
+
+        await LoadLookupsAsync();
+
+        if (EditId.HasValue)
+        {
+            var result = await EmployeeApiClient.GetByIdAsync(EditId.Value);
+            if (result.IsSuccess && result.Data is not null)
+                _model = EmployeeFormModel.FromDetail(result.Data);
+            else
+                _generalError = result.Error?.Message ?? "Could not load this employee.";
+        }
+        _loading = false;
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        var bigPage = new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" };
+
+        var orgs = await OrganizationApiClient.GetPagedAsync(bigPage);
+        if (orgs.IsSuccess && orgs.Data is not null)
+            _orgOptions = orgs.Data.Items.Select(o => new SelectField.Option(o.Id.ToString(), $"{o.Code} — {o.Name}")).ToList();
+
+        var branches = await BranchApiClient.GetPagedAsync(bigPage);
+        if (branches.IsSuccess && branches.Data is not null)
+            _branches = branches.Data.Items.Select(x => (x.Id, x.OrganizationId, $"{x.Code} — {x.Name}")).ToList();
+
+        var depts = await DepartmentApiClient.GetPagedAsync(bigPage);
+        if (depts.IsSuccess && depts.Data is not null)
+            _departments = depts.Data.Items.Select(x => (x.Id, x.OrganizationId, $"{x.Code} — {x.Name}")).ToList();
+
+        var desigs = await DesignationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Title" });
+        if (desigs.IsSuccess && desigs.Data is not null)
+            _designations = desigs.Data.Items.Select(x => (x.Id, x.OrganizationId, x.Title)).ToList();
+
+        var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
+        if (emps.IsSuccess && emps.Data is not null)
+            _managerOptions = emps.Data.Items
+                .Where(e => !EditId.HasValue || e.Id != EditId.Value) // can't report to self
+                .Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}"))
+                .ToList();
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (string.IsNullOrWhiteSpace(_model.EmployeeCode)) _fieldErrors["EmployeeCode"] = "Employee code is required.";
+        if (string.IsNullOrWhiteSpace(_model.FirstName)) _fieldErrors["FirstName"] = "First name is required.";
+        if (string.IsNullOrWhiteSpace(_model.LastName)) _fieldErrors["LastName"] = "Last name is required.";
+        if (string.IsNullOrWhiteSpace(_model.Email)) _fieldErrors["Email"] = "Email is required.";
+        if (!IsEdit && string.IsNullOrWhiteSpace(_model.Password)) _fieldErrors["Password"] = "Password is required.";
+        if (_model.OrganizationId == Guid.Empty) _fieldErrors["OrganizationId"] = "Organization is required.";
+        if (string.IsNullOrWhiteSpace(_model.JoiningDate)) _fieldErrors["JoiningDate"] = "Joining date is required.";
+        if (_fieldErrors.Count > 0) return;
+
+        _saving = true;
+        bool success;
+        ApiError? error;
+        if (IsEdit)
+        {
+            var res = await EmployeeApiClient.UpdateAsync(EditId!.Value, _model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        else
+        {
+            var res = await EmployeeApiClient.CreateAsync(_model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        _saving = false;
+
+        if (!success) { ApplyError(error); return; }
+        await OnSaved.InvokeAsync();
+    }
+
+    private void ApplyError(ApiError? error)
+    {
+        _generalError = error?.Message ?? "Save failed. Please try again.";
+        if (error?.FieldErrors is not null)
+            foreach (var kv in error.FieldErrors)
+                _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+    }
+}

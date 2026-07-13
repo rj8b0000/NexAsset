@@ -22,10 +22,10 @@ builder.Services.AddSingleton<NavigationState>();
 
 // Mock API Client registrations — gradual-migration placeholders backed by MockDatabaseService.
 // Interfaces stay stable so each can be swapped for a real NexAsset.API-backed
-// implementation independently once that phase begins.
+// implementation independently. Organization moved to a real client this phase
+// (see AddNexAssetApiInfrastructure); Branch/Department/Designation are new real clients.
 builder.Services.AddScoped<IAssetApiClient, AssetApiClient>();
 builder.Services.AddScoped<IEmployeeApiClient, EmployeeApiClient>();
-builder.Services.AddScoped<IOrganizationApiClient, OrganizationApiClient>();
 builder.Services.AddScoped<IProcurementApiClient, ProcurementApiClient>();
 builder.Services.AddScoped<IMaintenanceApiClient, MaintenanceApiClient>();
 builder.Services.AddScoped<IFinanceApiClient, FinanceApiClient>();

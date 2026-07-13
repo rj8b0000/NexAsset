@@ -8,8 +8,8 @@
         <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 400px;">
             <div class="position-relative w-100">
                 <i class="lucide-search position-absolute text-muted-custom" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px;"></i>
-                <input type="text" class="form-control-custom" style="padding-left: 36px;" placeholder="Search table..." 
-                       @bind-value="LocalSearchQuery" @bind-value:event="oninput" @onkeyup="HandleSearch" />
+                <input type="text" class="form-control-custom" style="padding-left: 36px;" placeholder="Search table..."
+                       value="@LocalSearchQuery" @oninput="OnSearchInput" />
             </div>
             
             @if (ShowFilterPanel && (CategorySelector != null || StatusSelector != null))
@@ -138,7 +138,15 @@
     }
 
     <!-- Raw Data Grid Wrapper -->
-    <div class="table-responsive">
+    <div class="table-responsive position-relative">
+        @if (IsLoading)
+        {
+            <div class="d-flex align-items-center justify-content-center" style="position: absolute; inset: 0; z-index: 5; background-color: var(--bg-surface); opacity: 0.65;">
+                <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
         <table class="table-custom w-100 @GetDensityClass()">
             <thead>
                 <tr>
@@ -156,9 +164,9 @@
                         <th class="@(col.Sortable ? "sortable-header" : "")" @onclick="() => SetSortColumn(col)">
                             <div class="d-flex align-items-center gap-1">
                                 @col.Header
-                                @if (col.Sortable && SortColumn == col.Header)
+                                @if (col.Sortable && IsSortActive(col))
                                 {
-                                    <i class="@(SortAscending ? "lucide-arrow-up" : "lucide-arrow-down")" style="font-size: 11px;"></i>
+                                    <i class="@(SortIndicatorAscending ? "lucide-arrow-up" : "lucide-arrow-down")" style="font-size: 11px;"></i>
                                 }
                             </div>
                         </th>
@@ -172,9 +180,9 @@
                 </tr>
             </thead>
             <tbody>
-                @if (PaginatedItems.Any())
+                @if (DisplayItems.Any())
                 {
-                    @foreach (var item in PaginatedItems)
+                    @foreach (var item in DisplayItems)
                     {
                         var itemId = IdSelector?.Invoke(item) ?? "";
                         <tr class="@(SelectedItems.Contains(itemId) ? "row-selected" : "")">
@@ -292,17 +300,17 @@
     </div>
 
     <!-- Pagination Controls -->
-    @if (TotalItemsCount > 0)
+    @if (DisplayTotalCount > 0)
     {
         <div class="p-3 border-top d-flex align-items-center justify-content-between bg-light-custom" style="background-color: var(--bg-surface-hover);">
             <div class="text-caption text-muted-custom">
-                Showing <strong>@(StartIndex + 1)</strong> to <strong>@(Math.Min(EndIndex, TotalItemsCount))</strong> of <strong>@TotalItemsCount</strong> entries
+                Showing <strong>@(DisplayStartIndex + 1)</strong> to <strong>@(Math.Min(DisplayEndIndex, DisplayTotalCount))</strong> of <strong>@DisplayTotalCount</strong> entries
             </div>
-            
+
             <div class="d-flex align-items-center gap-3">
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-caption text-muted-custom">Rows per page:</span>
-                    <select class="form-control-custom py-1 px-2" style="width: 70px; height: 32px;" value="@RowsPerPage" @onchange="HandleRowsPerPageChange">
+                    <select class="form-control-custom py-1 px-2" style="width: 70px; height: 32px;" value="@DisplayPageSize" @onchange="HandleRowsPerPageChange">
                         <option value="5">5</option>
                         <option value="10">10</option>
                         <option value="20">20</option>
@@ -310,13 +318,13 @@
                 </div>
 
                 <div class="d-flex gap-1">
-                    <button class="btn-custom btn-custom-secondary p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" disabled="@(CurrentPage == 1)" @onclick="PrevPage">
+                    <button class="btn-custom btn-custom-secondary p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" disabled="@(DisplayPage <= 1)" @onclick="PrevPage">
                         <i class="lucide-chevron-left"></i>
                     </button>
                     <span class="btn-custom btn-custom-secondary py-1 px-3 d-flex align-items-center justify-content-center text-caption" style="height: 32px; pointer-events: none; border-color: var(--border-color); background: var(--bg-surface);">
-                        Page @CurrentPage of @TotalPages
+                        Page @DisplayPage of @(DisplayTotalPages == 0 ? 1 : DisplayTotalPages)
                     </span>
-                    <button class="btn-custom btn-custom-secondary p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" disabled="@(CurrentPage == TotalPages)" @onclick="NextPage">
+                    <button class="btn-custom btn-custom-secondary p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" disabled="@(DisplayPage >= DisplayTotalPages)" @onclick="NextPage">
                         <i class="lucide-chevron-right"></i>
                     </button>
                 </div>
@@ -330,6 +338,18 @@
     [Parameter, EditorRequired] public List<ColumnDefinition<TItem>> Columns { get; set; } = new();
     [Parameter] public bool ShowFilterPanel { get; set; } = true;
     [Parameter] public string Type { get; set; } = "Item";
+
+    // --- Server-driven mode (opt-in) ---
+    // When ServerMode is true the table stops filtering/sorting/paging in-memory and instead
+    // renders Items as the current page verbatim, using the Server* totals for the pager, and
+    // raises OnQueryChanged whenever the user searches, sorts, or pages. Left false, the table
+    // behaves exactly as before (client-side), so existing usages are unaffected.
+    [Parameter] public bool ServerMode { get; set; } = false;
+    [Parameter] public int ServerTotalCount { get; set; }
+    [Parameter] public int ServerPageNumber { get; set; } = 1;
+    [Parameter] public int ServerPageSize { get; set; } = 10;
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public EventCallback<PagedQuery> OnQueryChanged { get; set; }
     
     // Type extraction selectors
     [Parameter] public Func<TItem, string>? IdSelector { get; set; }
@@ -374,10 +394,34 @@
         }
     }
 
-    private void HandleSearch()
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        LocalSearchQuery = e.Value?.ToString() ?? "";
+        await HandleSearch();
+    }
+
+    private async Task HandleSearch()
     {
         CurrentPage = 1;
-        StateHasChanged();
+        if (!ServerMode)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        // Debounce keystrokes so we don't fire a request per character.
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts = new System.Threading.CancellationTokenSource();
+        var token = _searchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(350, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+        await RaiseQuery(1);
     }
 
     private void ToggleFilters()
@@ -422,10 +466,26 @@
         col.Visible = !col.Visible;
     }
 
-    private void SetSortColumn(ColumnDefinition<TItem> col)
+    private async Task SetSortColumn(ColumnDefinition<TItem> col)
     {
         if (!col.Sortable) return;
-        
+
+        if (ServerMode)
+        {
+            var key = SortKeyFor(col);
+            if (_serverSortBy == key)
+            {
+                _serverDescending = !_serverDescending;
+            }
+            else
+            {
+                _serverSortBy = key;
+                _serverDescending = false;
+            }
+            await RaiseQuery(1);
+            return;
+        }
+
         if (SortColumn == col.Header)
         {
             SortAscending = !SortAscending;
@@ -438,8 +498,13 @@
         CurrentPage = 1;
     }
 
-    private void RefreshTable()
+    private async Task RefreshTable()
     {
+        if (ServerMode)
+        {
+            await RaiseQuery(DisplayPage);
+            return;
+        }
         NotificationState.AddToast("Data Refreshed", $"Reloaded live list of {Type} items.", ToastType.Info);
         StateHasChanged();
     }
@@ -456,28 +521,48 @@
         StateHasChanged();
     }
 
-    private void ResetSearchFilters()
+    private async Task ResetSearchFilters()
     {
         LocalSearchQuery = "";
+        if (ServerMode)
+        {
+            await RaiseQuery(1);
+            return;
+        }
         ClearFilters();
     }
 
-    private void HandleRowsPerPageChange(ChangeEventArgs e)
+    private async Task HandleRowsPerPageChange(ChangeEventArgs e)
     {
-        if (int.TryParse(e.Value?.ToString(), out var r))
+        if (!int.TryParse(e.Value?.ToString(), out var r)) return;
+
+        if (ServerMode)
         {
-            RowsPerPage = r;
-            CurrentPage = 1;
+            ServerPageSize = r;
+            await RaiseQuery(1);
+            return;
         }
+        RowsPerPage = r;
+        CurrentPage = 1;
     }
 
-    private void PrevPage()
+    private async Task PrevPage()
     {
+        if (ServerMode)
+        {
+            if (DisplayPage > 1) await RaiseQuery(DisplayPage - 1);
+            return;
+        }
         if (CurrentPage > 1) CurrentPage--;
     }
 
-    private void NextPage()
+    private async Task NextPage()
     {
+        if (ServerMode)
+        {
+            if (DisplayPage < DisplayTotalPages) await RaiseQuery(DisplayPage + 1);
+            return;
+        }
         if (CurrentPage < TotalPages) CurrentPage++;
     }
 
@@ -521,7 +606,7 @@
         var checkedVal = e.Value is bool b && b;
         if (checkedVal)
         {
-            SelectedItems = PaginatedItems.Select(i => IdSelector?.Invoke(i) ?? "").Where(id => !string.IsNullOrEmpty(id)).ToList();
+            SelectedItems = DisplayItems.Select(i => IdSelector?.Invoke(i) ?? "").Where(id => !string.IsNullOrEmpty(id)).ToList();
         }
         else
         {
@@ -531,7 +616,7 @@
 
     private bool IsAllSelected()
     {
-        var ids = PaginatedItems.Select(i => IdSelector?.Invoke(i) ?? "").Where(id => !string.IsNullOrEmpty(id)).ToList();
+        var ids = DisplayItems.Select(i => IdSelector?.Invoke(i) ?? "").Where(id => !string.IsNullOrEmpty(id)).ToList();
         return ids.Any() && ids.All(id => SelectedItems.Contains(id));
     }
 
@@ -613,9 +698,40 @@
     }
 
     private List<TItem> PaginatedItems => FilteredItems.Skip(StartIndex).Take(RowsPerPage).ToList();
-    
+
     private int TotalItemsCount => FilteredItems.Count();
     private int TotalPages => (int)Math.Ceiling((double)TotalItemsCount / RowsPerPage);
     private int StartIndex => (CurrentPage - 1) * RowsPerPage;
     private int EndIndex => StartIndex + RowsPerPage;
+
+    // --- Server-mode state + unified display accessors ---
+    // Sort tracked by the backend column key (ColumnDefinition.SortColumn) rather than header text.
+    private string _serverSortBy = "";
+    private bool _serverDescending = false;
+    private System.Threading.CancellationTokenSource? _searchDebounceCts;
+
+    // Rows shown right now: the server's current page as-is, or the client-computed page.
+    private List<TItem> DisplayItems => ServerMode ? Items.ToList() : PaginatedItems;
+
+    private int DisplayTotalCount => ServerMode ? ServerTotalCount : TotalItemsCount;
+    private int DisplayPage => ServerMode ? ServerPageNumber : CurrentPage;
+    private int DisplayPageSize => ServerMode ? ServerPageSize : RowsPerPage;
+    private int DisplayTotalPages => ServerMode
+        ? (ServerPageSize <= 0 ? 0 : (int)Math.Ceiling((double)ServerTotalCount / ServerPageSize))
+        : TotalPages;
+    private int DisplayStartIndex => ServerMode ? (ServerPageNumber - 1) * ServerPageSize : StartIndex;
+    private int DisplayEndIndex => DisplayStartIndex + DisplayPageSize;
+
+    private string SortKeyFor(ColumnDefinition<TItem> col) => string.IsNullOrEmpty(col.SortColumn) ? col.Header : col.SortColumn;
+    private bool IsSortActive(ColumnDefinition<TItem> col) => ServerMode ? _serverSortBy == SortKeyFor(col) : SortColumn == col.Header;
+    private bool SortIndicatorAscending => ServerMode ? !_serverDescending : SortAscending;
+
+    private Task RaiseQuery(int page) => OnQueryChanged.InvokeAsync(new PagedQuery
+    {
+        PageNumber = page,
+        PageSize = DisplayPageSize,
+        Search = string.IsNullOrWhiteSpace(LocalSearchQuery) ? null : LocalSearchQuery,
+        SortBy = string.IsNullOrWhiteSpace(_serverSortBy) ? null : _serverSortBy,
+        Descending = _serverDescending
+    });
 }

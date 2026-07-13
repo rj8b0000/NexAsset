@@ -13,7 +13,6 @@ namespace NexAsset.Web.Infrastructure.Services.Mock
     {
         public List<AssetMock> Assets { get; } = new();
         public List<EmployeeMock> Employees { get; } = new();
-        public List<OrganizationMock> OrganizationDetails { get; } = new();
         public List<ProcurementMock> ProcurementRequests { get; } = new();
         public List<MaintenanceMock> MaintenanceTickets { get; } = new();
         public List<InvoiceMock> Invoices { get; } = new();
@@ -59,11 +58,6 @@ namespace NexAsset.Web.Infrastructure.Services.Mock
             Employees.Add(new EmployeeMock { Id = "EMP-003", Name = "David Carter", Department = "Logistics", Email = "david.carter@nexasset.com", Role = "Fleet Manager", AssetsAssigned = 1, Status = "Active" });
             Employees.Add(new EmployeeMock { Id = "EMP-004", Name = "Sarah Jenkins", Department = "Finance", Email = "sarah.jenkins@nexasset.com", Role = "Billing lead", AssetsAssigned = 0, Status = "Active" });
             Employees.Add(new EmployeeMock { Id = "EMP-005", Name = "Pierre Dubois", Department = "Sales", Email = "pierre.dubois@nexasset.com", Role = "Regional Director", AssetsAssigned = 0, Status = "On Leave" });
-
-            // Seed Organizations
-            OrganizationDetails.Add(new OrganizationMock { Id = "ORG-001", Name = "NexCorp Global", HeadCount = 450, Location = "New York, USA", CreatedDate = DateTime.Now.AddYears(-5) });
-            OrganizationDetails.Add(new OrganizationMock { Id = "ORG-002", Name = "NexCorp APAC", HeadCount = 180, Location = "Tokyo, Japan", CreatedDate = DateTime.Now.AddYears(-3) });
-            OrganizationDetails.Add(new OrganizationMock { Id = "ORG-003", Name = "NexCorp EMEA", HeadCount = 220, Location = "London, UK", CreatedDate = DateTime.Now.AddYears(-3) });
 
             // Seed Procurement
             ProcurementRequests.Add(new ProcurementMock { Id = "PR-001", ItemName = "Logitech MX Master 3S Mouse", Quantity = 10, UnitPrice = 99.00m, TotalValue = 990.00m, Requester = "Alice Smith", Status = "Approved" });

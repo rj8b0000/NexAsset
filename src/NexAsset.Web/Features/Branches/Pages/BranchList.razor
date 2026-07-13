@@ -1,0 +1,139 @@
+@page "/branches"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Foundation
+@using NexAsset.Web.Features.Branches.Components
+@inject IBranchApiClient BranchApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Branches</h1>
+            <span class="text-caption text-secondary">Manage the physical branches and locations of each organization.</span>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+            <i class="lucide-plus"></i> New Branch
+        </button>
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading branches..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load branches" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="BranchListItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Branch"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="b => b.Id.ToString()"
+                   OnEdit="OpenEdit"
+                   OnDelete="AskDelete" />
+    }
+</div>
+
+<BranchFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+<ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="branch"
+                     OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />
+
+@code {
+    private PagedResult<BranchListItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private Guid? _editId;
+    private BranchListItem? _deleteTarget;
+
+    private Dictionary<Guid, string> _orgNames = new();
+
+    private List<ColumnDefinition<BranchListItem>> _columns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _columns = new()
+        {
+            new() { Header = "Code", PropertySelector = b => b.Code, SortColumn = "Code" },
+            new() { Header = "Name", PropertySelector = b => b.Name, SortColumn = "Name" },
+            new() { Header = "Organization", Sortable = false, Template = b =>
+                @<span>@(_orgNames.TryGetValue(b.OrganizationId, out var n) ? n : "—")</span> },
+            new() { Header = "Email", PropertySelector = b => b.Email ?? "", SortColumn = "Email" },
+            new() { Header = "Status", SortColumn = "IsActive", Template = b =>
+                @<span class="badge-custom @(b.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(b.IsActive ? "Active" : "Inactive")</span> }
+        };
+
+        await LoadOrganizationNamesAsync();
+        await LoadAsync(_query);
+    }
+
+    private async Task LoadOrganizationNamesAsync()
+    {
+        var result = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (result.IsSuccess && result.Data is not null)
+            _orgNames = result.Data.Items.ToDictionary(o => o.Id, o => o.Name);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await BranchApiClient.GetPagedAsync(query);
+        _busy = false;
+
+        if (result.IsSuccess && result.Data is not null)
+            _page = result.Data;
+        else
+            _loadError = result.Error?.Message ?? "Something went wrong while loading branches.";
+    }
+
+    private void OpenCreate() { _editId = null; _formOpen = true; }
+    private void OpenEdit(BranchListItem item) { _editId = item.Id; _formOpen = true; }
+
+    private async Task OnSaved()
+    {
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "Branch saved successfully.");
+        await LoadAsync(_query);
+    }
+
+    private void AskDelete(BranchListItem item) => _deleteTarget = item;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteTarget is null) return;
+        var target = _deleteTarget;
+        _deleteTarget = null;
+        _busy = true;
+        var result = await BranchApiClient.DeleteAsync(target.Id);
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Deleted", $"Branch \"{target.Name}\" was deleted.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Delete failed", result.Error?.Message ?? "Could not delete this branch.");
+        }
+    }
+}

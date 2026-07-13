@@ -1,95 +1,200 @@
 @page "/employees"
-@using NexAsset.Web.Infrastructure.Services
-@inject IEmployeeApiClient EmployeeApiClient
-@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.HR
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Employees.Components
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+@inject IBranchApiClient BranchApiClient
+@inject IDepartmentApiClient DepartmentApiClient
+@inject IDesignationApiClient DesignationApiClient
+@inject INotificationService Notifications
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h1-title">Employees Directory</h1>
-            <span class="text-caption text-secondary">Manage and organize staff member profiles and asset custody details.</span>
+            <h1 class="h1-title">Employees</h1>
+            <span class="text-caption text-secondary">Manage employee records, employment details, and org placement.</span>
         </div>
-        <div>
-            <button type="button" class="btn-custom btn-custom-primary" @onclick='() => NavigationManager.NavigateTo("/employees/create")'>
-                <i class="lucide-plus"></i> Register Employee
-            </button>
-        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+            <i class="lucide-plus"></i> New Employee
+        </button>
     </div>
 
-    @if (Employees == null)
+    @if (_page is null && _loadError is null)
     {
-        <LoadingState />
+        <LoadingState Message="Loading employees..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load employees" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
     }
     else
     {
-        <DataTable TItem="EmployeeMock" Items="Employees" Type="Employee" Columns="EmployeeColumns"
-                   IdSelector="e => e.Id" CategorySelector="e => e.Department" StatusSelector="e => e.Status"
-                   OnViewDetails="HandleViewDetails" OnEdit="HandleEdit" OnDelete="HandleOpenDeleteDialog"
-                   OnBulkDelete="HandleBulkDelete">
-        </DataTable>
+        <DataTable TItem="EmployeeListItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Employee"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="e => e.Id.ToString()"
+                   OnViewDetails="OpenDetails"
+                   OnEdit="OpenEdit"
+                   OnDelete="AskDelete"
+                   CustomRowActions="ActivateDeactivateAction" />
     }
 </div>
 
-<!-- Delete Confirm Dialog -->
-<ConfirmDeleteDialog IsOpen="IsDeleteDialogOpen" EntityLabel="employee directory record"
-                      OnClose="() => IsDeleteDialogOpen = false" OnConfirm="ConfirmDelete" />
+<EmployeeFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+<EmployeeDetailsDialog IsOpen="_detailsOpen" EmployeeId="_detailsId" OnClose="() => _detailsOpen = false"
+                       Organizations="_orgNames" Branches="_branchNames" Departments="_deptNames"
+                       Designations="_designationNames" Managers="_empNames" />
+
+<ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="employee"
+                     OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />
 
 @code {
-    private List<EmployeeMock>? Employees;
-    private List<ColumnDefinition<EmployeeMock>> EmployeeColumns = new();
+    private PagedResult<EmployeeListItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
 
-    private EmployeeMock? SelectedEmployee;
-    private bool IsDeleteDialogOpen = false;
+    private bool _formOpen;
+    private Guid? _editId;
+    private bool _detailsOpen;
+    private Guid? _detailsId;
+    private EmployeeListItem? _deleteTarget;
+
+    private Dictionary<Guid, string> _orgNames = new();
+    private Dictionary<Guid, string> _branchNames = new();
+    private Dictionary<Guid, string> _deptNames = new();
+    private Dictionary<Guid, string> _designationNames = new();
+    private Dictionary<Guid, string> _empNames = new();
+
+    private List<ColumnDefinition<EmployeeListItem>> _columns = new();
+
+    private RenderFragment<EmployeeListItem> ActivateDeactivateAction => item =>
+        @<button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => ToggleActiveAsync(item)">
+            <i class="@(item.IsActive ? "lucide-user-x" : "lucide-user-check") me-2"></i> @(item.IsActive ? "Deactivate" : "Activate")
+        </button>;
 
     protected override async Task OnInitializedAsync()
     {
-        Employees = await EmployeeApiClient.GetEmployeesAsync();
-
-        EmployeeColumns = new()
+        _columns = new()
         {
-            new() { Header = "Employee ID", PropertySelector = e => e.Id, SortColumn = "Id" },
-            new() { Header = "Name", PropertySelector = e => e.Name, SortColumn = "Name" },
-            new() { Header = "Department", PropertySelector = e => e.Department, SortColumn = "Department" },
+            new() { Header = "Code", PropertySelector = e => e.EmployeeCode, SortColumn = "EmployeeCode" },
+            new() { Header = "Name", Sortable = true, SortColumn = "FirstName", Template = e =>
+                @<span class="fw-semibold" style="color: var(--text-primary);">@e.FirstName @e.LastName</span> },
             new() { Header = "Email", PropertySelector = e => e.Email, SortColumn = "Email" },
-            new() { Header = "Role", PropertySelector = e => e.Role, SortColumn = "Role" },
-            new() { Header = "Assets Assigned", PropertySelector = e => e.AssetsAssigned.ToString(), SortColumn = "AssetsAssigned" },
-            new() { Header = "Status", PropertySelector = e => e.Status, SortColumn = "Status",
-                    Template = emp => @<span class="badge-custom @(emp.Status == "Active" ? "badge-custom-success" : emp.Status == "On Leave" ? "badge-custom-warning" : "badge-custom-danger")">@emp.Status</span> }
+            new() { Header = "Organization", Sortable = false, Template = e => @<span>@Lookup(_orgNames, e.OrganizationId)</span> },
+            new() { Header = "Branch", Sortable = false, Template = e => @<span>@Lookup(_branchNames, e.BranchId)</span> },
+            new() { Header = "Department", Sortable = false, Template = e => @<span>@Lookup(_deptNames, e.DepartmentId)</span> },
+            new() { Header = "Designation", Sortable = false, Template = e => @<span>@Lookup(_designationNames, e.DesignationId)</span> },
+            new() { Header = "Employment", Sortable = false, Template = e => @<span>@EmploymentStatus.Label(e.EmploymentStatus)</span> },
+            new() { Header = "Joining Date", Sortable = true, SortColumn = "JoiningDate", Template = e => @<span>@e.JoiningDate.ToString("yyyy-MM-dd")</span> },
+            new() { Header = "Status", SortColumn = "IsActive", Template = e =>
+                @<span class="badge-custom @(e.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(e.IsActive ? "Active" : "Inactive")</span> }
         };
+
+        await LoadLookupsAsync();
+        await LoadAsync(_query);
     }
 
-    private void HandleViewDetails(EmployeeMock emp)
+    private static string Lookup(Dictionary<Guid, string> map, Guid? id) =>
+        id is { } g && map.TryGetValue(g, out var n) ? n : "—";
+
+    private async Task LoadLookupsAsync()
     {
-        NavigationManager.NavigateTo($"/employees/details/{emp.Id}");
+        var big = new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" };
+        var orgs = await OrganizationApiClient.GetPagedAsync(big);
+        if (orgs.IsSuccess && orgs.Data is not null) _orgNames = orgs.Data.Items.ToDictionary(o => o.Id, o => o.Name);
+        var branches = await BranchApiClient.GetPagedAsync(big);
+        if (branches.IsSuccess && branches.Data is not null) _branchNames = branches.Data.Items.ToDictionary(b => b.Id, b => b.Name);
+        var depts = await DepartmentApiClient.GetPagedAsync(big);
+        if (depts.IsSuccess && depts.Data is not null) _deptNames = depts.Data.Items.ToDictionary(d => d.Id, d => d.Name);
+        var desigs = await DesignationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Title" });
+        if (desigs.IsSuccess && desigs.Data is not null) _designationNames = desigs.Data.Items.ToDictionary(d => d.Id, d => d.Title);
+        var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
+        if (emps.IsSuccess && emps.Data is not null) _empNames = emps.Data.Items.ToDictionary(e => e.Id, e => $"{e.FirstName} {e.LastName}");
     }
 
-    private void HandleEdit(EmployeeMock emp)
+    private async Task LoadAsync(PagedQuery query)
     {
-        NavigationManager.NavigateTo($"/employees/edit/{emp.Id}");
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await EmployeeApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading employees.";
     }
 
-    private void HandleOpenDeleteDialog(EmployeeMock emp)
+    private void OpenCreate() { _editId = null; _formOpen = true; }
+    private void OpenEdit(EmployeeListItem item) { _editId = item.Id; _formOpen = true; }
+    private void OpenDetails(EmployeeListItem item) { _detailsId = item.Id; _detailsOpen = true; }
+
+    private async Task OnSaved()
     {
-        SelectedEmployee = emp;
-        IsDeleteDialogOpen = true;
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "Employee saved successfully.");
+        await LoadLookupsAsync();
+        await LoadAsync(_query);
     }
 
-    private async Task ConfirmDelete()
+    private void AskDelete(EmployeeListItem item) => _deleteTarget = item;
+
+    private async Task ConfirmDeleteAsync()
     {
-        if (SelectedEmployee != null)
+        if (_deleteTarget is null) return;
+        var target = _deleteTarget;
+        _deleteTarget = null;
+        _busy = true;
+        var result = await EmployeeApiClient.DeleteAsync(target.Id);
+        _busy = false;
+        if (result.IsSuccess)
         {
-            await EmployeeApiClient.DeleteEmployeeAsync(SelectedEmployee.Id);
-            Employees = await EmployeeApiClient.GetEmployeesAsync();
+            Notifications.ShowSuccess("Deleted", $"Employee \"{target.FirstName} {target.LastName}\" was deleted.");
+            await LoadAsync(_query);
         }
-        IsDeleteDialogOpen = false;
+        else
+        {
+            Notifications.ShowError("Delete failed", result.Error?.Message ?? "Could not delete this employee.");
+        }
     }
 
-    private async Task HandleBulkDelete(List<EmployeeMock> items)
+    // No dedicated activate endpoint — toggle IsActive through a full update (GetById → PUT).
+    private async Task ToggleActiveAsync(EmployeeListItem item)
     {
-        foreach (var item in items)
+        _busy = true;
+        var detail = await EmployeeApiClient.GetByIdAsync(item.Id);
+        if (!detail.IsSuccess || detail.Data is null)
         {
-            await EmployeeApiClient.DeleteEmployeeAsync(item.Id);
+            _busy = false;
+            Notifications.ShowError("Failed", detail.Error?.Message ?? "Could not load the employee.");
+            return;
         }
-        Employees = await EmployeeApiClient.GetEmployeesAsync();
+        var model = EmployeeFormModel.FromDetail(detail.Data);
+        model.IsActive = !item.IsActive;
+        var result = await EmployeeApiClient.UpdateAsync(item.Id, model);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess(model.IsActive ? "Activated" : "Deactivated", $"{item.FirstName} {item.LastName} is now {(model.IsActive ? "active" : "inactive")}.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Update failed", result.Error?.Message ?? "Could not update the employee.");
+        }
     }
 }

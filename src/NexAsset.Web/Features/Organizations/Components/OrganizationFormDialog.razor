@@ -1,0 +1,155 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Models.Foundation
+@inject IOrganizationApiClient OrganizationApiClient
+
+<Dialog IsOpen="IsOpen" Title="@(IsEdit ? "Edit Organization" : "New Organization")" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading organization..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_generalError))
+            {
+                <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                    <i class="lucide-alert-circle"></i> @_generalError
+                </div>
+            }
+            <div class="row g-3">
+                <TextField Label="Code" Required="true" Value="@_model.Code" ValueChanged="@(v => _model.Code = v)" Error='@Err("Code")' />
+                <TextField Label="Name" Required="true" Value="@_model.Name" ValueChanged="@(v => _model.Name = v)" Error='@Err("Name")' />
+                <TextField Label="Legal Name" Required="true" Value="@_model.LegalName" ValueChanged="@(v => _model.LegalName = v)" Error='@Err("LegalName")' />
+                <TextField Label="Email" Required="true" Type="email" Value="@_model.Email" ValueChanged="@(v => _model.Email = v)" Error='@Err("Email")' />
+                <TextField Label="Currency" Required="true" Value="@_model.Currency" ValueChanged="@(v => _model.Currency = v)" Error='@Err("Currency")' />
+                <TextField Label="Time Zone" Required="true" Value="@_model.TimeZone" ValueChanged="@(v => _model.TimeZone = v)" Error='@Err("TimeZone")' />
+                <TextField Label="Phone" Value="@_model.Phone" ValueChanged="@(v => _model.Phone = v)" Error='@Err("Phone")' />
+                <TextField Label="Website" Value="@_model.Website" ValueChanged="@(v => _model.Website = v)" Error='@Err("Website")' />
+                <TextField Label="Address" Value="@_model.Address" ValueChanged="@(v => _model.Address = v)" Error='@Err("Address")' />
+                <TextField Label="City" Value="@_model.City" ValueChanged="@(v => _model.City = v)" Error='@Err("City")' />
+                <TextField Label="State" Value="@_model.State" ValueChanged="@(v => _model.State = v)" Error='@Err("State")' />
+                <TextField Label="Country" Value="@_model.Country" ValueChanged="@(v => _model.Country = v)" Error='@Err("Country")' />
+                <TextField Label="Postal Code" Value="@_model.PostalCode" ValueChanged="@(v => _model.PostalCode = v)" Error='@Err("PostalCode")' />
+                @if (IsEdit)
+                {
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="org-active" checked="@_model.IsActive" @onchange="e => _model.IsActive = (bool)e.Value!" />
+                            <label class="form-check-label text-caption" for="org-active">Active</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? EditId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private OrganizationFormModel _model = new();
+    private bool _loading;
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private bool IsEdit => EditId.HasValue;
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            await InitializeAsync();
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task InitializeAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        _model = new OrganizationFormModel();
+
+        if (EditId.HasValue)
+        {
+            _loading = true;
+            var result = await OrganizationApiClient.GetByIdAsync(EditId.Value);
+            _loading = false;
+            if (result.IsSuccess && result.Data is not null)
+                _model = OrganizationFormModel.FromDetail(result.Data);
+            else
+                _generalError = result.Error?.Message ?? "Could not load this organization.";
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (string.IsNullOrWhiteSpace(_model.Code)) _fieldErrors["Code"] = "Code is required.";
+        if (string.IsNullOrWhiteSpace(_model.Name)) _fieldErrors["Name"] = "Name is required.";
+        if (string.IsNullOrWhiteSpace(_model.LegalName)) _fieldErrors["LegalName"] = "Legal name is required.";
+        if (string.IsNullOrWhiteSpace(_model.Email)) _fieldErrors["Email"] = "Email is required.";
+        if (string.IsNullOrWhiteSpace(_model.Currency)) _fieldErrors["Currency"] = "Currency is required.";
+        if (string.IsNullOrWhiteSpace(_model.TimeZone)) _fieldErrors["TimeZone"] = "Time zone is required.";
+        if (_fieldErrors.Count > 0) return;
+
+        _saving = true;
+        bool success;
+        ApiError? error;
+        if (IsEdit)
+        {
+            var res = await OrganizationApiClient.UpdateAsync(EditId!.Value, _model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        else
+        {
+            var res = await OrganizationApiClient.CreateAsync(_model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        _saving = false;
+
+        if (!success)
+        {
+            ApplyError(error);
+            return;
+        }
+        await OnSaved.InvokeAsync();
+    }
+
+    private void ApplyError(ApiError? error)
+    {
+        _generalError = error?.Message ?? "Save failed. Please try again.";
+        if (error?.FieldErrors is not null)
+        {
+            foreach (var kv in error.FieldErrors)
+                _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+        }
+    }
+}

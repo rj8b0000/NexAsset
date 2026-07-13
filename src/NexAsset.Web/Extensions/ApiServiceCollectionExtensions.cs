@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexAsset.Web.Infrastructure.API;
 using NexAsset.Web.Infrastructure.Authentication;
+using NexAsset.Web.Infrastructure.Foundation;
+using NexAsset.Web.Infrastructure.HR;
 
 namespace NexAsset.Web.Extensions
 {
@@ -29,8 +31,20 @@ namespace NexAsset.Web.Extensions
             services.AddTransient<CookieAuthenticationHandler>();
 
             // Typed HttpClient for the authentication endpoints. The same helper is reused
-            // for future business clients so the transport never diverges between features.
+            // for every business client so the transport never diverges between features.
             services.AddNexAssetApiClient<IAuthenticationApiClient, AuthenticationApiClient>(settings);
+
+            // Foundation module clients (real HTTP, replacing the former mocks).
+            services.AddNexAssetApiClient<IOrganizationApiClient, OrganizationApiClient>(settings);
+            services.AddNexAssetApiClient<IBranchApiClient, BranchApiClient>(settings);
+            services.AddNexAssetApiClient<IDepartmentApiClient, DepartmentApiClient>(settings);
+            services.AddNexAssetApiClient<IDesignationApiClient, DesignationApiClient>(settings);
+
+            // HR module clients (real HTTP). The Employee interface lives in Infrastructure.HR to
+            // coexist with the legacy mock IEmployeeApiClient the Asset pages still use.
+            services.AddNexAssetApiClient<IEmployeeApiClient, EmployeeApiClient>(settings);
+            services.AddNexAssetApiClient<IRoleApiClient, RoleApiClient>(settings);
+            services.AddNexAssetApiClient<IPermissionApiClient, PermissionApiClient>(settings);
 
             return services;
         }

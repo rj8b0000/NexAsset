@@ -1,0 +1,42 @@
+@*
+    Labeled <select> for foundation form foreign-key pickers (Organization, Department).
+    Options are provided as (value,label) pairs; two-way binds the selected value string.
+*@
+<div class="@ColumnClass">
+    <label class="form-label-custom">
+        @Label
+        @if (Required)
+        {
+            <span style="color: var(--danger);"> *</span>
+        }
+    </label>
+    <select class="form-control-custom" style="@BorderStyle" value="@Value" @onchange="HandleChange">
+        <option value="">@Placeholder</option>
+        @foreach (var opt in Options)
+        {
+            <option value="@opt.Value" selected="@(opt.Value == Value)">@opt.Label</option>
+        }
+    </select>
+    @if (HasError)
+    {
+        <div class="text-caption mt-1" style="color: var(--danger); font-size: 11px;">@Error</div>
+    }
+</div>
+
+@code {
+    public sealed record Option(string Value, string Label);
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public IReadOnlyList<Option> Options { get; set; } = System.Array.Empty<Option>();
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Select...";
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string ColumnClass { get; set; } = "col-md-6";
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+    private string BorderStyle => HasError ? "border-color: var(--danger);" : "";
+
+    private Task HandleChange(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString() ?? "");
+}

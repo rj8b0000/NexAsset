@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -50,6 +52,38 @@ namespace NexAsset.Web.Infrastructure.API
                 var response = await Http.PutAsJsonAsync(requestUri, payload, JsonOptions, cancellationToken);
                 return await HandleResponseAsync<TResponse>(response, cancellationToken);
             });
+
+        /// <summary>PUT whose response body we don't need — success is signalled by the status code.</summary>
+        protected async Task<ApiResult> PutAsync<TRequest>(string requestUri, TRequest payload, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await Http.PutAsJsonAsync(requestUri, payload, JsonOptions, cancellationToken);
+                return response.IsSuccessStatusCode
+                    ? ApiResult.Success()
+                    : ApiResult.Failure(await BuildErrorAsync(response, cancellationToken));
+            }
+            catch (Exception ex)
+            {
+                return ApiResult.Failure(ApiError.FromException(ex));
+            }
+        }
+
+        /// <summary>POST a body whose response payload we don't need (e.g. role↔permission assign).</summary>
+        protected async Task<ApiResult> PostAsync<TRequest>(string requestUri, TRequest payload, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await Http.PostAsJsonAsync(requestUri, payload, JsonOptions, cancellationToken);
+                return response.IsSuccessStatusCode
+                    ? ApiResult.Success()
+                    : ApiResult.Failure(await BuildErrorAsync(response, cancellationToken));
+            }
+            catch (Exception ex)
+            {
+                return ApiResult.Failure(ApiError.FromException(ex));
+            }
+        }
 
         /// <summary>POST with no request body and no response payload (e.g. /logout).</summary>
         protected async Task<ApiResult> PostAsync(string requestUri, CancellationToken cancellationToken = default)
@@ -116,7 +150,10 @@ namespace NexAsset.Web.Infrastructure.API
         /// </summary>
         private static async Task<ApiError> BuildErrorAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
+            var status = (int)response.StatusCode;
             string? serverMessage = null;
+            IReadOnlyDictionary<string, string[]>? fieldErrors = null;
+
             try
             {
                 var raw = (await response.Content.ReadAsStringAsync(cancellationToken))?.Trim();
@@ -124,15 +161,38 @@ namespace NexAsset.Web.Infrastructure.API
                 {
                     if (raw.StartsWith('"') && raw.EndsWith('"') && raw.Length >= 2)
                     {
-                        // Bare JSON string, e.g. Results.BadRequest("Invalid credentials.")
+                        // Bare JSON string, e.g. Results.BadRequest("Code already exists.")
                         serverMessage = JsonSerializer.Deserialize<string>(raw, JsonOptions);
                     }
-                    else if (!raw.StartsWith('{') && !raw.StartsWith('['))
+                    else if (raw.StartsWith('{'))
                     {
-                        serverMessage = raw;
+                        using var doc = JsonDocument.Parse(raw);
+                        var root = doc.RootElement;
+
+                        // FluentValidation shape: { "Errors": [ { "PropertyName", "ErrorMessage" } ] }
+                        if (root.TryGetProperty("Errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+                        {
+                            var map = new Dictionary<string, List<string>>();
+                            foreach (var e in errors.EnumerateArray())
+                            {
+                                var prop = e.TryGetProperty("PropertyName", out var p) ? p.GetString() ?? "" : "";
+                                var msg = e.TryGetProperty("ErrorMessage", out var m) ? m.GetString() ?? "" : "";
+                                if (string.IsNullOrEmpty(msg)) continue;
+                                if (!map.TryGetValue(prop, out var list)) map[prop] = list = new List<string>();
+                                list.Add(msg);
+                            }
+                            if (map.Count > 0)
+                            {
+                                fieldErrors = map.ToDictionary(k => k.Key, v => v.Value.ToArray());
+                                serverMessage = string.Join(" ", map.Values.SelectMany(v => v));
+                            }
+                        }
+                        // Unhandled-exception shape: { "Message": "..." }
+                        else if (root.TryGetProperty("Message", out var messageProp))
+                        {
+                            serverMessage = messageProp.GetString();
+                        }
                     }
-                    // A JSON object/array (e.g. ProblemDetails) is left for the status default,
-                    // so we never leak a raw serialized envelope into the UI.
                 }
             }
             catch
@@ -140,7 +200,9 @@ namespace NexAsset.Web.Infrastructure.API
                 // Best-effort only — fall through to the friendly per-status default.
             }
 
-            return ApiError.FromStatusCode((int)response.StatusCode, string.IsNullOrWhiteSpace(serverMessage) ? null : serverMessage);
+            var error = ApiError.FromStatusCode(status, string.IsNullOrWhiteSpace(serverMessage) ? null : serverMessage);
+            error.FieldErrors = fieldErrors;
+            return error;
         }
     }
 }

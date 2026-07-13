@@ -1,0 +1,42 @@
+@*
+    Small labeled text/textarea input for the foundation module forms. Two-way binds via
+    Value/ValueChanged and shows a per-field validation message when Error is set. Sits in a
+    Bootstrap grid column (default half width) so forms lay out as responsive two-column grids.
+*@
+<div class="@ColumnClass">
+    <label class="form-label-custom">
+        @Label
+        @if (Required)
+        {
+            <span style="color: var(--danger);"> *</span>
+        }
+    </label>
+    @if (Multiline)
+    {
+        <textarea class="form-control-custom" rows="3" style="@BorderStyle" value="@Value" @oninput="HandleInput"></textarea>
+    }
+    else
+    {
+        <input type="@Type" class="form-control-custom" style="@BorderStyle" value="@Value" @oninput="HandleInput" />
+    }
+    @if (HasError)
+    {
+        <div class="text-caption mt-1" style="color: var(--danger); font-size: 11px;">@Error</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public bool Multiline { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string ColumnClass { get; set; } = "col-md-6";
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+    private string BorderStyle => HasError ? "border-color: var(--danger);" : "";
+
+    private Task HandleInput(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString() ?? "");
+}
