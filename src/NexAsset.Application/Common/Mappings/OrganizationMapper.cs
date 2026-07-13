@@ -7,7 +7,7 @@ using NexAsset.Application.Features.Organizations.Queries.GetOrganizations;
 
 namespace NexAsset.Application.Common.Mappings;
 
-[Mapper]
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
 public static partial class OrganizationMapper
 {
     public static partial Organization ToEntity(

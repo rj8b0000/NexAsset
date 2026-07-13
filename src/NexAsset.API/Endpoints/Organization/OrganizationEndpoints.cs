@@ -13,7 +13,8 @@ public static class OrganizationEndpoints
     public static IEndpointRouteBuilder MapOrganizationEndpoints(
         this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/organizations");
+        var group = app.MapGroup("/api/organizations")
+            .WithTags("Organizations");
 
         group.MapPost(
             "/",
@@ -110,4 +111,3 @@ public static class OrganizationEndpoints
         return app;
     }
 }
-

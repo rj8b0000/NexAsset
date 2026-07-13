@@ -12,6 +12,12 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
     }
     
     public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<Designation> Designations => Set<Designation>();
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

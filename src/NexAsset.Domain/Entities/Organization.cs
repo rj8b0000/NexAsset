@@ -4,9 +4,9 @@ namespace NexAsset.Domain.Entities;
 
 public class Organization:BaseEntity
 {
-    public string Code { get; set; }
-    public string Name { get; set; }
-    public string LegalName { get; set; }
+    public string Code { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string LegalName { get; set; } = default!;
     public string? RegistrationNumber { get; set; }
     public string? TaxNumber { get; set; }
     public string Email { get; set; } = default!;

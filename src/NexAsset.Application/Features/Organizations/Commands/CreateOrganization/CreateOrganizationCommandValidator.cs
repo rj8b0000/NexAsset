@@ -15,7 +15,12 @@ public sealed class CreateOrganizationCommandValidator
             .NotEmpty()
             .MaximumLength(200);
 
+        RuleFor(x => x.LegalName)
+            .NotEmpty()
+            .MaximumLength(200);
+
         RuleFor(x => x.Email)
+            .NotEmpty()
             .EmailAddress();
 
         RuleFor(x => x.Currency)
