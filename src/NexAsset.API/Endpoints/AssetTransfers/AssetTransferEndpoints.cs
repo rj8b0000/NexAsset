@@ -1,0 +1,28 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using NexAsset.Application.Features.AssetTransfers.Commands.TransferAsset;
+using NexAsset.Application.Features.AssetTransfers.Queries.GetAssetTransferHistory;
+
+namespace NexAsset.API.Endpoints.AssetTransfers;
+
+public static class AssetTransferEndpoints
+{
+    public static IEndpointRouteBuilder MapAssetTransferEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/asset-transfers").WithTags("Asset Transfers");
+
+        group.MapPost("/", async ([FromBody] TransferAssetCommand command, ISender sender) =>
+        {
+            var result = await sender.Send(command);
+            return result.IsFailure ? Results.BadRequest(result.Error) : Results.Ok(result.Value);
+        });
+
+        group.MapGet("/assets/{assetId:guid}/history", async (Guid assetId, ISender sender) =>
+        {
+            var result = await sender.Send(new GetAssetTransferHistoryQuery(assetId));
+            return result.IsFailure ? Results.BadRequest(result.Error) : Results.Ok(result.Value);
+        });
+
+        return app;
+    }
+}

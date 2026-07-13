@@ -42,6 +42,12 @@ public static class DependencyInjection
         services.AddScoped<IDesignationRepository, DesignationRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<IAssetCategoryRepository, AssetCategoryRepository>();
+        services.AddScoped<IAssetRepository, AssetRepository>();
+        services.AddScoped<IAssetAssignmentRepository, AssetAssignmentRepository>();
+        services.AddScoped<IAssetTransferRepository, AssetTransferRepository>();
+        services.AddScoped<IAssetReturnRepository, AssetReturnRepository>();
+        services.AddScoped<IEnterpriseOperationsRepository, EnterpriseOperationsRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
 

@@ -1,0 +1,487 @@
+{
+  "info": {
+    "_postman_id": "8e6e8071-1584-4af0-8c6c-b59a0d381d39",
+    "name": "NexAsset",
+    "description": "NexAsset API collection. Includes Asset Management phase endpoints for categories, assets, assignments, transfers, and returns.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "Asset Categories",
+      "description": "Asset category master-data endpoints.",
+      "item": [
+        {
+          "name": "Create Asset Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-categories"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"code\": \"LAPTOP\",\n  \"name\": \"Laptop\",\n  \"description\": \"Portable computers\"\n}"
+            },
+            "description": "Creates a new asset category scoped to an organization."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Asset Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-categories?pageNumber=1&pageSize=10&search=laptop&sortBy=name&descending=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-categories"],
+              "query": [
+                { "key": "pageNumber", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "laptop" },
+                { "key": "sortBy", "value": "name" },
+                { "key": "descending", "value": "false" }
+              ]
+            },
+            "description": "Returns paged asset categories with search and sorting."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Asset Category By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-categories/{{assetCategoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-categories", "{{assetCategoryId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Asset Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-categories/{{assetCategoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-categories", "{{assetCategoryId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"code\": \"LAPTOP\",\n  \"name\": \"Laptop\",\n  \"description\": \"Portable computers and notebooks\",\n  \"isActive\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Asset Category",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-categories/{{assetCategoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-categories", "{{assetCategoryId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assets",
+      "description": "Asset master-data endpoints.",
+      "item": [
+        {
+          "name": "Create Asset",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"categoryId\": \"{{assetCategoryId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"currentEmployeeId\": null,\n  \"assetCode\": \"AST-0001\",\n  \"assetName\": \"Dell Latitude 7450\",\n  \"serialNumber\": \"SN-0001\",\n  \"barcode\": \"BC-0001\",\n  \"qrCode\": \"QR-0001\",\n  \"brand\": \"Dell\",\n  \"model\": \"Latitude 7450\",\n  \"purchaseDate\": \"2026-07-13\",\n  \"warrantyExpiry\": \"2029-07-13\",\n  \"vendor\": \"Dell Partner\",\n  \"purchaseCost\": 1200.00,\n  \"currentValue\": 1200.00,\n  \"assetStatus\": 1,\n  \"location\": \"HQ Store\",\n  \"remarks\": \"Initial asset\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/assets?pageNumber=1&pageSize=10&search=AST&sortBy=assetCode&descending=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets"],
+              "query": [
+                { "key": "pageNumber", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "search", "value": "AST" },
+                { "key": "sortBy", "value": "assetCode" },
+                { "key": "descending", "value": "false" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Asset By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Asset",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"categoryId\": \"{{assetCategoryId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"currentEmployeeId\": null,\n  \"assetCode\": \"AST-0001\",\n  \"assetName\": \"Dell Latitude 7450\",\n  \"serialNumber\": \"SN-0001\",\n  \"barcode\": \"BC-0001\",\n  \"qrCode\": \"QR-0001\",\n  \"brand\": \"Dell\",\n  \"model\": \"Latitude 7450\",\n  \"purchaseDate\": \"2026-07-13\",\n  \"warrantyExpiry\": \"2029-07-13\",\n  \"vendor\": \"Dell Partner\",\n  \"purchaseCost\": 1200.00,\n  \"currentValue\": 900.00,\n  \"assetStatus\": 1,\n  \"location\": \"HQ Store\",\n  \"remarks\": \"Updated value\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Asset",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assets", "{{assetId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Asset Assignments",
+      "description": "Asset assignment workflow endpoints.",
+      "item": [
+        {
+          "name": "Assign Asset",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-assignments/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-assignments", "assign"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"employeeId\": \"{{employeeId}}\",\n  \"assignedDate\": \"2026-07-13\",\n  \"remarks\": \"Assigned for daily work\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assignment",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-assignments", "{{assignmentId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assignment History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-assignments/assets/{{assetId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-assignments", "assets", "{{assetId}}", "history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unassign Asset",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-assignments/unassign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-assignments", "unassign"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"unassignedDate\": \"2026-07-13\",\n  \"remarks\": \"Released by employee\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Asset Transfers",
+      "description": "Asset transfer workflow endpoints.",
+      "item": [
+        {
+          "name": "Transfer Asset",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-transfers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-transfers"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"toEmployeeId\": \"{{employeeId}}\",\n  \"toBranchId\": \"{{branchId}}\",\n  \"toDepartmentId\": \"{{departmentId}}\",\n  \"transferDate\": \"2026-07-13\",\n  \"isApproved\": true,\n  \"remarks\": \"Transfer approved\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transfer History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-transfers/assets/{{assetId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-transfers", "assets", "{{assetId}}", "history"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Asset Returns",
+      "description": "Asset return workflow endpoints.",
+      "item": [
+        {
+          "name": "Return Asset",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-returns"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"returnDate\": \"2026-07-13\",\n  \"inspectionNotes\": \"Good condition\",\n  \"returnRemarks\": \"Returned by employee\",\n  \"isAssetUsable\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Return History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/asset-returns/assets/{{assetId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "asset-returns", "assets", "{{assetId}}", "history"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Enterprise Operations",
+      "description": "Vendors, procurement, inventory, stock, consumables, maintenance, customers, tickets, dashboard, notifications, audit logs, reports-readiness, and system settings.",
+      "item": [
+        {
+          "name": "Create Vendor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/vendors", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "vendors"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"code\": \"VEN-001\",\n  \"name\": \"Primary Vendor\",\n  \"contactPerson\": \"Vendor Contact\",\n  \"email\": \"vendor@example.com\",\n  \"phone\": \"+1-555-0100\",\n  \"address\": \"Vendor address\",\n  \"taxNumber\": \"TAX-001\"\n}" },
+            "description": "Creates a vendor master record."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vendors",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/vendors?pageNumber=1&pageSize=10&search=vendor", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "vendors"], "query": [{ "key": "pageNumber", "value": "1" }, { "key": "pageSize", "value": "10" }, { "key": "search", "value": "vendor" }] },
+            "description": "Returns paged vendors."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Purchase Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/purchase-requests", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "purchase-requests"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"requestNumber\": \"PR-0001\",\n  \"title\": \"Laptop procurement\",\n  \"description\": \"Procure laptops for onboarding\",\n  \"requestedByEmployeeId\": \"{{employeeId}}\",\n  \"requestDate\": \"2026-07-13\",\n  \"estimatedAmount\": 5000\n}" },
+            "description": "Creates a purchase request in pending approval status."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Purchase Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/purchase-requests/{{purchaseRequestId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "purchase-requests", "{{purchaseRequestId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"{{purchaseRequestId}}\",\n  \"status\": 3,\n  \"approvedByEmployeeId\": \"{{employeeId}}\",\n  \"approvalRemarks\": \"Approved\"\n}" },
+            "description": "Approves, rejects, or cancels a purchase request by changing status."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Purchase Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/purchase-orders", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "purchase-orders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"orderNumber\": \"PO-0001\",\n  \"purchaseRequestId\": \"{{purchaseRequestId}}\",\n  \"vendorId\": \"{{vendorId}}\",\n  \"orderDate\": \"2026-07-13\",\n  \"expectedDeliveryDate\": \"2026-07-30\",\n  \"totalAmount\": 5000,\n  \"remarks\": \"Generated from PR\"\n}" },
+            "description": "Creates a purchase order, optionally linked to a purchase request."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Inventory Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/inventory", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "inventory"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"itemCode\": \"MOUSE\",\n  \"itemName\": \"Wireless Mouse\",\n  \"description\": \"Consumable peripheral\",\n  \"currentStock\": 25,\n  \"reservedStock\": 0,\n  \"reorderLevel\": 5,\n  \"unitOfMeasure\": \"Each\"\n}" },
+            "description": "Creates an inventory item with stock levels."
+          },
+          "response": []
+        },
+        {
+          "name": "Stock Movement",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/inventory/stock-movements", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "inventory", "stock-movements"] },
+            "body": { "mode": "raw", "raw": "{\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"movementType\": 1,\n  \"quantity\": 10,\n  \"referenceNumber\": \"GRN-0001\",\n  \"remarks\": \"Stock in\"\n}" },
+            "description": "Records stock in, stock out, adjustment, reservation, or release."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Consumable",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/consumables", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "consumables"] },
+            "body": { "mode": "raw", "raw": "{\n  \"inventoryItemId\": \"{{inventoryItemId}}\",\n  \"consumableCode\": \"CON-001\",\n  \"name\": \"Mouse\",\n  \"description\": \"Wireless mouse consumable\"\n}" },
+            "description": "Creates a consumable backed by inventory."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Maintenance Record",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/maintenance", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "maintenance"] },
+            "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"maintenanceType\": 1,\n  \"requestedDate\": \"2026-07-13\",\n  \"scheduledDate\": \"2026-07-20\",\n  \"title\": \"Quarterly preventive maintenance\",\n  \"description\": \"Routine check\",\n  \"cost\": 100,\n  \"remarks\": \"Scheduled\"\n}" },
+            "description": "Creates preventive or corrective maintenance."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/customers", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "customers"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"code\": \"CUS-001\",\n  \"name\": \"Acme Customer\",\n  \"contactPerson\": \"Customer Contact\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+1-555-0200\",\n  \"address\": \"Customer address\"\n}" },
+            "description": "Creates a customer master record."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Service Ticket",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/service-tickets", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "service-tickets"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"customerId\": \"{{customerId}}\",\n  \"ticketNumber\": \"TCK-0001\",\n  \"title\": \"Asset support request\",\n  \"description\": \"Customer needs support\",\n  \"priority\": 2\n}" },
+            "description": "Creates a customer service ticket."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Notification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/notifications", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "notifications"] },
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": null,\n  \"title\": \"Low Stock\",\n  \"message\": \"Wireless Mouse stock is low\",\n  \"notificationType\": 2\n}" },
+            "description": "Stores a notification event."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Audit Log",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/audit-logs", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "audit-logs"] },
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": null,\n  \"entityName\": \"Asset\",\n  \"entityId\": \"{{assetId}}\",\n  \"action\": \"Updated\",\n  \"oldValues\": \"{}\",\n  \"newValues\": \"{}\"\n}" },
+            "description": "Stores an audit event."
+          },
+          "response": []
+        },
+        {
+          "name": "Upsert System Setting",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/system-settings", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "system-settings"] },
+            "body": { "mode": "raw", "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"key\": \"Currency\",\n  \"value\": \"INR\",\n  \"description\": \"Default currency\",\n  \"isEncrypted\": false\n}" },
+            "description": "Creates or updates an organization-scoped setting."
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/enterprise-operations/dashboard/{{organizationId}}", "host": ["{{baseUrl}}"], "path": ["api", "enterprise-operations", "dashboard", "{{organizationId}}"] },
+            "description": "Returns organization dashboard KPIs."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
