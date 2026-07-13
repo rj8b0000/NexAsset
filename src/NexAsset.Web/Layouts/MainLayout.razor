@@ -1,0 +1,52 @@
+@inherits LayoutComponentBase
+@using NexAsset.Web.State
+@using NexAsset.Web.Features.Dashboard.Components
+@inject NavigationState NavigationState
+@implements IDisposable
+
+@*
+    The layout is the single authorization gate for the whole app: every routable page uses
+    MainLayout as its default layout, so gating here protects all of them at once. AuthorizeView
+    reads the real backend session from NexAssetAuthenticationStateProvider (via
+    CascadingAuthenticationState in App.razor):
+      • Authorizing  → the startup / refresh /api/auth/me probe is in flight → show a loader.
+      • NotAuthorized → no valid cookie → show the login screen (unchanged UI).
+      • Authorized    → render the app shell.
+*@
+<AuthorizeView>
+    <Authorizing>
+        <LoadingState Message="Restoring your session..." />
+    </Authorizing>
+    <NotAuthorized>
+        <LoginPage />
+    </NotAuthorized>
+    <Authorized>
+        <div class="app-layout @(NavigationState.SidebarCollapsed ? "sidebar-collapsed" : "")">
+            <!-- Left Sidebar -->
+            <Sidebar />
+
+            <!-- Topbar Header -->
+            <Topbar />
+
+            <!-- Core Main Content Window -->
+            <main class="content-slot">
+                @Body
+            </main>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+<!-- Global Toast Notification Queue -->
+<Toast />
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        NavigationState.OnChange -= StateHasChanged;
+    }
+}

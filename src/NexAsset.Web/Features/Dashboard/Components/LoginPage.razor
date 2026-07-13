@@ -1,6 +1,5 @@
-@using NexAsset.Web.State
-@inject AuthenticationState AuthenticationState
-@implements IDisposable
+@using NexAsset.Web.Infrastructure.Authentication
+@inject IAuthenticationService AuthenticationService
 
 <div class="d-flex align-items-center justify-content-center min-vh-100 position-relative" style="background-color: var(--bg-app); padding: var(--space-24); overflow: hidden;">
     <!-- Premium background blobs -->
@@ -18,58 +17,72 @@
             <p class="text-caption text-muted-custom" style="font-size: 13px;">Enterprise Asset & Equipment Management</p>
         </div>
 
-        @if (AuthenticationState.AuthView == "login")
+        @if (_view == "login")
         {
-            <form @onsubmit:preventDefault>
+            <form @onsubmit="HandleLogin" @onsubmit:preventDefault>
                 <div class="form-group-custom">
                     <label class="form-label-custom">Email Address</label>
                     <div class="position-relative">
                         <i class="lucide-mail position-absolute text-muted-custom" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; z-index: 10;"></i>
-                        <input type="email" class="form-control-custom" style="padding-left: 40px !important;" placeholder="admin@nexasset.com" @bind="AuthenticationState.AuthEmail" />
+                        <input type="email" class="form-control-custom" style="padding-left: 40px !important;" placeholder="admin@nexasset.com" @bind="_email" @bind:event="oninput" disabled="@_isSubmitting" />
                     </div>
                 </div>
                 <div class="form-group-custom">
                     <div class="d-flex align-items-center justify-content-between">
                         <label class="form-label-custom">Password</label>
-                        <button type="button" class="btn-custom-link text-caption" style="font-size: 12px;" @onclick='() => AuthenticationState.SetAuthView("forgot")'>Forgot Password?</button>
+                        <button type="button" class="btn-custom-link text-caption" style="font-size: 12px;" @onclick='() => SetView("forgot")'>Forgot Password?</button>
                     </div>
                     <div class="position-relative">
                         <i class="lucide-lock position-absolute text-muted-custom" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; z-index: 10;"></i>
-                        <input type="password" class="form-control-custom" style="padding-left: 40px !important;" placeholder="••••••••" @bind="AuthenticationState.AuthPassword" />
+                        <input type="password" class="form-control-custom" style="padding-left: 40px !important;" placeholder="••••••••" @bind="_password" @bind:event="oninput" disabled="@_isSubmitting" />
                     </div>
                 </div>
 
-                @if (AuthenticationState.ShowAuthError)
+                <div class="form-check d-flex align-items-center gap-2 mt-1 mb-1">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" @bind="_rememberMe" disabled="@_isSubmitting" />
+                    <label class="form-check-label text-caption text-muted-custom" for="rememberMe" style="font-size: 12.5px;">Keep me signed in</label>
+                </div>
+
+                @if (_showError)
                 {
                     <div class="alert alert-danger py-2 px-3 text-caption border-0 rounded-3 mb-3 d-flex align-items-center gap-2" style="background-color: var(--danger-light); color: var(--danger); border-radius: var(--radius-12);">
-                        <i class="lucide-alert-circle"></i> Invalid email or password credentials.
+                        <i class="lucide-alert-circle"></i> @_errorMessage
                     </div>
                 }
 
-                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5 mt-3" style="height: 44px; border-radius: var(--radius-12) !important; font-size: 14px;" @onclick="HandleLogin">
-                    <i class="lucide-log-in"></i> Sign In
+                <button type="submit" class="btn-custom btn-custom-primary w-100 py-2.5 mt-3" style="height: 44px; border-radius: var(--radius-12) !important; font-size: 14px;" disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <span>Signing in...</span>
+                    }
+                    else
+                    {
+                        <i class="lucide-log-in"></i>
+                        <span>Sign In</span>
+                    }
                 </button>
             </form>
         }
-        else if (AuthenticationState.AuthView == "forgot")
+        else if (_view == "forgot")
         {
-            <form @onsubmit:preventDefault>
+            <form @onsubmit="HandleForgotPassword" @onsubmit:preventDefault>
                 <div class="form-group-custom">
                     <label class="form-label-custom">Enter Account Email</label>
                     <div class="position-relative">
                         <i class="lucide-mail position-absolute text-muted-custom" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; z-index: 10;"></i>
-                        <input type="email" class="form-control-custom" style="padding-left: 40px !important;" placeholder="admin@nexasset.com" @bind="AuthenticationState.AuthEmail" />
+                        <input type="email" class="form-control-custom" style="padding-left: 40px !important;" placeholder="admin@nexasset.com" @bind="_email" @bind:event="oninput" />
                     </div>
                 </div>
-                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5 mt-3" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick="HandleForgotPassword">
+                <button type="submit" class="btn-custom btn-custom-primary w-100 py-2.5 mt-3" style="height: 44px; border-radius: var(--radius-12) !important;">
                     Send Reset Link
                 </button>
-                <button type="button" class="btn-custom btn-custom-secondary w-100 py-2.5 mt-2" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick='() => AuthenticationState.SetAuthView("login")'>
+                <button type="button" class="btn-custom btn-custom-secondary w-100 py-2.5 mt-2" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick='() => SetView("login")'>
                     Back to Sign In
                 </button>
             </form>
         }
-        else if (AuthenticationState.AuthView == "reset")
+        else if (_view == "reset")
         {
             <div>
                 <div class="text-center py-4">
@@ -77,9 +90,9 @@
                         <i class="lucide-mail-check fs-2"></i>
                     </div>
                     <h4 class="h2-title">Check Your Email</h4>
-                    <p class="text-caption text-muted-custom mt-2" style="max-width: 320px; margin: 0 auto;">We have dispatched password recovery instructions to <strong>@AuthenticationState.AuthEmail</strong>.</p>
+                    <p class="text-caption text-muted-custom mt-2" style="max-width: 320px; margin: 0 auto;">We have dispatched password recovery instructions to <strong>@_email</strong>.</p>
                 </div>
-                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick='() => AuthenticationState.SetAuthView("login")'>
+                <button type="button" class="btn-custom btn-custom-primary w-100 py-2.5" style="height: 44px; border-radius: var(--radius-12) !important;" @onclick='() => SetView("login")'>
                     Return to Log In
                 </button>
             </div>
@@ -88,26 +101,50 @@
 </div>
 
 @code {
-    protected override void OnInitialized()
-    {
-        AuthenticationState.OnChange += StateHasChanged;
-    }
+    // Local form/view state. This component owns its own UI state now — there is no shared
+    // mock auth container. All real auth work is delegated to IAuthenticationService.
+    private string _view = "login"; // login, forgot, reset
+    private string _email = "";
+    private string _password = "";
+    private bool _rememberMe = false;
 
-    private void HandleLogin()
+    private bool _isSubmitting = false;   // drives button loading + prevents duplicate submits
+    private bool _showError = false;
+    private string _errorMessage = "Invalid email or password credentials.";
+
+    private async Task HandleLogin()
     {
-        AuthenticationState.Login(AuthenticationState.AuthEmail, AuthenticationState.AuthPassword);
+        if (_isSubmitting) return; // guard against double-submit (Enter + click)
+        _isSubmitting = true;
+        _showError = false;
+
+        var result = await AuthenticationService.LoginAsync(_email, _password, _rememberMe);
+
+        if (!result.IsSuccess)
+        {
+            _errorMessage = result.Error?.Message ?? "Invalid email or password credentials.";
+            _showError = true;
+            _password = "";
+        }
+        // On success the AuthenticationStateProvider notifies the cascading auth state, which
+        // re-renders MainLayout into the authenticated shell — no navigation needed here.
+
+        _isSubmitting = false;
     }
 
     private void HandleForgotPassword()
     {
-        if (!string.IsNullOrEmpty(AuthenticationState.AuthEmail))
+        // Password reset is a backend flow not yet exposed to the SPA; preserve the existing
+        // confirmation UX without claiming a mail was actually sent by the API.
+        if (!string.IsNullOrWhiteSpace(_email))
         {
-            AuthenticationState.SetAuthView("reset");
+            SetView("reset");
         }
     }
 
-    public void Dispose()
+    private void SetView(string view)
     {
-        AuthenticationState.OnChange -= StateHasChanged;
+        _view = view;
+        _showError = false;
     }
 }

@@ -1,6 +1,6 @@
 @page "/assets"
-@using NexAsset.Web.Infrastructure.Models
 @using NexAsset.Web.Infrastructure.Services
+@using NexAsset.Web.Features.Assets.Components
 @inject IAssetApiClient AssetApiClient
 @inject IEmployeeApiClient EmployeeApiClient
 @inject MockDatabaseService Db
@@ -60,66 +60,16 @@
 </div>
 
 <!-- Delete Confirm Dialog -->
-<Dialog IsOpen="IsDeleteDialogOpen" Title="Confirm Delete Operation" Size="sm" OnClose="() => IsDeleteDialogOpen = false">
-    <ChildContent>
-        <div class="text-center py-3">
-            <div class="p-3 bg-danger-light text-danger rounded-circle d-inline-block mb-3 animate-bounce">
-                <i class="lucide-trash-2 fs-2"></i>
-            </div>
-            <h4 class="h2-title">Permanently delete this record?</h4>
-            <p class="text-caption text-secondary mt-2">This operational action is irreversible. The asset ledger record will be permanently purged.</p>
-        </div>
-    </ChildContent>
-    <FooterContent>
-        <button class="btn-custom btn-custom-secondary flex-grow-1" @onclick="() => IsDeleteDialogOpen = false">Cancel</button>
-        <button class="btn-custom btn-custom-danger flex-grow-1" @onclick="ConfirmDelete">Delete</button>
-    </FooterContent>
-</Dialog>
+<ConfirmDeleteDialog IsOpen="IsDeleteDialogOpen" EntityLabel="asset ledger record"
+                      OnClose="() => IsDeleteDialogOpen = false" OnConfirm="ConfirmDelete" />
 
 <!-- Assign Custody Dialog -->
-<Dialog IsOpen="IsAssignDialogOpen" Title="Assign Asset Custody" Size="md" OnClose="() => IsAssignDialogOpen = false">
-    <ChildContent>
-        <div class="form-group-custom mb-3">
-            <label class="form-label-custom">Select Employee for Assignment</label>
-            <select class="form-control-custom" @bind="SelectedEmployeeForAssignment">
-                <option value="">-- Choose Employee --</option>
-                @if (Employees != null)
-                {
-                    @foreach (var emp in Employees)
-                    {
-                        <option value="@emp.Name">@emp.Name (@emp.Department)</option>
-                    }
-                }
-            </select>
-        </div>
-        <p class="text-caption text-secondary">The asset condition is logged as 'Verifiable Good'. This worker will receive an automated email request to confirm custody.</p>
-    </ChildContent>
-    <FooterContent>
-        <button class="btn-custom btn-custom-secondary" @onclick="() => IsAssignDialogOpen = false">Cancel</button>
-        <button class="btn-custom btn-custom-primary" @onclick="ConfirmAssign">Assign Custody</button>
-    </FooterContent>
-</Dialog>
+<AssignAssetDialog IsOpen="IsAssignDialogOpen" Employees="Employees"
+                    OnClose="() => IsAssignDialogOpen = false" OnConfirm="ConfirmAssign" />
 
 <!-- Transfer Branch Dialog -->
-<Dialog IsOpen="IsTransferDialogOpen" Title="Transfer Operations Branch" Size="md" OnClose="() => IsTransferDialogOpen = false">
-    <ChildContent>
-        <div class="form-group-custom mb-3">
-            <label class="form-label-custom">Target Branch Destination</label>
-            <select class="form-control-custom" @bind="SelectedBranchForTransfer">
-                <option value="">-- Select Branch --</option>
-                @foreach (var br in Db.Branches)
-                {
-                    <option value="@br">@br</option>
-                }
-            </select>
-        </div>
-        <p class="text-caption text-secondary">A logistics transit request will be flagged. Estimated branch asset migration time: 24 hours.</p>
-    </ChildContent>
-    <FooterContent>
-        <button class="btn-custom btn-custom-secondary" @onclick="() => IsTransferDialogOpen = false">Cancel</button>
-        <button class="btn-custom btn-custom-primary" @onclick="ConfirmTransfer">Transfer</button>
-    </FooterContent>
-</Dialog>
+<TransferAssetDialog IsOpen="IsTransferDialogOpen" Branches="Db.Branches"
+                      OnClose="() => IsTransferDialogOpen = false" OnConfirm="ConfirmTransfer" />
 
 @code {
     private new List<AssetMock>? Assets;
@@ -130,9 +80,6 @@
     private bool IsDeleteDialogOpen = false;
     private bool IsAssignDialogOpen = false;
     private bool IsTransferDialogOpen = false;
-
-    private string SelectedEmployeeForAssignment = "";
-    private string SelectedBranchForTransfer = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -190,15 +137,14 @@
     private void OpenAssignDialog(AssetMock asset)
     {
         SelectedAsset = asset;
-        SelectedEmployeeForAssignment = "";
         IsAssignDialogOpen = true;
     }
 
-    private async Task ConfirmAssign()
+    private async Task ConfirmAssign(string employeeName)
     {
-        if (SelectedAsset != null && !string.IsNullOrEmpty(SelectedEmployeeForAssignment))
+        if (SelectedAsset != null)
         {
-            await AssetApiClient.AssignAssetAsync(SelectedAsset.Id, SelectedEmployeeForAssignment);
+            await AssetApiClient.AssignAssetAsync(SelectedAsset.Id, employeeName);
             Assets = await AssetApiClient.GetAssetsAsync();
         }
         IsAssignDialogOpen = false;
@@ -207,15 +153,14 @@
     private void OpenTransferDialog(AssetMock asset)
     {
         SelectedAsset = asset;
-        SelectedBranchForTransfer = "";
         IsTransferDialogOpen = true;
     }
 
-    private async Task ConfirmTransfer()
+    private async Task ConfirmTransfer(string branchName)
     {
-        if (SelectedAsset != null && !string.IsNullOrEmpty(SelectedBranchForTransfer))
+        if (SelectedAsset != null)
         {
-            await AssetApiClient.TransferAssetAsync(SelectedAsset.Id, SelectedBranchForTransfer);
+            await AssetApiClient.TransferAssetAsync(SelectedAsset.Id, branchName);
             Assets = await AssetApiClient.GetAssetsAsync();
         }
         IsTransferDialogOpen = false;

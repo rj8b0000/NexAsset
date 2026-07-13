@@ -1,5 +1,4 @@
 @page "/assets/create"
-@using NexAsset.Web.Infrastructure.Models
 @using NexAsset.Web.Infrastructure.Services
 @inject IAssetApiClient AssetApiClient
 @inject MockDatabaseService Db
@@ -61,10 +60,10 @@
         Status = "Available"
     };
 
-    private void HandleSave()
+    private async Task HandleSave()
     {
         if (string.IsNullOrEmpty(NewAsset.Name)) return;
-        AssetApiClient.CreateAssetAsync(NewAsset);
+        await AssetApiClient.CreateAssetAsync(NewAsset);
         NavigationManager.NavigateTo("/assets");
     }
 

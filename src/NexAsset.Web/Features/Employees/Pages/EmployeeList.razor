@@ -1,5 +1,4 @@
 @page "/employees"
-@using NexAsset.Web.Infrastructure.Models
 @using NexAsset.Web.Infrastructure.Services
 @inject IEmployeeApiClient EmployeeApiClient
 @inject NavigationManager NavigationManager
@@ -32,21 +31,8 @@
 </div>
 
 <!-- Delete Confirm Dialog -->
-<Dialog IsOpen="IsDeleteDialogOpen" Title="Confirm Delete Operation" Size="sm" OnClose="() => IsDeleteDialogOpen = false">
-    <ChildContent>
-        <div class="text-center py-3">
-            <div class="p-3 bg-danger-light text-danger rounded-circle d-inline-block mb-3 animate-bounce">
-                <i class="lucide-trash-2 fs-2"></i>
-            </div>
-            <h4 class="h2-title">Permanently delete this record?</h4>
-            <p class="text-caption text-secondary mt-2">This operational action is irreversible. The employee directory record will be permanently purged.</p>
-        </div>
-    </ChildContent>
-    <FooterContent>
-        <button class="btn-custom btn-custom-secondary flex-grow-1" @onclick="() => IsDeleteDialogOpen = false">Cancel</button>
-        <button class="btn-custom btn-custom-danger flex-grow-1" @onclick="ConfirmDelete">Delete</button>
-    </FooterContent>
-</Dialog>
+<ConfirmDeleteDialog IsOpen="IsDeleteDialogOpen" EntityLabel="employee directory record"
+                      OnClose="() => IsDeleteDialogOpen = false" OnConfirm="ConfirmDelete" />
 
 @code {
     private List<EmployeeMock>? Employees;

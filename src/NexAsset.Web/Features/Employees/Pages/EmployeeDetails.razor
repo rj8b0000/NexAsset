@@ -1,5 +1,4 @@
 @page "/employees/details/{id}"
-@using NexAsset.Web.Infrastructure.Models
 @using NexAsset.Web.Infrastructure.Services
 @using NexAsset.Web.State
 @inject IEmployeeApiClient EmployeeApiClient
@@ -121,28 +120,7 @@
 
     private List<Timeline.TimelineEvent> GetItemAuditEvents()
     {
-        var list = new List<Timeline.TimelineEvent>();
-        foreach (var log in Db.AuditLogs.Where(l => l.EntityId == Id))
-        {
-            list.Add(new Timeline.TimelineEvent
-            {
-                Timestamp = log.Timestamp,
-                Title = log.Action.ToUpper() + " Event",
-                Details = log.Details,
-                User = log.User
-            });
-        }
-        if (!list.Any())
-        {
-            list.Add(new Timeline.TimelineEvent
-            {
-                Timestamp = DateTime.Now.AddMonths(-1),
-                Title = "RECORD CREATION",
-                Details = "Resource registered and integrated into NexAsset ledger.",
-                User = "System Seed"
-            });
-        }
-        return list;
+        return AuditLogHelpers.BuildTimelineEvents(Db.AuditLogs, Id);
     }
 
     private void SendPortalInvite()

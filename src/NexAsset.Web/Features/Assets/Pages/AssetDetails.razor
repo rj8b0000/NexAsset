@@ -1,7 +1,7 @@
 @page "/assets/details/{id}"
-@using NexAsset.Web.Infrastructure.Models
 @using NexAsset.Web.Infrastructure.Services
 @using NexAsset.Web.State
+@using NexAsset.Web.Features.Assets.Components
 @inject IAssetApiClient AssetApiClient
 @inject IEmployeeApiClient EmployeeApiClient
 @inject MockDatabaseService Db
@@ -125,49 +125,12 @@
 </div>
 
 <!-- Assign Custody Dialog -->
-<Dialog IsOpen="IsAssignDialogOpen" Title="Assign Asset Custody" Size="md" OnClose="() => IsAssignDialogOpen = false">
-    <ChildContent>
-        <div class="form-group-custom mb-3">
-            <label class="form-label-custom">Select Employee for Assignment</label>
-            <select class="form-control-custom" @bind="SelectedEmployeeForAssignment">
-                <option value="">-- Choose Employee --</option>
-                @if (Employees != null)
-                {
-                    @foreach (var emp in Employees)
-                    {
-                        <option value="@emp.Name">@emp.Name (@emp.Department)</option>
-                    }
-                }
-            </select>
-        </div>
-        <p class="text-caption text-secondary">The asset condition is logged as 'Verifiable Good'. This worker will receive an automated email request to confirm custody.</p>
-    </ChildContent>
-    <FooterContent>
-        <button class="btn-custom btn-custom-secondary" @onclick="() => IsAssignDialogOpen = false">Cancel</button>
-        <button class="btn-custom btn-custom-primary" @onclick="ConfirmAssign">Assign Custody</button>
-    </FooterContent>
-</Dialog>
+<AssignAssetDialog IsOpen="IsAssignDialogOpen" Employees="Employees"
+                    OnClose="() => IsAssignDialogOpen = false" OnConfirm="ConfirmAssign" />
 
 <!-- Transfer Branch Dialog -->
-<Dialog IsOpen="IsTransferDialogOpen" Title="Transfer Operations Branch" Size="md" OnClose="() => IsTransferDialogOpen = false">
-    <ChildContent>
-        <div class="form-group-custom mb-3">
-            <label class="form-label-custom">Target Branch Destination</label>
-            <select class="form-control-custom" @bind="SelectedBranchForTransfer">
-                <option value="">-- Select Branch --</option>
-                @foreach (var br in Db.Branches)
-                {
-                    <option value="@br">@br</option>
-                }
-            </select>
-        </div>
-        <p class="text-caption text-secondary">A logistics transit request will be flagged. Estimated branch asset migration time: 24 hours.</p>
-    </ChildContent>
-    <FooterContent>
-        <button class="btn-custom btn-custom-secondary" @onclick="() => IsTransferDialogOpen = false">Cancel</button>
-        <button class="btn-custom btn-custom-primary" @onclick="ConfirmTransfer">Transfer</button>
-    </FooterContent>
-</Dialog>
+<TransferAssetDialog IsOpen="IsTransferDialogOpen" Branches="Db.Branches"
+                      OnClose="() => IsTransferDialogOpen = false" OnConfirm="ConfirmTransfer" />
 
 @code {
     [Parameter] public string Id { get; set; } = "";
@@ -177,8 +140,6 @@
 
     private bool IsAssignDialogOpen = false;
     private bool IsTransferDialogOpen = false;
-    private string SelectedEmployeeForAssignment = "";
-    private string SelectedBranchForTransfer = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -202,41 +163,19 @@
 
     private List<Timeline.TimelineEvent> GetItemAuditEvents()
     {
-        var list = new List<Timeline.TimelineEvent>();
-        foreach (var log in Db.AuditLogs.Where(l => l.EntityId == Id))
-        {
-            list.Add(new Timeline.TimelineEvent
-            {
-                Timestamp = log.Timestamp,
-                Title = log.Action.ToUpper() + " Event",
-                Details = log.Details,
-                User = log.User
-            });
-        }
-        if (!list.Any())
-        {
-            list.Add(new Timeline.TimelineEvent
-            {
-                Timestamp = DateTime.Now.AddMonths(-1),
-                Title = "RECORD CREATION",
-                Details = "Resource registered and integrated into NexAsset ledger.",
-                User = "System Seed"
-            });
-        }
-        return list;
+        return AuditLogHelpers.BuildTimelineEvents(Db.AuditLogs, Id);
     }
 
     private void OpenAssignDialog()
     {
-        SelectedEmployeeForAssignment = "";
         IsAssignDialogOpen = true;
     }
 
-    private async Task ConfirmAssign()
+    private async Task ConfirmAssign(string employeeName)
     {
-        if (Asset != null && !string.IsNullOrEmpty(SelectedEmployeeForAssignment))
+        if (Asset != null)
         {
-            await AssetApiClient.AssignAssetAsync(Asset.Id, SelectedEmployeeForAssignment);
+            await AssetApiClient.AssignAssetAsync(Asset.Id, employeeName);
             await LoadAsset();
         }
         IsAssignDialogOpen = false;
@@ -244,15 +183,14 @@
 
     private void OpenTransferDialog()
     {
-        SelectedBranchForTransfer = "";
         IsTransferDialogOpen = true;
     }
 
-    private async Task ConfirmTransfer()
+    private async Task ConfirmTransfer(string branchName)
     {
-        if (Asset != null && !string.IsNullOrEmpty(SelectedBranchForTransfer))
+        if (Asset != null)
         {
-            await AssetApiClient.TransferAssetAsync(Asset.Id, SelectedBranchForTransfer);
+            await AssetApiClient.TransferAssetAsync(Asset.Id, branchName);
             await LoadAsset();
         }
         IsTransferDialogOpen = false;

@@ -1,0 +1,54 @@
+@*
+    Extracted from the identical "Transfer Branch Dialog" markup previously duplicated in
+    AssetList.razor and AssetDetails.razor. Owns its own selection state internally and
+    resets it whenever it closes, so callers don't need to manage a two-way-bound field.
+*@
+<Dialog IsOpen="IsOpen" Title="Transfer Operations Branch" Size="md" OnClose="OnClose">
+    <ChildContent>
+        <div class="form-group-custom mb-3">
+            <label class="form-label-custom">Target Branch Destination</label>
+            <select class="form-control-custom" @bind="_selectedBranch">
+                <option value="">-- Select Branch --</option>
+                @if (Branches != null)
+                {
+                    @foreach (var br in Branches)
+                    {
+                        <option value="@br">@br</option>
+                    }
+                }
+            </select>
+        </div>
+        <p class="text-caption text-secondary">A logistics transit request will be flagged. Estimated branch asset migration time: 24 hours.</p>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="HandleConfirm">Transfer</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public List<string>? Branches { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>Raised with the selected branch name when the user confirms.</summary>
+    [Parameter] public EventCallback<string> OnConfirm { get; set; }
+
+    private string _selectedBranch = "";
+
+    protected override void OnParametersSet()
+    {
+        if (!IsOpen)
+        {
+            _selectedBranch = "";
+        }
+    }
+
+    private async Task HandleConfirm()
+    {
+        if (!string.IsNullOrEmpty(_selectedBranch))
+        {
+            await OnConfirm.InvokeAsync(_selectedBranch);
+        }
+    }
+}

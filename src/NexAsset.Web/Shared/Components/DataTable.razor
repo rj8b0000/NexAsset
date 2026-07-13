@@ -1,0 +1,621 @@
+@typeparam TItem
+@using NexAsset.Web.State
+@inject NotificationState NotificationState
+
+<div class="card-custom p-0 animate-fade-in" style="overflow: hidden; border: 1px solid var(--border-color);">
+    <!-- Table Controls Header -->
+    <div class="p-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light-custom" style="background-color: var(--bg-surface-hover);">
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 400px;">
+            <div class="position-relative w-100">
+                <i class="lucide-search position-absolute text-muted-custom" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px;"></i>
+                <input type="text" class="form-control-custom" style="padding-left: 36px;" placeholder="Search table..." 
+                       @bind-value="LocalSearchQuery" @bind-value:event="oninput" @onkeyup="HandleSearch" />
+            </div>
+            
+            @if (ShowFilterPanel && (CategorySelector != null || StatusSelector != null))
+            {
+                <button class="btn-custom btn-custom-secondary py-2 px-3" @onclick="ToggleFilters">
+                    <i class="lucide-filter"></i> Filters
+                </button>
+            }
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <!-- Density Toggle -->
+            <div class="dropdown">
+                <button class="btn-custom btn-custom-secondary py-2 px-3 dropdown-toggle" type="button" @onclick="ToggleDensityDropdown">
+                    <i class="lucide-align-justify"></i> Density
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-2 @(DensityDropdownOpen ? "show" : "")" style="min-width: 140px; position: absolute; right: 0; top: 100%; z-index: 1050; display: @(DensityDropdownOpen ? "block" : "none"); background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-8); box-shadow: var(--shadow-md);">
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded @(Density == "compact" ? "active" : "")" style="background: @(Density == "compact" ? "var(--primary-light)" : "transparent"); color: @(Density == "compact" ? "var(--primary)" : "var(--text-primary)"); font-size: 13px; border: none;" @onclick='() => SetDensity("compact")'>Compact</button>
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded @(Density == "normal" ? "active" : "")" style="background: @(Density == "normal" ? "var(--primary-light)" : "transparent"); color: @(Density == "normal" ? "var(--primary)" : "var(--text-primary)"); font-size: 13px; border: none;" @onclick='() => SetDensity("normal")'>Normal</button>
+                    <button class="dropdown-item py-2 px-3 w-100 text-start rounded @(Density == "spacious" ? "active" : "")" style="background: @(Density == "spacious" ? "var(--primary-light)" : "transparent"); color: @(Density == "spacious" ? "var(--primary)" : "var(--text-primary)"); font-size: 13px; border: none;" @onclick='() => SetDensity("spacious")'>Spacious</button>
+                </div>
+            </div>
+
+            <!-- Column Chooser -->
+            <div class="dropdown">
+                <button class="btn-custom btn-custom-secondary py-2 px-3 dropdown-toggle" type="button" @onclick="ToggleColumnsDropdown">
+                    <i class="lucide-layout-grid"></i> Columns
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3 @(ColumnsDropdownOpen ? "show" : "")" style="min-width: 200px; position: absolute; right: 0; top: 100%; z-index: 1050; display: @(ColumnsDropdownOpen ? "block" : "none"); background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-8); box-shadow: var(--shadow-md); max-height: 250px; overflow-y: auto;">
+                    <div class="text-label mb-2">Toggle Columns</div>
+                    @foreach (var col in Columns)
+                    {
+                        <div class="form-check py-1">
+                            <input class="form-check-input" type="checkbox" id="col-@col.Header" checked="@col.Visible" @onchange="@(e => ToggleColumn(col))" />
+                            <label class="form-check-label text-caption ms-1" style="color: var(--text-primary);" for="col-@col.Header">
+                                @col.Header
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <button class="btn-custom btn-custom-secondary py-2 px-3" @onclick="RefreshTable">
+                <i class="lucide-rotate-cw"></i> Refresh
+            </button>
+
+            <button class="btn-custom btn-custom-secondary py-2 px-3" @onclick="ExportData">
+                <i class="lucide-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Filters Section -->
+    @if (FilterPanelOpen)
+    {
+        <div class="p-3 border-bottom bg-light-custom d-flex flex-wrap gap-3" style="background-color: var(--bg-app);">
+            @if (CategorySelector != null)
+            {
+                <div style="min-width: 150px;">
+                    <label class="text-label mb-1" style="font-size: 11px;">Category</label>
+                    <select class="form-control-custom py-1 px-2" @bind="SelectedCategoryFilter">
+                        <option value="">All Categories</option>
+                        @foreach (var cat in GetCategories())
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    </select>
+                </div>
+            }
+            @if (StatusSelector != null)
+            {
+                <div style="min-width: 150px;">
+                    <label class="text-label mb-1" style="font-size: 11px;">Status</label>
+                    <select class="form-control-custom py-1 px-2" @bind="SelectedStatusFilter">
+                        <option value="">All Statuses</option>
+                        @foreach (var st in GetStatuses())
+                        {
+                            <option value="@st">@st</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="d-flex align-items-end">
+                <button class="btn-custom btn-custom-secondary py-1 px-3" style="height: 38px;" @onclick="ClearFilters">Clear</button>
+            </div>
+        </div>
+    }
+
+    <!-- Active Filter Chips Section -->
+    @if (!string.IsNullOrEmpty(SelectedCategoryFilter) || !string.IsNullOrEmpty(SelectedStatusFilter))
+    {
+        <div class="px-3 py-2 border-bottom d-flex flex-wrap align-items-center gap-2" style="background-color: var(--bg-surface-hover); min-height: 40px;">
+            <span class="text-caption text-muted-custom" style="font-size: 11.5px; font-weight: 500;">Active Filters:</span>
+            @if (!string.IsNullOrEmpty(SelectedCategoryFilter))
+            {
+                <span class="badge-custom badge-custom-primary d-flex align-items-center gap-1.5 py-1 px-2.5" style="font-size: 11px;">
+                    Category: @SelectedCategoryFilter
+                    <i class="lucide-x" style="font-size: 10px; cursor: pointer;" @onclick='() => SelectedCategoryFilter = ""'></i>
+                </span>
+            }
+            @if (!string.IsNullOrEmpty(SelectedStatusFilter))
+            {
+                <span class="badge-custom badge-custom-info d-flex align-items-center gap-1.5 py-1 px-2.5" style="font-size: 11px;">
+                    Status: @SelectedStatusFilter
+                    <i class="lucide-x" style="font-size: 10px; cursor: pointer;" @onclick='() => SelectedStatusFilter = ""'></i>
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Bulk Actions Panel (Triggers when multiple items are selected) -->
+    @if (SelectedItems.Any())
+    {
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-primary-light" style="background-color: var(--primary-light); color: var(--primary);">
+            <span class="fw-semibold text-caption">
+                <i class="lucide-check-square me-1"></i> @SelectedItems.Count items selected
+            </span>
+            <div class="d-flex gap-2">
+                <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" style="background: var(--bg-surface);" @onclick="BulkClearSelection">Clear Selection</button>
+                @if (OnBulkDelete.HasDelegate)
+                {
+                    <button class="btn-custom btn-custom-danger py-1 px-3 text-caption" @onclick="BulkDelete">Delete Selected</button>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Raw Data Grid Wrapper -->
+    <div class="table-responsive">
+        <table class="table-custom w-100 @GetDensityClass()">
+            <thead>
+                <tr>
+                    <!-- Bulk Selection Checkbox -->
+                    @if (IdSelector != null)
+                    {
+                        <th style="width: 48px; text-align: center; vertical-align: middle;">
+                            <input class="form-check-input" type="checkbox" checked="@IsAllSelected()" @onchange="ToggleSelectAll" />
+                        </th>
+                    }
+                    
+                    <!-- Dynamic Headers from Column Definitions -->
+                    @foreach (var col in Columns.Where(c => c.Visible))
+                    {
+                        <th class="@(col.Sortable ? "sortable-header" : "")" @onclick="() => SetSortColumn(col)">
+                            <div class="d-flex align-items-center gap-1">
+                                @col.Header
+                                @if (col.Sortable && SortColumn == col.Header)
+                                {
+                                    <i class="@(SortAscending ? "lucide-arrow-up" : "lucide-arrow-down")" style="font-size: 11px;"></i>
+                                }
+                            </div>
+                        </th>
+                    }
+                    
+                    <!-- Actions Header spacer -->
+                    @if (OnViewDetails.HasDelegate || OnEdit.HasDelegate || OnDelete.HasDelegate || CustomRowActions != null)
+                    {
+                        <th style="text-align: right; width: 80px;">Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (PaginatedItems.Any())
+                {
+                    @foreach (var item in PaginatedItems)
+                    {
+                        var itemId = IdSelector?.Invoke(item) ?? "";
+                        <tr class="@(SelectedItems.Contains(itemId) ? "row-selected" : "")">
+                            @if (IdSelector != null)
+                            {
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <input class="form-check-input" type="checkbox" checked="@SelectedItems.Contains(itemId)" @onchange="() => ToggleSelectItem(itemId)" />
+                                </td>
+                            }
+
+                            @foreach (var col in Columns.Where(c => c.Visible))
+                            {
+                                <td style="vertical-align: middle;">
+                                    @if (col.Template != null)
+                                    {
+                                        @col.Template(item)
+                                    }
+                                    else if (col.PropertySelector != null)
+                                    {
+                                        var val = col.PropertySelector(item);
+                                        @if (col.Header.Contains("Value") || col.Header.Contains("Price") || col.Header.Contains("Amount"))
+                                        {
+                                            if (decimal.TryParse(val, out var dec))
+                                            {
+                                                @dec.ToString("C")
+                                            }
+                                            else
+                                            {
+                                                @val
+                                            }
+                                        }
+                                        else if (col.Header.Contains("Date"))
+                                        {
+                                            if (DateTime.TryParse(val, out var dt))
+                                            {
+                                                @dt.ToString("yyyy-MM-dd")
+                                            }
+                                            else
+                                            {
+                                                @val
+                                            }
+                                        }
+                                        else if (col.Header == "Asset ID" || col.Header == "Employee ID" || col.Header == "Organization ID" || col.Header == "Request ID" || col.Header == "Ticket ID" || col.Header == "Invoice ID" || col.Header == "Audit ID" || col.Header == "Name" || col.Header == "Item Name")
+                                        {
+                                            <div class="fw-semibold" style="color: var(--text-primary);">
+                                                @val
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @val
+                                        }
+                                    }
+                                </td>
+                            }
+
+                            <!-- Row Actions Menu -->
+                            @if (OnViewDetails.HasDelegate || OnEdit.HasDelegate || OnDelete.HasDelegate || CustomRowActions != null)
+                            {
+                                <td style="text-align: right; vertical-align: middle;">
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn-custom btn-custom-secondary p-1" style="border-radius: 4px; border-color: transparent;" @onclick="() => ToggleRowActionsDropdown(itemId)">
+                                            <i class="lucide-more-vertical"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-end p-2 @(ActiveRowActionsDropdownId == itemId ? "show" : "")" style="min-width: 140px; position: absolute; right: 0; z-index: 1040; display: @(ActiveRowActionsDropdownId == itemId ? "block" : "none"); background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-8); box-shadow: var(--shadow-md);">
+                                            @if (OnViewDetails.HasDelegate)
+                                            {
+                                                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => ViewDetails(item)">
+                                                    <i class="lucide-eye me-2"></i> Details
+                                                </button>
+                                            }
+                                            @if (OnEdit.HasDelegate)
+                                            {
+                                                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => EditItem(item)">
+                                                    <i class="lucide-edit-2 me-2"></i> Edit
+                                                </button>
+                                            }
+                                            
+                                            @if (CustomRowActions != null)
+                                            {
+                                                @CustomRowActions(item)
+                                            }
+
+                                            @if (OnDelete.HasDelegate)
+                                            {
+                                                <div class="dropdown-divider"></div>
+                                                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption text-danger border-0 bg-transparent" @onclick="() => DeleteItem(item)">
+                                                    <i class="lucide-trash-2 me-2"></i> Delete
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="@(Columns.Count(c => c.Visible) + (IdSelector != null ? 1 : 0) + (OnViewDetails.HasDelegate || OnEdit.HasDelegate || OnDelete.HasDelegate || CustomRowActions != null ? 1 : 0))" class="text-center py-5">
+                            <div class="d-flex flex-column align-items-center gap-3">
+                                <div class="p-3 rounded-circle bg-light-custom" style="background-color: var(--bg-app); color: var(--text-muted);">
+                                    <i class="lucide-search fs-3"></i>
+                                </div>
+                                <h4 class="h2-title">No search results found</h4>
+                                <p class="text-caption text-muted-custom">Try checking your spelling, using less specific keywords, or clearing your filters.</p>
+                                <button class="btn-custom btn-custom-secondary py-1 px-3 mt-1" @onclick="ResetSearchFilters">Clear Search</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    @if (TotalItemsCount > 0)
+    {
+        <div class="p-3 border-top d-flex align-items-center justify-content-between bg-light-custom" style="background-color: var(--bg-surface-hover);">
+            <div class="text-caption text-muted-custom">
+                Showing <strong>@(StartIndex + 1)</strong> to <strong>@(Math.Min(EndIndex, TotalItemsCount))</strong> of <strong>@TotalItemsCount</strong> entries
+            </div>
+            
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-caption text-muted-custom">Rows per page:</span>
+                    <select class="form-control-custom py-1 px-2" style="width: 70px; height: 32px;" value="@RowsPerPage" @onchange="HandleRowsPerPageChange">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-1">
+                    <button class="btn-custom btn-custom-secondary p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" disabled="@(CurrentPage == 1)" @onclick="PrevPage">
+                        <i class="lucide-chevron-left"></i>
+                    </button>
+                    <span class="btn-custom btn-custom-secondary py-1 px-3 d-flex align-items-center justify-content-center text-caption" style="height: 32px; pointer-events: none; border-color: var(--border-color); background: var(--bg-surface);">
+                        Page @CurrentPage of @TotalPages
+                    </span>
+                    <button class="btn-custom btn-custom-secondary p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" disabled="@(CurrentPage == TotalPages)" @onclick="NextPage">
+                        <i class="lucide-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<TItem> Items { get; set; } = Array.Empty<TItem>();
+    [Parameter, EditorRequired] public List<ColumnDefinition<TItem>> Columns { get; set; } = new();
+    [Parameter] public bool ShowFilterPanel { get; set; } = true;
+    [Parameter] public string Type { get; set; } = "Item";
+    
+    // Type extraction selectors
+    [Parameter] public Func<TItem, string>? IdSelector { get; set; }
+    [Parameter] public Func<TItem, string>? CategorySelector { get; set; }
+    [Parameter] public Func<TItem, string>? StatusSelector { get; set; }
+    [Parameter] public Func<TItem, string, bool>? SearchPredicate { get; set; }
+    
+    // Custom Actions Template
+    [Parameter] public RenderFragment<TItem>? CustomRowActions { get; set; }
+
+    // Callbacks
+    [Parameter] public EventCallback<TItem> OnViewDetails { get; set; }
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public EventCallback<List<TItem>> OnBulkDelete { get; set; }
+
+    private string LocalSearchQuery = "";
+    private bool FilterPanelOpen = false;
+    private bool DensityDropdownOpen = false;
+    private bool ColumnsDropdownOpen = false;
+    
+    private string Density = "normal";
+    
+    private string SortColumn = "";
+    private bool SortAscending = true;
+    
+    private int CurrentPage = 1;
+    private int RowsPerPage = 5;
+    
+    private List<string> SelectedItems = new();
+    private string ActiveRowActionsDropdownId = "";
+
+    // Filters
+    private string SelectedCategoryFilter = "";
+    private string SelectedStatusFilter = "";
+
+    protected override void OnInitialized()
+    {
+        if (Columns.Any() && string.IsNullOrEmpty(SortColumn))
+        {
+            SortColumn = Columns.First().Header;
+        }
+    }
+
+    private void HandleSearch()
+    {
+        CurrentPage = 1;
+        StateHasChanged();
+    }
+
+    private void ToggleFilters()
+    {
+        FilterPanelOpen = !FilterPanelOpen;
+        DensityDropdownOpen = false;
+        ColumnsDropdownOpen = false;
+    }
+
+    private void ToggleDensityDropdown()
+    {
+        DensityDropdownOpen = !DensityDropdownOpen;
+        FilterPanelOpen = false;
+        ColumnsDropdownOpen = false;
+    }
+
+    private void ToggleColumnsDropdown()
+    {
+        ColumnsDropdownOpen = !ColumnsDropdownOpen;
+        FilterPanelOpen = false;
+        DensityDropdownOpen = false;
+    }
+
+    private void SetDensity(string d)
+    {
+        Density = d;
+        DensityDropdownOpen = false;
+    }
+
+    private string GetDensityClass()
+    {
+        return Density switch
+        {
+            "compact" => "table-density-compact",
+            "spacious" => "table-density-spacious",
+            _ => ""
+        };
+    }
+
+    private void ToggleColumn(ColumnDefinition<TItem> col)
+    {
+        col.Visible = !col.Visible;
+    }
+
+    private void SetSortColumn(ColumnDefinition<TItem> col)
+    {
+        if (!col.Sortable) return;
+        
+        if (SortColumn == col.Header)
+        {
+            SortAscending = !SortAscending;
+        }
+        else
+        {
+            SortColumn = col.Header;
+            SortAscending = true;
+        }
+        CurrentPage = 1;
+    }
+
+    private void RefreshTable()
+    {
+        NotificationState.AddToast("Data Refreshed", $"Reloaded live list of {Type} items.", ToastType.Info);
+        StateHasChanged();
+    }
+
+    private void ExportData()
+    {
+        NotificationState.AddToast("Export Initiated", $"Downloading list of {Type} items to CSV format.", ToastType.Success);
+    }
+
+    private void ClearFilters()
+    {
+        SelectedCategoryFilter = "";
+        SelectedStatusFilter = "";
+        StateHasChanged();
+    }
+
+    private void ResetSearchFilters()
+    {
+        LocalSearchQuery = "";
+        ClearFilters();
+    }
+
+    private void HandleRowsPerPageChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var r))
+        {
+            RowsPerPage = r;
+            CurrentPage = 1;
+        }
+    }
+
+    private void PrevPage()
+    {
+        if (CurrentPage > 1) CurrentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (CurrentPage < TotalPages) CurrentPage++;
+    }
+
+    private void ToggleRowActionsDropdown(string id)
+    {
+        if (ActiveRowActionsDropdownId == id)
+            ActiveRowActionsDropdownId = "";
+        else
+            ActiveRowActionsDropdownId = id;
+    }
+
+    private void ViewDetails(TItem item)
+    {
+        ActiveRowActionsDropdownId = "";
+        OnViewDetails.InvokeAsync(item);
+    }
+
+    private void EditItem(TItem item)
+    {
+        ActiveRowActionsDropdownId = "";
+        OnEdit.InvokeAsync(item);
+    }
+
+    private void DeleteItem(TItem item)
+    {
+        ActiveRowActionsDropdownId = "";
+        OnDelete.InvokeAsync(item);
+    }
+
+    // Bulk selection helpers
+    private void ToggleSelectItem(string id)
+    {
+        if (SelectedItems.Contains(id))
+            SelectedItems.Remove(id);
+        else
+            SelectedItems.Add(id);
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var checkedVal = e.Value is bool b && b;
+        if (checkedVal)
+        {
+            SelectedItems = PaginatedItems.Select(i => IdSelector?.Invoke(i) ?? "").Where(id => !string.IsNullOrEmpty(id)).ToList();
+        }
+        else
+        {
+            SelectedItems.Clear();
+        }
+    }
+
+    private bool IsAllSelected()
+    {
+        var ids = PaginatedItems.Select(i => IdSelector?.Invoke(i) ?? "").Where(id => !string.IsNullOrEmpty(id)).ToList();
+        return ids.Any() && ids.All(id => SelectedItems.Contains(id));
+    }
+
+    private void BulkClearSelection()
+    {
+        SelectedItems.Clear();
+    }
+
+    private void BulkDelete()
+    {
+        var itemsToDelete = Items.Where(i => SelectedItems.Contains(IdSelector?.Invoke(i) ?? "")).ToList();
+        OnBulkDelete.InvokeAsync(itemsToDelete);
+        SelectedItems.Clear();
+        CurrentPage = 1;
+        StateHasChanged();
+    }
+
+    private IEnumerable<string> GetCategories()
+    {
+        if (CategorySelector == null) return Array.Empty<string>();
+        return Items.Select(CategorySelector).Where(c => !string.IsNullOrEmpty(c)).Distinct();
+    }
+
+    private IEnumerable<string> GetStatuses()
+    {
+        if (StatusSelector == null) return Array.Empty<string>();
+        return Items.Select(StatusSelector).Where(s => !string.IsNullOrEmpty(s)).Distinct();
+    }
+
+    // Filtering, Sorting, Pagination pipeline
+    private IEnumerable<TItem> FilteredItems
+    {
+        get
+        {
+            var query = Items;
+            
+            // Search filter
+            if (!string.IsNullOrEmpty(LocalSearchQuery))
+            {
+                if (SearchPredicate != null)
+                {
+                    query = query.Where(item => SearchPredicate(item, LocalSearchQuery));
+                }
+                else
+                {
+                    query = query.Where(item => 
+                        Columns.Any(col => 
+                            col.Visible && col.PropertySelector != null && 
+                            col.PropertySelector(item)?.Contains(LocalSearchQuery, StringComparison.OrdinalIgnoreCase) == true));
+                }
+            }
+
+            // Category filter
+            if (!string.IsNullOrEmpty(SelectedCategoryFilter) && CategorySelector != null)
+            {
+                query = query.Where(item => CategorySelector(item) == SelectedCategoryFilter);
+            }
+
+            // Status filter
+            if (!string.IsNullOrEmpty(SelectedStatusFilter) && StatusSelector != null)
+            {
+                query = query.Where(item => StatusSelector(item) == SelectedStatusFilter);
+            }
+
+            // Sorting
+            if (!string.IsNullOrEmpty(SortColumn))
+            {
+                var col = Columns.FirstOrDefault(c => c.Header == SortColumn);
+                if (col != null && col.PropertySelector != null)
+                {
+                    query = SortAscending 
+                        ? query.OrderBy(item => col.PropertySelector(item)) 
+                        : query.OrderByDescending(item => col.PropertySelector(item));
+                }
+            }
+
+            return query;
+        }
+    }
+
+    private List<TItem> PaginatedItems => FilteredItems.Skip(StartIndex).Take(RowsPerPage).ToList();
+    
+    private int TotalItemsCount => FilteredItems.Count();
+    private int TotalPages => (int)Math.Ceiling((double)TotalItemsCount / RowsPerPage);
+    private int StartIndex => (CurrentPage - 1) * RowsPerPage;
+    private int EndIndex => StartIndex + RowsPerPage;
+}

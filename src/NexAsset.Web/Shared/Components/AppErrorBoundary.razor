@@ -1,0 +1,27 @@
+@*
+    Wraps Blazor's built-in ErrorBoundary with the app's existing EmptyState visual style,
+    so an unhandled exception inside a subtree shows a friendly message instead of a blank
+    page. Purely additive infrastructure — no page currently uses this component, so wrapping
+    it around a page's markup is left to a future pass to avoid changing behavior sight-unseen.
+*@
+<ErrorBoundary @ref="_errorBoundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent>
+        <EmptyState Title="Something went wrong"
+                    Description="This section couldn't be displayed. You can try again, or refresh the page if the problem continues."
+                    IconClass="lucide-alert-triangle"
+                    ActionLabel="Try Again"
+                    ActionIconClass="lucide-refresh-cw"
+                    OnActionClick="Recover" />
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    private ErrorBoundary? _errorBoundary;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private void Recover() => _errorBoundary?.Recover();
+}

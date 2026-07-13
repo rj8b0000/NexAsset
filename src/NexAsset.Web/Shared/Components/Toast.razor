@@ -1,0 +1,67 @@
+@using NexAsset.Web.State
+@inject NotificationState NotificationState
+@implements IDisposable
+
+<div class="toast-container-custom" style="position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; max-width: 350px; width: 100%;">
+    @foreach (var toast in NotificationState.Toasts)
+    {
+        <div class="toast-item-custom p-3 rounded-3 shadow-lg d-flex align-items-start gap-3 border animate-toast" style="background-color: var(--bg-surface); border-color: var(--@GetThemeColor(toast.Type)-border); animation: slideInLeft 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
+            <!-- Icon -->
+            <div class="p-2 rounded-circle" style="background-color: var(--@GetThemeColor(toast.Type)-light); color: var(--@GetThemeColor(toast.Type));">
+                <i class="@GetIconClass(toast.Type) fs-5"></i>
+            </div>
+            
+            <!-- Content -->
+            <div class="flex-grow-1">
+                <h5 class="h3-title mb-1" style="color: var(--text-primary);">@toast.Title</h5>
+                <p class="text-caption mb-0" style="color: var(--text-secondary); line-height: 1.4;">@toast.Message</p>
+            </div>
+
+            <!-- Close Button -->
+            <button type="button" class="btn-close-toast" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;" @onclick="() => CloseToast(toast.Id)">
+                <i class="lucide-x font-weight-bold fs-6"></i>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NotificationState.OnChange += StateHasChanged;
+    }
+
+    private void CloseToast(string id)
+    {
+        NotificationState.RemoveToast(id);
+    }
+
+    private string GetThemeColor(ToastType type)
+    {
+        return type switch
+        {
+            ToastType.Success => "success",
+            ToastType.Warning => "warning",
+            ToastType.Danger => "danger",
+            ToastType.Info => "info",
+            _ => "primary"
+        };
+    }
+
+    private string GetIconClass(ToastType type)
+    {
+        return type switch
+        {
+            ToastType.Success => "lucide-check-circle",
+            ToastType.Warning => "lucide-alert-triangle",
+            ToastType.Danger => "lucide-alert-circle",
+            ToastType.Info => "lucide-info",
+            _ => "lucide-bell"
+        };
+    }
+
+    public void Dispose()
+    {
+        NotificationState.OnChange -= StateHasChanged;
+    }
+}

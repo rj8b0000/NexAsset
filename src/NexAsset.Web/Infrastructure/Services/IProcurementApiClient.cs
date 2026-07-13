@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NexAsset.Web.Infrastructure.Models;
+using NexAsset.Web.Models.Mock;
 
 namespace NexAsset.Web.Infrastructure.Services
 {

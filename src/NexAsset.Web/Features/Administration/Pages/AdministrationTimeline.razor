@@ -1,6 +1,5 @@
 @page "/administration/timeline"
 @using NexAsset.Web.State
-@using NexAsset.Web.Infrastructure.Models
 @inject NotificationState NotificationState
 @inject NavigationManager NavigationManager
 
@@ -13,5 +12,5 @@
     </div>
     
     <Timeline Title="Operational Logs" Subtitle="Raw audit logs sorted by trigger chronology" 
-              Events="NotificationState.Activities.Select(a => new NexAsset.Web.Components.Timeline.TimelineEvent { Timestamp = a.Timestamp, Title = a.Title, Details = a.Details, User = a.User })" />
+              Events="NotificationState.Activities.Select(a => new NexAsset.Web.Shared.Components.Timeline.TimelineEvent { Timestamp = a.Timestamp, Title = a.Title, Details = a.Details, User = a.User })" />
 </div>

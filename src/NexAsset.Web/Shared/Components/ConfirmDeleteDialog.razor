@@ -1,0 +1,30 @@
+@*
+    Generic delete-confirmation dialog. Extracted from the byte-for-byte identical markup
+    previously duplicated in AssetList.razor and EmployeeList.razor (and matched by the same
+    pattern elsewhere) — only the entity label in the body copy differed.
+*@
+<Dialog IsOpen="IsOpen" Title="Confirm Delete Operation" Size="sm" OnClose="OnClose">
+    <ChildContent>
+        <div class="text-center py-3">
+            <div class="p-3 bg-danger-light text-danger rounded-circle d-inline-block mb-3 animate-bounce">
+                <i class="lucide-trash-2 fs-2"></i>
+            </div>
+            <h4 class="h2-title">Permanently delete this record?</h4>
+            <p class="text-caption text-secondary mt-2">This operational action is irreversible. The @EntityLabel will be permanently purged.</p>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary flex-grow-1" @onclick="OnClose">Cancel</button>
+        <button class="btn-custom btn-custom-danger flex-grow-1" @onclick="OnConfirm">Delete</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+
+    /// <summary>Plain-language entity description inserted into "The {EntityLabel} will be permanently purged.", e.g. "asset ledger record".</summary>
+    [Parameter] public string EntityLabel { get; set; } = "record";
+
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

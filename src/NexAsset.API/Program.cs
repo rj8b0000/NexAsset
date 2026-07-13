@@ -23,6 +23,19 @@ builder.Services.AddApplication();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// CORS for the Blazor WASM frontend. Credentials must be allowed so the browser will
+// send/receive the ASP.NET Identity auth cookie on cross-origin (different-port) calls;
+// AllowCredentials() forbids a wildcard origin, hence the explicit dev origins.
+const string WasmCorsPolicy = "WasmClient";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(WasmCorsPolicy, policy => policy
+        .WithOrigins("http://localhost:5174", "https://localhost:7225")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "NexAsset.Auth";
@@ -49,6 +62,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(WasmCorsPolicy);
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
