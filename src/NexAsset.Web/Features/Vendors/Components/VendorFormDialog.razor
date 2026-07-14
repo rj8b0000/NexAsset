@@ -1,0 +1,147 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.Procurement
+@using NexAsset.Web.Models.Procurement
+@using NexAsset.Web.Shared.Models
+@inject IVendorApiClient VendorApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+
+<Dialog IsOpen="IsOpen" Title="@(IsEdit ? "Edit Vendor" : "New Vendor")" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading vendor..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_generalError))
+            {
+                <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                    <i class="lucide-alert-circle"></i> @_generalError
+                </div>
+            }
+            <div class="row g-3">
+                <SelectField Label="Organization" Required="true" ColumnClass="col-12"
+                             Options="_orgOptions" Placeholder="Select an organization"
+                             Value="@(_model.OrganizationId == Guid.Empty ? "" : _model.OrganizationId.ToString())"
+                             ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                             Error='@Err("OrganizationId")' />
+                <TextField Label="Vendor Code" Required="true" Value="@_model.Code" ValueChanged="@(v => _model.Code = v)" Error='@Err("Code")' />
+                <TextField Label="Vendor Name" Required="true" Value="@_model.Name" ValueChanged="@(v => _model.Name = v)" Error='@Err("Name")' />
+                <TextField Label="Email" Required="true" Type="email" Value="@_model.Email" ValueChanged="@(v => _model.Email = v)" Error='@Err("Email")' />
+                <TextField Label="Contact Person" Value="@_model.ContactPerson" ValueChanged="@(v => _model.ContactPerson = v)" Error='@Err("ContactPerson")' />
+                <TextField Label="Phone" Value="@_model.Phone" ValueChanged="@(v => _model.Phone = v)" Error='@Err("Phone")' />
+                <TextField Label="Tax Number (GST)" Value="@_model.TaxNumber" ValueChanged="@(v => _model.TaxNumber = v)" Error='@Err("TaxNumber")' />
+                <TextField Label="Address" ColumnClass="col-12" Multiline="true" Value="@_model.Address" ValueChanged="@(v => _model.Address = v)" Error='@Err("Address")' />
+                @if (IsEdit)
+                {
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="vendor-active" checked="@_model.IsActive" @onchange="e => _model.IsActive = (bool)e.Value!" />
+                            <label class="form-check-label text-caption" for="vendor-active">Active</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? EditId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private VendorFormModel _model = new();
+    private List<SelectField.Option> _orgOptions = new();
+    private bool _loading;
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private bool IsEdit => EditId.HasValue;
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await InitializeAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task InitializeAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        _model = new VendorFormModel();
+        _loading = true;
+
+        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (orgs.IsSuccess && orgs.Data is not null)
+            _orgOptions = orgs.Data.Items.Select(o => new SelectField.Option(o.Id.ToString(), $"{o.Code} — {o.Name}")).ToList();
+
+        if (EditId.HasValue)
+        {
+            var result = await VendorApiClient.GetByIdAsync(EditId.Value);
+            if (result.IsSuccess && result.Data is not null)
+                _model = VendorFormModel.FromItem(result.Data);
+            else
+                _generalError = result.Error?.Message ?? "Could not load this vendor.";
+        }
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (_model.OrganizationId == Guid.Empty) _fieldErrors["OrganizationId"] = "Organization is required.";
+        if (string.IsNullOrWhiteSpace(_model.Code)) _fieldErrors["Code"] = "Code is required.";
+        if (string.IsNullOrWhiteSpace(_model.Name)) _fieldErrors["Name"] = "Name is required.";
+        if (string.IsNullOrWhiteSpace(_model.Email)) _fieldErrors["Email"] = "Email is required.";
+        if (_fieldErrors.Count > 0) return;
+
+        _saving = true;
+        bool success;
+        ApiError? error;
+        if (IsEdit)
+        {
+            var res = await VendorApiClient.UpdateAsync(EditId!.Value, _model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        else
+        {
+            var res = await VendorApiClient.CreateAsync(_model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        _saving = false;
+
+        if (!success) { ApplyError(error); return; }
+        await OnSaved.InvokeAsync();
+    }
+
+    private void ApplyError(ApiError? error)
+    {
+        _generalError = error?.Message ?? "Save failed. Please try again.";
+        if (error?.FieldErrors is not null)
+            foreach (var kv in error.FieldErrors)
+                _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+    }
+}

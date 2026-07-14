@@ -1,0 +1,126 @@
+@using System.Globalization
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.Procurement
+@using NexAsset.Web.Models.Procurement
+@using NexAsset.Web.Shared.Models
+@inject IPurchaseRequestApiClient PurchaseRequestApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+
+<Dialog IsOpen="IsOpen" Title="New Purchase Request" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
+                         Value="@(_model.OrganizationId == Guid.Empty ? "" : _model.OrganizationId.ToString())"
+                         ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         Error='@Err("OrganizationId")' />
+            <TextField Label="Request Number" Required="true" Value="@_model.RequestNumber" ValueChanged="@(v => _model.RequestNumber = v)" Error='@Err("RequestNumber")' />
+            <TextField Label="Title" Required="true" ColumnClass="col-12" Value="@_model.Title" ValueChanged="@(v => _model.Title = v)" Error='@Err("Title")' />
+            <SelectField Label="Requested By" Required="true" Options="_employeeOptions" Placeholder="Select an employee"
+                         Value="@(_model.RequestedByEmployeeId == Guid.Empty ? "" : _model.RequestedByEmployeeId.ToString())"
+                         ValueChanged="@(v => _model.RequestedByEmployeeId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         Error='@Err("RequestedByEmployeeId")' />
+            <TextField Label="Request Date" Required="true" Type="date" Value="@_model.RequestDate" ValueChanged="@(v => _model.RequestDate = v)" Error='@Err("RequestDate")' />
+            <TextField Label="Estimated Amount" Required="true" Type="number" Value="@_amountStr" ValueChanged="@(v => _amountStr = v)" Error='@Err("EstimatedAmount")' />
+            <TextField Label="Description" ColumnClass="col-12" Multiline="true" Value="@_model.Description" ValueChanged="@(v => _model.Description = v)" Error='@Err("Description")' />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private PurchaseRequestFormModel _model = new();
+    private string _amountStr = "";
+    private List<SelectField.Option> _orgOptions = new();
+    private List<SelectField.Option> _employeeOptions = new();
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _model = new PurchaseRequestFormModel();
+            _amountStr = "";
+            await LoadLookupsAsync();
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (orgs.IsSuccess && orgs.Data is not null)
+            _orgOptions = orgs.Data.Items.Select(o => new SelectField.Option(o.Id.ToString(), $"{o.Code} — {o.Name}")).ToList();
+
+        var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
+        if (emps.IsSuccess && emps.Data is not null)
+            _employeeOptions = emps.Data.Items.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (_model.OrganizationId == Guid.Empty) _fieldErrors["OrganizationId"] = "Organization is required.";
+        if (string.IsNullOrWhiteSpace(_model.RequestNumber)) _fieldErrors["RequestNumber"] = "Request number is required.";
+        if (string.IsNullOrWhiteSpace(_model.Title)) _fieldErrors["Title"] = "Title is required.";
+        if (_model.RequestedByEmployeeId == Guid.Empty) _fieldErrors["RequestedByEmployeeId"] = "Requester is required.";
+        if (string.IsNullOrWhiteSpace(_model.RequestDate)) _fieldErrors["RequestDate"] = "Request date is required.";
+        if (!decimal.TryParse(_amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var amount) || amount < 0)
+            _fieldErrors["EstimatedAmount"] = "Enter a valid amount.";
+        else
+            _model.EstimatedAmount = amount;
+        if (_fieldErrors.Count > 0) return;
+
+        _saving = true;
+        var result = await PurchaseRequestApiClient.CreateAsync(_model);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Save failed. Please try again.";
+            if (result.Error?.FieldErrors is not null)
+                foreach (var kv in result.Error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnSaved.InvokeAsync();
+    }
+}

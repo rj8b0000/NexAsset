@@ -1,0 +1,120 @@
+@page "/vendors"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Infrastructure.Procurement
+@using NexAsset.Web.Models.Procurement
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Vendors.Components
+@inject IVendorApiClient VendorApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Vendors</h1>
+            <span class="text-caption text-secondary">Manage suppliers used across procurement and purchasing.</span>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+            <i class="lucide-plus"></i> New Vendor
+        </button>
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading vendors..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load vendors" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="VendorItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Vendor"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="v => v.Id.ToString()"
+                   OnEdit="OpenEdit"
+                   OnDelete="AskDelete" />
+    }
+</div>
+
+<VendorFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+<ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="vendor"
+                     OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />
+
+@code {
+    private PagedResult<VendorItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private Guid? _editId;
+    private VendorItem? _deleteTarget;
+
+    private readonly List<ColumnDefinition<VendorItem>> _columns = new()
+    {
+        new() { Header = "Vendor Code", PropertySelector = v => v.Code, SortColumn = "Code" },
+        new() { Header = "Vendor Name", PropertySelector = v => v.Name, SortColumn = "Name" },
+        new() { Header = "Email", PropertySelector = v => v.Email, SortColumn = "Email" },
+        new() { Header = "Phone", Sortable = false, Template = v => @<span>@(string.IsNullOrEmpty(v.Phone) ? "—" : v.Phone)</span> },
+        new() { Header = "GST", Sortable = false, Template = v => @<span>@(string.IsNullOrEmpty(v.TaxNumber) ? "—" : v.TaxNumber)</span> },
+        new() { Header = "Status", SortColumn = "IsActive", Template = v =>
+            @<span class="badge-custom @(v.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(v.IsActive ? "Active" : "Inactive")</span> }
+    };
+
+    protected override Task OnInitializedAsync() => LoadAsync(_query);
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await VendorApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading vendors.";
+    }
+
+    private void OpenCreate() { _editId = null; _formOpen = true; }
+    private void OpenEdit(VendorItem item) { _editId = item.Id; _formOpen = true; }
+
+    private async Task OnSaved()
+    {
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "Vendor saved successfully.");
+        await LoadAsync(_query);
+    }
+
+    private void AskDelete(VendorItem item) => _deleteTarget = item;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteTarget is null) return;
+        var target = _deleteTarget;
+        _deleteTarget = null;
+        _busy = true;
+        var result = await VendorApiClient.DeleteAsync(target.Id);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Deleted", $"Vendor \"{target.Name}\" was deleted.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Delete failed", result.Error?.Message ?? "Could not delete this vendor.");
+        }
+    }
+}

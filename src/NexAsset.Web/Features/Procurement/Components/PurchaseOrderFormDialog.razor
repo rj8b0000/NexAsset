@@ -1,0 +1,141 @@
+@using System.Globalization
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.Procurement
+@using NexAsset.Web.Models.Procurement
+@using NexAsset.Web.Shared.Models
+@inject IPurchaseOrderApiClient PurchaseOrderApiClient
+@inject IPurchaseRequestApiClient PurchaseRequestApiClient
+@inject IVendorApiClient VendorApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+
+<Dialog IsOpen="IsOpen" Title="New Purchase Order" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
+                         Value="@(_model.OrganizationId == Guid.Empty ? "" : _model.OrganizationId.ToString())"
+                         ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         Error='@Err("OrganizationId")' />
+            <TextField Label="PO Number" Required="true" Value="@_model.OrderNumber" ValueChanged="@(v => _model.OrderNumber = v)" Error='@Err("OrderNumber")' />
+            <SelectField Label="Vendor" Required="true" Options="_vendorOptions" Placeholder="Select a vendor"
+                         Value="@(_model.VendorId == Guid.Empty ? "" : _model.VendorId.ToString())"
+                         ValueChanged="@(v => _model.VendorId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         Error='@Err("VendorId")' />
+            <SelectField Label="Purchase Request" Options="_prOptions" Placeholder="(None)"
+                         Value="@(_model.PurchaseRequestId?.ToString() ?? "")"
+                         ValueChanged="@(v => _model.PurchaseRequestId = Guid.TryParse(v, out var g) ? g : null)"
+                         Error='@Err("PurchaseRequestId")' />
+            <TextField Label="Order Date" Required="true" Type="date" Value="@_model.OrderDate" ValueChanged="@(v => _model.OrderDate = v)" Error='@Err("OrderDate")' />
+            <TextField Label="Expected Delivery" Type="date" Value="@_model.ExpectedDeliveryDate" ValueChanged="@(v => _model.ExpectedDeliveryDate = v)" Error='@Err("ExpectedDeliveryDate")' />
+            <TextField Label="Total Amount" Required="true" Type="number" Value="@_amountStr" ValueChanged="@(v => _amountStr = v)" Error='@Err("TotalAmount")' />
+            <TextField Label="Remarks" ColumnClass="col-12" Multiline="true" Value="@_model.Remarks" ValueChanged="@(v => _model.Remarks = v)" Error='@Err("Remarks")' />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private PurchaseOrderFormModel _model = new();
+    private string _amountStr = "";
+    private List<SelectField.Option> _orgOptions = new();
+    private List<SelectField.Option> _vendorOptions = new();
+    private List<SelectField.Option> _prOptions = new();
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _model = new PurchaseOrderFormModel();
+            _amountStr = "";
+            await LoadLookupsAsync();
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        var big = new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" };
+
+        var orgs = await OrganizationApiClient.GetPagedAsync(big);
+        if (orgs.IsSuccess && orgs.Data is not null)
+            _orgOptions = orgs.Data.Items.Select(o => new SelectField.Option(o.Id.ToString(), $"{o.Code} — {o.Name}")).ToList();
+
+        var vendors = await VendorApiClient.GetPagedAsync(big);
+        if (vendors.IsSuccess && vendors.Data is not null)
+            _vendorOptions = vendors.Data.Items.Select(v => new SelectField.Option(v.Id.ToString(), $"{v.Code} — {v.Name}")).ToList();
+
+        var prs = await PurchaseRequestApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200 });
+        if (prs.IsSuccess && prs.Data is not null)
+            _prOptions = prs.Data.Items
+                .Select(r => new SelectField.Option(r.Id.ToString(), $"{r.RequestNumber} — {r.Title} ({ProcurementStatus.Label(r.Status)})"))
+                .ToList();
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (_model.OrganizationId == Guid.Empty) _fieldErrors["OrganizationId"] = "Organization is required.";
+        if (string.IsNullOrWhiteSpace(_model.OrderNumber)) _fieldErrors["OrderNumber"] = "PO number is required.";
+        if (_model.VendorId == Guid.Empty) _fieldErrors["VendorId"] = "Vendor is required.";
+        if (string.IsNullOrWhiteSpace(_model.OrderDate)) _fieldErrors["OrderDate"] = "Order date is required.";
+        if (!decimal.TryParse(_amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var amount) || amount < 0)
+            _fieldErrors["TotalAmount"] = "Enter a valid amount.";
+        else
+            _model.TotalAmount = amount;
+        if (_fieldErrors.Count > 0) return;
+
+        _model.ExpectedDeliveryDate = string.IsNullOrWhiteSpace(_model.ExpectedDeliveryDate) ? null : _model.ExpectedDeliveryDate;
+
+        _saving = true;
+        var result = await PurchaseOrderApiClient.CreateAsync(_model);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Save failed. Please try again.";
+            if (result.Error?.FieldErrors is not null)
+                foreach (var kv in result.Error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnSaved.InvokeAsync();
+    }
+}

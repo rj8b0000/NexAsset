@@ -8,6 +8,7 @@ using NexAsset.Web.Infrastructure.Assets;
 using NexAsset.Web.Infrastructure.Authentication;
 using NexAsset.Web.Infrastructure.Foundation;
 using NexAsset.Web.Infrastructure.HR;
+using NexAsset.Web.Infrastructure.Procurement;
 
 namespace NexAsset.Web.Extensions
 {
@@ -52,6 +53,12 @@ namespace NexAsset.Web.Extensions
             services.AddNexAssetApiClient<IAssetCategoryApiClient, AssetCategoryApiClient>(settings);
             services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Assets.IAssetApiClient, NexAsset.Web.Infrastructure.Assets.AssetApiClient>(settings);
             services.AddNexAssetApiClient<IAssetLifecycleApiClient, AssetLifecycleApiClient>(settings);
+
+            // Procurement module clients (real HTTP, /api/enterprise-operations/*). The legacy mock
+            // IProcurementApiClient stays registered for the out-of-scope ApprovalCenter page.
+            services.AddNexAssetApiClient<IVendorApiClient, VendorApiClient>(settings);
+            services.AddNexAssetApiClient<IPurchaseRequestApiClient, PurchaseRequestApiClient>(settings);
+            services.AddNexAssetApiClient<IPurchaseOrderApiClient, PurchaseOrderApiClient>(settings);
 
             return services;
         }

@@ -1,4 +1,4 @@
-@page "/procurement"
+@page "/purchase-orders"
 @attribute [Authorize]
 @using NexAsset.Web.Infrastructure.API
 @using NexAsset.Web.Infrastructure.Notifications
@@ -6,70 +6,72 @@
 @using NexAsset.Web.Models.Procurement
 @using NexAsset.Web.Shared.Models
 @using NexAsset.Web.Features.Procurement.Components
+@inject IPurchaseOrderApiClient PurchaseOrderApiClient
 @inject IPurchaseRequestApiClient PurchaseRequestApiClient
+@inject IVendorApiClient VendorApiClient
 @inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
 @inject INotificationService Notifications
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h1-title">Purchase Requests</h1>
-            <span class="text-caption text-secondary">Raise and approve procurement requests before ordering.</span>
+            <h1 class="h1-title">Purchase Orders</h1>
+            <span class="text-caption text-secondary">Order approved purchases from vendors and track delivery.</span>
         </div>
         <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
-            <i class="lucide-plus"></i> New Request
+            <i class="lucide-plus"></i> New Order
         </button>
     </div>
 
     @if (_page is null && _loadError is null)
     {
-        <LoadingState Message="Loading purchase requests..." />
+        <LoadingState Message="Loading purchase orders..." />
     }
     else if (_loadError is not null)
     {
-        <EmptyState Title="Couldn't load purchase requests" Description="@_loadError"
+        <EmptyState Title="Couldn't load purchase orders" Description="@_loadError"
                     IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
                     OnActionClick="() => LoadAsync(_query)" />
     }
     else
     {
-        <DataTable TItem="PurchaseRequestItem"
+        <DataTable TItem="PurchaseOrderItem"
                    Items="_page!.Items"
                    Columns="_columns"
-                   Type="Purchase Request"
+                   Type="Purchase Order"
                    ServerMode="true"
                    ServerTotalCount="_page.TotalCount"
                    ServerPageNumber="_page.PageNumber"
                    ServerPageSize="_page.PageSize"
                    IsLoading="_busy"
                    OnQueryChanged="LoadAsync"
-                   IdSelector="r => r.Id.ToString()"
+                   IdSelector="o => o.Id.ToString()"
                    OnViewDetails="OpenDetails"
                    CustomRowActions="StatusAction" />
     }
 </div>
 
-<PurchaseRequestFormDialog IsOpen="_formOpen" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+<PurchaseOrderFormDialog IsOpen="_formOpen" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
 
 <ProcurementStatusDialog IsOpen="_statusOpen" EntityLabel="@_statusLabel" CurrentStatus="_statusCurrent"
                          ApproverOptions="_employeeOptions"
                          OnSave="SaveStatusAsync"
                          OnClose="() => _statusOpen = false" OnCompleted="OnStatusCompleted" />
 
-<Dialog IsOpen="_detailsTarget is not null" Title="Purchase Request Details" Size="md" OnClose="() => _detailsTarget = null">
+<Dialog IsOpen="_detailsTarget is not null" Title="Purchase Order Details" Size="md" OnClose="() => _detailsTarget = null">
     <ChildContent>
         @if (_detailsTarget is not null)
         {
             <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="h2-title mb-0">@_detailsTarget.RequestNumber</span>
+                <span class="h2-title mb-0">@_detailsTarget.OrderNumber</span>
                 <span class="badge-custom @(ProcurementStatus.BadgeClass(_detailsTarget.Status))">@ProcurementStatus.Label(_detailsTarget.Status)</span>
             </div>
-            @Row("Title", _detailsTarget.Title)
-            @Row("Requested By", Lookup(_empNames, _detailsTarget.RequestedByEmployeeId))
-            @Row("Request Date", _detailsTarget.RequestDate.ToString("yyyy-MM-dd"))
-            @Row("Estimated Amount", _detailsTarget.EstimatedAmount.ToString("C"))
-            @Row("Description", string.IsNullOrWhiteSpace(_detailsTarget.Description) ? "—" : _detailsTarget.Description!)
-            @Row("Approval Remarks", string.IsNullOrWhiteSpace(_detailsTarget.ApprovalRemarks) ? "—" : _detailsTarget.ApprovalRemarks!)
+            @Row("Vendor", Lookup(_vendorNames, _detailsTarget.VendorId))
+            @Row("Purchase Request", _detailsTarget.PurchaseRequestId is { } pr ? Lookup(_prNumbers, pr) : "—")
+            @Row("Order Date", _detailsTarget.OrderDate.ToString("yyyy-MM-dd"))
+            @Row("Expected Delivery", _detailsTarget.ExpectedDeliveryDate?.ToString("yyyy-MM-dd") ?? "—")
+            @Row("Total Amount", _detailsTarget.TotalAmount.ToString("C"))
+            @Row("Remarks", string.IsNullOrWhiteSpace(_detailsTarget.Remarks) ? "—" : _detailsTarget.Remarks!)
         }
     </ChildContent>
     <FooterContent>
@@ -78,24 +80,25 @@
 </Dialog>
 
 @code {
-    private PagedResult<PurchaseRequestItem>? _page;
+    private PagedResult<PurchaseOrderItem>? _page;
     private PagedQuery _query = new();
     private string? _loadError;
     private bool _busy;
 
     private bool _formOpen;
-    private PurchaseRequestItem? _detailsTarget;
+    private PurchaseOrderItem? _detailsTarget;
 
     private bool _statusOpen;
     private Guid? _statusId;
     private string _statusLabel = "";
     private int _statusCurrent;
 
-    private Dictionary<Guid, string> _empNames = new();
+    private Dictionary<Guid, string> _vendorNames = new();
+    private Dictionary<Guid, string> _prNumbers = new();
     private List<SelectField.Option> _employeeOptions = new();
-    private List<ColumnDefinition<PurchaseRequestItem>> _columns = new();
+    private List<ColumnDefinition<PurchaseOrderItem>> _columns = new();
 
-    private RenderFragment<PurchaseRequestItem> StatusAction => item =>
+    private RenderFragment<PurchaseOrderItem> StatusAction => item =>
         @<button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => OpenStatus(item)">
             <i class="lucide-git-branch me-2"></i> Update Status
         </button>;
@@ -104,31 +107,37 @@
     {
         _columns = new()
         {
-            new() { Header = "PR Number", PropertySelector = r => r.RequestNumber, SortColumn = "RequestNumber" },
-            new() { Header = "Title", Sortable = true, SortColumn = "Title", Template = r =>
-                @<span class="fw-semibold" style="color: var(--text-primary);">@r.Title</span> },
-            new() { Header = "Requester", Sortable = false, Template = r => @<span>@Lookup(_empNames, r.RequestedByEmployeeId)</span> },
-            new() { Header = "Request Date", Sortable = true, SortColumn = "RequestDate", Template = r => @<span>@r.RequestDate.ToString("yyyy-MM-dd")</span> },
-            new() { Header = "Amount", Sortable = true, SortColumn = "EstimatedAmount", Template = r => @<span>@r.EstimatedAmount.ToString("C")</span> },
-            new() { Header = "Status", Sortable = false, Template = r =>
-                @<span class="badge-custom @(ProcurementStatus.BadgeClass(r.Status))">@ProcurementStatus.Label(r.Status)</span> }
+            new() { Header = "PO Number", PropertySelector = o => o.OrderNumber, SortColumn = "OrderNumber" },
+            new() { Header = "Vendor", Sortable = false, Template = o =>
+                @<span class="fw-semibold" style="color: var(--text-primary);">@Lookup(_vendorNames, o.VendorId)</span> },
+            new() { Header = "PR", Sortable = false, Template = o =>
+                @<span>@(o.PurchaseRequestId is { } pr ? Lookup(_prNumbers, pr) : "—")</span> },
+            new() { Header = "Order Date", Sortable = true, SortColumn = "OrderDate", Template = o => @<span>@o.OrderDate.ToString("yyyy-MM-dd")</span> },
+            new() { Header = "Amount", Sortable = true, SortColumn = "TotalAmount", Template = o => @<span>@o.TotalAmount.ToString("C")</span> },
+            new() { Header = "Status", Sortable = false, Template = o =>
+                @<span class="badge-custom @(ProcurementStatus.BadgeClass(o.Status))">@ProcurementStatus.Label(o.Status)</span> }
         };
 
-        await LoadEmployeesAsync();
+        await LoadLookupsAsync();
         await LoadAsync(_query);
     }
 
     private static string Lookup(Dictionary<Guid, string> map, Guid id) =>
         map.TryGetValue(id, out var n) ? n : "—";
 
-    private async Task LoadEmployeesAsync()
+    private async Task LoadLookupsAsync()
     {
+        var vendors = await VendorApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" });
+        if (vendors.IsSuccess && vendors.Data is not null)
+            _vendorNames = vendors.Data.Items.ToDictionary(v => v.Id, v => v.Name);
+
+        var prs = await PurchaseRequestApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500 });
+        if (prs.IsSuccess && prs.Data is not null)
+            _prNumbers = prs.Data.Items.ToDictionary(r => r.Id, r => r.RequestNumber);
+
         var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
         if (emps.IsSuccess && emps.Data is not null)
-        {
-            _empNames = emps.Data.Items.ToDictionary(e => e.Id, e => $"{e.FirstName} {e.LastName}");
             _employeeOptions = emps.Data.Items.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
-        }
     }
 
     private async Task LoadAsync(PagedQuery query)
@@ -136,37 +145,38 @@
         _query = query;
         _loadError = null;
         _busy = true;
-        var result = await PurchaseRequestApiClient.GetPagedAsync(query);
+        var result = await PurchaseOrderApiClient.GetPagedAsync(query);
         _busy = false;
         if (result.IsSuccess && result.Data is not null) _page = result.Data;
-        else _loadError = result.Error?.Message ?? "Something went wrong while loading purchase requests.";
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading purchase orders.";
     }
 
-    private void OpenDetails(PurchaseRequestItem item) => _detailsTarget = item;
+    private void OpenDetails(PurchaseOrderItem item) => _detailsTarget = item;
 
-    private void OpenStatus(PurchaseRequestItem item)
+    private void OpenStatus(PurchaseOrderItem item)
     {
         _statusId = item.Id;
-        _statusLabel = item.RequestNumber;
+        _statusLabel = item.OrderNumber;
         _statusCurrent = item.Status;
         _statusOpen = true;
     }
 
     private Task<ApiResult> SaveStatusAsync(SetProcurementStatusRequest request) =>
-        _statusId is { } id ? PurchaseRequestApiClient.SetStatusAsync(id, request) : Task.FromResult(ApiResult.Failure(new ApiError()));
+        _statusId is { } id ? PurchaseOrderApiClient.SetStatusAsync(id, request) : Task.FromResult(ApiResult.Failure(new ApiError()));
 
     private async Task OnStatusCompleted()
     {
         _statusOpen = false;
-        Notifications.ShowSuccess("Updated", "Purchase request status updated.");
+        Notifications.ShowSuccess("Updated", "Purchase order status updated.");
         await LoadAsync(_query);
     }
 
     private async Task OnSaved()
     {
         _formOpen = false;
-        Notifications.ShowSuccess("Saved", "Purchase request created.");
+        Notifications.ShowSuccess("Saved", "Purchase order created.");
         await LoadAsync(_query);
+        await LoadLookupsAsync();
     }
 
     private RenderFragment Row(string label, string value) => @<div class="d-flex justify-content-between py-1 border-bottom" style="border-color: var(--border-color) !important;">

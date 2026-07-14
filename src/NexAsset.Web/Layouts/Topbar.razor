@@ -65,13 +65,13 @@
             <div class="dropdown-menu dropdown-menu-end p-2 @(QuickActionsOpen ? "show" : "")" 
                  style="display: @(QuickActionsOpen ? "block" : "none"); position: absolute; right: 0; z-index: 1030; min-width: 180px; margin-top: 4px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-8); box-shadow: var(--shadow-md);">
                 <div class="text-label p-2" style="font-size: 10px;">Common tasks</div>
-                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-primary-hover" style="color: var(--text-primary);" @onclick='() => QuickNavigate("/assets/create")'>
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-primary-hover" style="color: var(--text-primary);" @onclick='() => QuickNavigate("/assets")'>
                     <i class="lucide-box me-2 text-primary"></i> Create Asset
                 </button>
                 <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-primary-hover" style="color: var(--text-primary);" @onclick='() => QuickNavigate("/assets")'>
                     <i class="lucide-user-plus me-2 text-success"></i> Assign Asset
                 </button>
-                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-primary-hover" style="color: var(--text-primary);" @onclick='() => QuickNavigate("/procurement/create")'>
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-primary-hover" style="color: var(--text-primary);" @onclick='() => QuickNavigate("/procurement")'>
                     <i class="lucide-shopping-cart me-2 text-info"></i> Purchase Request
                 </button>
                 <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent text-primary-hover" style="color: var(--text-primary);" @onclick='() => QuickNavigate("/maintenance/create")'>
