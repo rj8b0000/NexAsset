@@ -49,9 +49,9 @@
     }
 </div>
 
-<RoleFormDialog IsOpen="_formOpen" EditId="_editId" EditName="_editName" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+<RoleFormDialog IsOpen="_formOpen" EditId="_editId" EditName="@_editName" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
 
-<RolePermissionsDialog IsOpen="_permsOpen" RoleId="_permsRoleId" RoleName="_permsRoleName" OnClose="() => _permsOpen = false" />
+<RolePermissionsDialog IsOpen="_permsOpen" RoleId="_permsRoleId" RoleName="@_permsRoleName" OnClose="() => _permsOpen = false" />
 
 <ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="role"
                      OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />
