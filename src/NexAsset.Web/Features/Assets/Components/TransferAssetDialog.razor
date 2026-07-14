@@ -1,54 +1,137 @@
-@*
-    Extracted from the identical "Transfer Branch Dialog" markup previously duplicated in
-    AssetList.razor and AssetDetails.razor. Owns its own selection state internally and
-    resets it whenever it closes, so callers don't need to manage a two-way-bound field.
-*@
-<Dialog IsOpen="IsOpen" Title="Transfer Operations Branch" Size="md" OnClose="OnClose">
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Assets
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Models.Assets
+@using NexAsset.Web.Shared.Models
+@inject IAssetLifecycleApiClient LifecycleApiClient
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+@inject IBranchApiClient BranchApiClient
+@inject IDepartmentApiClient DepartmentApiClient
+
+<Dialog IsOpen="IsOpen" Title="@($"Transfer Asset — {AssetName}")" Size="md" OnClose="OnClose">
     <ChildContent>
-        <div class="form-group-custom mb-3">
-            <label class="form-label-custom">Target Branch Destination</label>
-            <select class="form-control-custom" @bind="_selectedBranch">
-                <option value="">-- Select Branch --</option>
-                @if (Branches != null)
-                {
-                    @foreach (var br in Branches)
-                    {
-                        <option value="@br">@br</option>
-                    }
-                }
-            </select>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <p class="text-caption text-secondary mb-3">Select at least one destination — a new holder, branch, or department.</p>
+        <div class="row g-3">
+            <SelectField Label="To Employee" ColumnClass="col-12" Options="_employeeOptions" Placeholder="(No change)"
+                         Value="@(_request.ToEmployeeId?.ToString() ?? "")"
+                         ValueChanged="@(v => _request.ToEmployeeId = Guid.TryParse(v, out var g) ? g : null)"
+                         Error='@Err("ToEmployeeId")' />
+            <SelectField Label="To Branch" Options="_branchOptions" Placeholder="(No change)"
+                         Value="@(_request.ToBranchId?.ToString() ?? "")"
+                         ValueChanged="@(v => _request.ToBranchId = Guid.TryParse(v, out var g) ? g : null)"
+                         Error='@Err("ToBranchId")' />
+            <SelectField Label="To Department" Options="_deptOptions" Placeholder="(No change)"
+                         Value="@(_request.ToDepartmentId?.ToString() ?? "")"
+                         ValueChanged="@(v => _request.ToDepartmentId = Guid.TryParse(v, out var g) ? g : null)"
+                         Error='@Err("ToDepartmentId")' />
+            <TextField Label="Transfer Date" Required="true" Type="date" Value="@_request.TransferDate"
+                       ValueChanged="@(v => _request.TransferDate = v)" Error='@Err("TransferDate")' />
+            <TextField Label="Remarks" ColumnClass="col-12" Multiline="true" Value="@_request.Remarks"
+                       ValueChanged="@(v => _request.Remarks = v)" Error='@Err("Remarks")' />
         </div>
-        <p class="text-caption text-secondary">A logistics transit request will be flagged. Estimated branch asset migration time: 24 hours.</p>
     </ChildContent>
     <FooterContent>
-        <button class="btn-custom btn-custom-secondary" @onclick="OnClose">Cancel</button>
-        <button class="btn-custom btn-custom-primary" @onclick="HandleConfirm">Transfer</button>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Transferring...</span>
+            }
+            else
+            {
+                <i class="lucide-arrow-right-left"></i>
+                <span>Transfer</span>
+            }
+        </button>
     </FooterContent>
 </Dialog>
 
 @code {
     [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public List<string>? Branches { get; set; }
+    [Parameter] public Guid? AssetId { get; set; }
+    [Parameter] public string AssetName { get; set; } = "";
     [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCompleted { get; set; }
 
-    /// <summary>Raised with the selected branch name when the user confirms.</summary>
-    [Parameter] public EventCallback<string> OnConfirm { get; set; }
+    private TransferAssetRequest _request = new();
+    private List<SelectField.Option> _employeeOptions = new();
+    private List<SelectField.Option> _branchOptions = new();
+    private List<SelectField.Option> _deptOptions = new();
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
 
-    private string _selectedBranch = "";
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        if (!IsOpen)
+        if (IsOpen && !_open)
         {
-            _selectedBranch = "";
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _request = new TransferAssetRequest { AssetId = AssetId ?? Guid.Empty };
+            await LoadLookupsAsync();
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
         }
     }
 
-    private async Task HandleConfirm()
+    private async Task LoadLookupsAsync()
     {
-        if (!string.IsNullOrEmpty(_selectedBranch))
+        var big = new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" };
+
+        var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
+        if (emps.IsSuccess && emps.Data is not null)
+            _employeeOptions = emps.Data.Items.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
+
+        var branches = await BranchApiClient.GetPagedAsync(big);
+        if (branches.IsSuccess && branches.Data is not null)
+            _branchOptions = branches.Data.Items.Select(b => new SelectField.Option(b.Id.ToString(), $"{b.Code} — {b.Name}")).ToList();
+
+        var depts = await DepartmentApiClient.GetPagedAsync(big);
+        if (depts.IsSuccess && depts.Data is not null)
+            _deptOptions = depts.Data.Items.Select(d => new SelectField.Option(d.Id.ToString(), $"{d.Code} — {d.Name}")).ToList();
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        if (_request.ToEmployeeId is null && _request.ToBranchId is null && _request.ToDepartmentId is null)
         {
-            await OnConfirm.InvokeAsync(_selectedBranch);
+            _generalError = "Select at least one destination (employee, branch, or department).";
+            return;
         }
+        if (string.IsNullOrWhiteSpace(_request.TransferDate)) { _fieldErrors["TransferDate"] = "Transfer date is required."; return; }
+
+        _saving = true;
+        var result = await LifecycleApiClient.TransferAsync(_request);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            ApplyError(result.Error);
+            return;
+        }
+        await OnCompleted.InvokeAsync();
+    }
+
+    private void ApplyError(ApiError? error)
+    {
+        _generalError = error?.Message ?? "Transfer failed. Please try again.";
+        if (error?.FieldErrors is not null)
+            foreach (var kv in error.FieldErrors)
+                _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
     }
 }

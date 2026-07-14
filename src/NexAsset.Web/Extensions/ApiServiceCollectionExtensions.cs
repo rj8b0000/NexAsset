@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexAsset.Web.Infrastructure.API;
+using NexAsset.Web.Infrastructure.Assets;
 using NexAsset.Web.Infrastructure.Authentication;
 using NexAsset.Web.Infrastructure.Foundation;
 using NexAsset.Web.Infrastructure.HR;
@@ -45,6 +46,12 @@ namespace NexAsset.Web.Extensions
             services.AddNexAssetApiClient<IEmployeeApiClient, EmployeeApiClient>(settings);
             services.AddNexAssetApiClient<IRoleApiClient, RoleApiClient>(settings);
             services.AddNexAssetApiClient<IPermissionApiClient, PermissionApiClient>(settings);
+
+            // Asset module clients (real HTTP). The Asset interface lives in Infrastructure.Assets
+            // to coexist with the legacy mock IAssetApiClient the Dashboard/Procurement mocks use.
+            services.AddNexAssetApiClient<IAssetCategoryApiClient, AssetCategoryApiClient>(settings);
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Assets.IAssetApiClient, NexAsset.Web.Infrastructure.Assets.AssetApiClient>(settings);
+            services.AddNexAssetApiClient<IAssetLifecycleApiClient, AssetLifecycleApiClient>(settings);
 
             return services;
         }

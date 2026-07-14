@@ -1,0 +1,207 @@
+@using NexAsset.Web.Infrastructure.Assets
+@using NexAsset.Web.Models.Assets
+@inject IAssetApiClient AssetApiClient
+@inject IAssetLifecycleApiClient LifecycleApiClient
+
+<Dialog IsOpen="IsOpen" Title="Asset Details" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading asset..." />
+        }
+        else if (_error is not null)
+        {
+            <div class="alert alert-danger py-2 px-3 border-0 text-caption rounded-3" style="background-color: var(--danger-light); color: var(--danger);">@_error</div>
+        }
+        else if (_detail is not null)
+        {
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: var(--primary-light); color: var(--primary);">
+                    <i class="lucide-box fs-4"></i>
+                </div>
+                <div>
+                    <div class="h2-title mb-0">@_detail.AssetName</div>
+                    <span class="text-caption text-secondary">@_detail.AssetCode</span>
+                    <span class="badge-custom @(AssetStatus.BadgeClass(_detail.AssetStatus)) ms-2">@AssetStatus.Label(_detail.AssetStatus)</span>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="text-label mb-2">General</div>
+                    @Row("Category", Name(Categories, _detail.CategoryId))
+                    @Row("Brand", Or(_detail.Brand))
+                    @Row("Model", Or(_detail.Model))
+                    @Row("Serial Number", Or(_detail.SerialNumber))
+                    @Row("Barcode", Or(_detail.Barcode))
+                    @Row("QR Code", Or(_detail.QrCode))
+                </div>
+                <div class="col-md-6">
+                    <div class="text-label mb-2">Placement</div>
+                    @Row("Organization", Name(Organizations, _detail.OrganizationId))
+                    @Row("Branch", Name(Branches, _detail.BranchId))
+                    @Row("Department", Name(Departments, _detail.DepartmentId))
+                    @Row("Current Holder", Name(Employees, _detail.CurrentEmployeeId))
+                    @Row("Location", Or(_detail.Location))
+                </div>
+                <div class="col-md-6">
+                    <div class="text-label mb-2">Procurement & Value</div>
+                    @Row("Vendor", Or(_detail.Vendor))
+                    @Row("Purchase Date", _detail.PurchaseDate?.ToString("yyyy-MM-dd") ?? "—")
+                    @Row("Warranty Expiry", _detail.WarrantyExpiry?.ToString("yyyy-MM-dd") ?? "—")
+                    @Row("Purchase Cost", Money(_detail.PurchaseCost))
+                    @Row("Current Value", Money(_detail.CurrentValue))
+                </div>
+                <div class="col-md-6">
+                    <div class="text-label mb-2">Remarks</div>
+                    <p class="text-caption text-secondary">@Or(_detail.Remarks)</p>
+                </div>
+
+                <div class="col-12">
+                    <div class="text-label mb-2">History</div>
+                    @if (_historyLoading)
+                    {
+                        <p class="text-caption text-secondary">Loading history...</p>
+                    }
+                    else if (!_history.Assignments.Any() && !_history.Transfers.Any() && !_history.Returns.Any())
+                    {
+                        <p class="text-caption text-secondary">No lifecycle activity recorded for this asset yet.</p>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var entry in HistoryEntries)
+                            {
+                                <div class="d-flex align-items-start gap-3 p-2 rounded" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color);">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 28px; height: 28px; flex-shrink: 0; background-color: var(--primary-light); color: var(--primary);">
+                                        <i class="@entry.Icon" style="font-size: 13px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-semibold text-caption" style="color: var(--text-primary);">@entry.Title</span>
+                                            <span class="text-caption text-muted-custom">@entry.Date.ToString("yyyy-MM-dd")</span>
+                                        </div>
+                                        <span class="text-caption text-secondary">@entry.Description</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose">Close</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? AssetId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Dictionary<Guid, string> Organizations { get; set; } = new();
+    [Parameter] public Dictionary<Guid, string> Categories { get; set; } = new();
+    [Parameter] public Dictionary<Guid, string> Branches { get; set; } = new();
+    [Parameter] public Dictionary<Guid, string> Departments { get; set; } = new();
+    [Parameter] public Dictionary<Guid, string> Employees { get; set; } = new();
+
+    private AssetDetail? _detail;
+    private bool _loading;
+    private string? _error;
+    private bool _open;
+
+    private AssetHistory _history = new();
+    private bool _historyLoading;
+
+    /// <summary>One flattened, newest-first timeline entry per lifecycle event.</summary>
+    private sealed record HistoryEntry(DateOnly Date, string Icon, string Title, string Description);
+
+    private IEnumerable<HistoryEntry> HistoryEntries
+    {
+        get
+        {
+            var entries = new List<HistoryEntry>();
+            foreach (var a in _history.Assignments)
+            {
+                entries.Add(new HistoryEntry(a.AssignedDate, "lucide-user-check", "Assigned",
+                    $"To {Name(Employees, a.EmployeeId)} ({AssetAssignmentStatus.Label(a.Status)}){Suffix(a.Remarks)}"));
+                if (a.UnassignedDate is { } u)
+                    entries.Add(new HistoryEntry(u, "lucide-user-x", "Assignment ended",
+                        $"{Name(Employees, a.EmployeeId)} — {AssetAssignmentStatus.Label(a.Status)}"));
+            }
+            foreach (var t in _history.Transfers)
+            {
+                var to = new[]
+                {
+                    t.ToEmployeeId is { } e ? Name(Employees, e) : null,
+                    t.ToBranchId is { } b ? Name(Branches, b) : null,
+                    t.ToDepartmentId is { } d ? Name(Departments, d) : null
+                }.Where(s => !string.IsNullOrEmpty(s));
+                entries.Add(new HistoryEntry(t.TransferDate, "lucide-arrow-right-left", "Transferred",
+                    $"To {string.Join(", ", to)}{Suffix(t.Remarks)}"));
+            }
+            foreach (var r in _history.Returns)
+            {
+                entries.Add(new HistoryEntry(r.ReturnDate, "lucide-undo-2", "Returned",
+                    $"By {Name(Employees, r.EmployeeId)} — {(r.IsAssetUsable ? "usable" : "not usable")}{Suffix(r.ReturnRemarks)}"));
+            }
+            return entries.OrderByDescending(e => e.Date);
+        }
+    }
+
+    private static string Suffix(string? remarks) => string.IsNullOrWhiteSpace(remarks) ? "" : $" · {remarks}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await LoadAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task LoadAsync()
+    {
+        _detail = null; _error = null;
+        _history = new AssetHistory();
+        if (AssetId is null) return;
+        _loading = true;
+        var result = await AssetApiClient.GetByIdAsync(AssetId.Value);
+        _loading = false;
+        if (result.IsSuccess && result.Data is not null)
+        {
+            _detail = result.Data;
+            await LoadHistoryAsync(AssetId.Value);
+        }
+        else
+        {
+            _error = result.Error?.Message ?? "Could not load this asset.";
+        }
+    }
+
+    private async Task LoadHistoryAsync(Guid assetId)
+    {
+        _historyLoading = true;
+        StateHasChanged();
+
+        var assignments = await LifecycleApiClient.GetAssignmentHistoryAsync(assetId);
+        var transfers = await LifecycleApiClient.GetTransferHistoryAsync(assetId);
+        var returns = await LifecycleApiClient.GetReturnHistoryAsync(assetId);
+
+        _history = new AssetHistory
+        {
+            Assignments = assignments.IsSuccess && assignments.Data is not null ? assignments.Data : new(),
+            Transfers = transfers.IsSuccess && transfers.Data is not null ? transfers.Data : new(),
+            Returns = returns.IsSuccess && returns.Data is not null ? returns.Data : new()
+        };
+        _historyLoading = false;
+    }
+
+    private static string Or(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v!;
+    private static string Money(decimal? v) => v is null ? "—" : v.Value.ToString("C");
+    private static string Name(Dictionary<Guid, string> map, Guid? id) =>
+        id is { } g && map.TryGetValue(g, out var n) ? n : "—";
+
+    private RenderFragment Row(string label, string value) => @<div class="d-flex justify-content-between py-1 border-bottom" style="border-color: var(--border-color) !important;">
+        <span class="text-caption text-secondary">@label</span>
+        <span class="text-caption fw-semibold" style="color: var(--text-primary);">@value</span>
+    </div>;
+}

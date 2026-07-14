@@ -1,11 +1,9 @@
 @using NexAsset.Web.Infrastructure.API
 @using NexAsset.Web.Infrastructure.Assets
 @using NexAsset.Web.Models.Assets
-@using NexAsset.Web.Shared.Models
 @inject IAssetLifecycleApiClient LifecycleApiClient
-@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
 
-<Dialog IsOpen="IsOpen" Title="@($"Assign Asset — {AssetName}")" Size="md" OnClose="OnClose">
+<Dialog IsOpen="IsOpen" Title="@($"Unassign Asset — {AssetName}")" Size="sm" OnClose="OnClose">
     <ChildContent>
         @if (!string.IsNullOrEmpty(_generalError))
         {
@@ -14,13 +12,8 @@
             </div>
         }
         <div class="row g-3">
-            <SelectField Label="Employee" Required="true" ColumnClass="col-12"
-                         Options="_employeeOptions" Placeholder="Select an employee"
-                         Value="@(_request.EmployeeId == Guid.Empty ? "" : _request.EmployeeId.ToString())"
-                         ValueChanged="@(v => _request.EmployeeId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
-                         Error='@Err("EmployeeId")' />
-            <TextField Label="Assigned Date" Required="true" Type="date" Value="@_request.AssignedDate"
-                       ValueChanged="@(v => _request.AssignedDate = v)" Error='@Err("AssignedDate")' />
+            <TextField Label="Unassigned Date" Required="true" Type="date" ColumnClass="col-12" Value="@_request.UnassignedDate"
+                       ValueChanged="@(v => _request.UnassignedDate = v)" Error='@Err("UnassignedDate")' />
             <TextField Label="Remarks" ColumnClass="col-12" Multiline="true" Value="@_request.Remarks"
                        ValueChanged="@(v => _request.Remarks = v)" Error='@Err("Remarks")' />
         </div>
@@ -31,12 +24,12 @@
             @if (_saving)
             {
                 <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                <span>Assigning...</span>
+                <span>Unassigning...</span>
             }
             else
             {
-                <i class="lucide-user-check"></i>
-                <span>Assign</span>
+                <i class="lucide-user-x"></i>
+                <span>Unassign</span>
             }
         </button>
     </FooterContent>
@@ -49,8 +42,7 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnCompleted { get; set; }
 
-    private AssignAssetRequest _request = new();
-    private List<SelectField.Option> _employeeOptions = new();
+    private UnassignAssetRequest _request = new();
     private bool _saving;
     private string? _generalError;
     private Dictionary<string, string> _fieldErrors = new();
@@ -58,15 +50,14 @@
 
     private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (IsOpen && !_open)
         {
             _open = true;
             _generalError = null;
             _fieldErrors = new();
-            _request = new AssignAssetRequest { AssetId = AssetId ?? Guid.Empty };
-            await LoadEmployeesAsync();
+            _request = new UnassignAssetRequest { AssetId = AssetId ?? Guid.Empty };
         }
         else if (!IsOpen && _open)
         {
@@ -74,25 +65,14 @@
         }
     }
 
-    private async Task LoadEmployeesAsync()
-    {
-        var result = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
-        if (result.IsSuccess && result.Data is not null)
-            _employeeOptions = result.Data.Items
-                .Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}"))
-                .ToList();
-    }
-
     private async Task SaveAsync()
     {
         _generalError = null;
         _fieldErrors = new();
-        if (_request.EmployeeId == Guid.Empty) _fieldErrors["EmployeeId"] = "Employee is required.";
-        if (string.IsNullOrWhiteSpace(_request.AssignedDate)) _fieldErrors["AssignedDate"] = "Assigned date is required.";
-        if (_fieldErrors.Count > 0) return;
+        if (string.IsNullOrWhiteSpace(_request.UnassignedDate)) { _fieldErrors["UnassignedDate"] = "Unassigned date is required."; return; }
 
         _saving = true;
-        var result = await LifecycleApiClient.AssignAsync(_request);
+        var result = await LifecycleApiClient.UnassignAsync(_request);
         _saving = false;
 
         if (!result.IsSuccess)
@@ -105,7 +85,7 @@
 
     private void ApplyError(ApiError? error)
     {
-        _generalError = error?.Message ?? "Assignment failed. Please try again.";
+        _generalError = error?.Message ?? "Unassign failed. Please try again.";
         if (error?.FieldErrors is not null)
             foreach (var kv in error.FieldErrors)
                 _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
