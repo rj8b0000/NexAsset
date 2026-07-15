@@ -1,0 +1,101 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Inventory
+@using NexAsset.Web.Models.Inventory
+@using NexAsset.Web.Shared.Models
+@inject IInventoryApiClient InventoryApiClient
+
+<Dialog IsOpen="IsOpen" Title="@($"Record Movement — {ItemName}")" Size="md" OnClose="OnClose">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="Movement Type" Required="true" Options="_typeOptions" Placeholder="Select type"
+                         Value="@_model.MovementType.ToString()"
+                         ValueChanged="@(v => _model.MovementType = int.TryParse(v, out var t) ? t : StockMovementType.StockIn)"
+                         Error='@Err("MovementType")' />
+            <TextField Label="Quantity" Required="true" Type="number" Value="@_quantityStr"
+                       ValueChanged="@(v => _quantityStr = v)" Error='@Err("Quantity")' />
+            <TextField Label="Reference Number" Value="@_model.ReferenceNumber"
+                       ValueChanged="@(v => _model.ReferenceNumber = v)" Error='@Err("ReferenceNumber")' />
+            <TextField Label="Remarks" ColumnClass="col-12" Multiline="true" Value="@_model.Remarks"
+                       ValueChanged="@(v => _model.Remarks = v)" Error='@Err("Remarks")' />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Recording...</span>
+            }
+            else
+            {
+                <i class="lucide-package"></i>
+                <span>Record</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? InventoryItemId { get; set; }
+    [Parameter] public string ItemName { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCompleted { get; set; }
+
+    private StockMovementFormModel _model = new();
+    private string _quantityStr = "";
+    private readonly List<SelectField.Option> _typeOptions =
+        StockMovementType.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
+
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _quantityStr = "";
+            _model = new StockMovementFormModel { InventoryItemId = InventoryItemId ?? Guid.Empty };
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        if (!int.TryParse(_quantityStr, out var qty) || qty <= 0) { _fieldErrors["Quantity"] = "Enter a quantity greater than zero."; return; }
+        _model.Quantity = qty;
+
+        _saving = true;
+        var result = await InventoryApiClient.RecordMovementAsync(_model);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Movement failed. Please try again.";
+            if (result.Error?.FieldErrors is not null)
+                foreach (var kv in result.Error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnCompleted.InvokeAsync();
+    }
+}

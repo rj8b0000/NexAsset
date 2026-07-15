@@ -1,0 +1,111 @@
+@page "/consumables"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Inventory
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Inventory
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Inventory.Components
+@inject IConsumableApiClient ConsumableApiClient
+@inject IInventoryApiClient InventoryApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Consumables</h1>
+            <span class="text-caption text-secondary">Track consumable items backed by inventory stock.</span>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+            <i class="lucide-plus"></i> New Consumable
+        </button>
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading consumables..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load consumables" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="ConsumableItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Consumable"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="c => c.Id.ToString()"
+                   OnEdit="OpenEdit" />
+    }
+</div>
+
+<ConsumableFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+@code {
+    private PagedResult<ConsumableItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private Guid? _editId;
+
+    private Dictionary<Guid, string> _itemNames = new();
+    private List<ColumnDefinition<ConsumableItem>> _columns = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _columns = new()
+        {
+            new() { Header = "Code", PropertySelector = c => c.ConsumableCode, SortColumn = "ConsumableCode" },
+            new() { Header = "Name", Sortable = true, SortColumn = "Name", Template = c =>
+                @<span class="fw-semibold" style="color: var(--text-primary);">@c.Name</span> },
+            new() { Header = "Inventory Item", Sortable = false, Template = c =>
+                @<span>@(_itemNames.TryGetValue(c.InventoryItemId, out var n) ? n : "—")</span> },
+            new() { Header = "Description", Sortable = false, Template = c =>
+                @<span>@(string.IsNullOrWhiteSpace(c.Description) ? "—" : c.Description)</span> },
+            new() { Header = "Status", Sortable = false, Template = c =>
+                @<span class="badge-custom @(c.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(c.IsActive ? "Active" : "Inactive")</span> }
+        };
+
+        await LoadItemNamesAsync();
+        await LoadAsync(_query);
+    }
+
+    private async Task LoadItemNamesAsync()
+    {
+        var items = await InventoryApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "ItemName" });
+        if (items.IsSuccess && items.Data is not null)
+            _itemNames = items.Data.Items.ToDictionary(i => i.Id, i => i.ItemName);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await ConsumableApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading consumables.";
+    }
+
+    private void OpenCreate() { _editId = null; _formOpen = true; }
+    private void OpenEdit(ConsumableItem item) { _editId = item.Id; _formOpen = true; }
+
+    private async Task OnSaved()
+    {
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "Consumable saved successfully.");
+        await LoadAsync(_query);
+    }
+}

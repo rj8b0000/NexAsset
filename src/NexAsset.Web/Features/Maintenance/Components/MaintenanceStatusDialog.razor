@@ -1,0 +1,101 @@
+@using NexAsset.Web.Models.Maintenance
+@using NexAsset.Web.Shared.Models
+@inject NexAsset.Web.Infrastructure.Maintenance.IMaintenanceRecordApiClient MaintenanceApiClient
+
+<Dialog IsOpen="IsOpen" Title="@($"Update Status — {EntityLabel}")" Size="md" OnClose="OnClose">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="New Status" Required="true" ColumnClass="col-12" Options="_statusOptions" Placeholder="Select status"
+                         Value="@(_request.Status == 0 ? "" : _request.Status.ToString())"
+                         ValueChanged="@(v => _request.Status = int.TryParse(v, out var s) ? s : 0)"
+                         Error='@Err("Status")' />
+            <TextField Label="Scheduled Date" Type="date" Value="@_request.ScheduledDate"
+                       ValueChanged="@(v => _request.ScheduledDate = v)" Error='@Err("ScheduledDate")' />
+            <TextField Label="Completed Date" Type="date" Value="@_request.CompletedDate"
+                       ValueChanged="@(v => _request.CompletedDate = v)" Error='@Err("CompletedDate")' />
+            <TextField Label="Remarks" ColumnClass="col-12" Multiline="true" Value="@_request.Remarks"
+                       ValueChanged="@(v => _request.Remarks = v)" Error='@Err("Remarks")' />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Updating...</span>
+            }
+            else
+            {
+                <i class="lucide-check"></i>
+                <span>Update Status</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? RecordId { get; set; }
+    [Parameter] public string EntityLabel { get; set; } = "";
+    [Parameter] public int CurrentStatus { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCompleted { get; set; }
+
+    private MaintenanceStatusRequest _request = new();
+    private readonly List<SelectField.Option> _statusOptions =
+        MaintenanceStatus.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
+
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _request = new MaintenanceStatusRequest { Status = CurrentStatus };
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        if (_request.Status == 0) { _fieldErrors["Status"] = "Status is required."; return; }
+        if (RecordId is null) return;
+
+        _request.ScheduledDate = string.IsNullOrWhiteSpace(_request.ScheduledDate) ? null : _request.ScheduledDate;
+        _request.CompletedDate = string.IsNullOrWhiteSpace(_request.CompletedDate) ? null : _request.CompletedDate;
+
+        _saving = true;
+        var result = await MaintenanceApiClient.SetStatusAsync(RecordId.Value, _request);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Status update failed. Please try again.";
+            if (result.Error?.FieldErrors is not null)
+                foreach (var kv in result.Error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnCompleted.InvokeAsync();
+    }
+}

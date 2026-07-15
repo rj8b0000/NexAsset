@@ -1,0 +1,140 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Inventory
+@using NexAsset.Web.Models.Inventory
+@using NexAsset.Web.Shared.Models
+@inject IConsumableApiClient ConsumableApiClient
+@inject IInventoryApiClient InventoryApiClient
+
+<Dialog IsOpen="IsOpen" Title="@(IsEdit ? "Edit Consumable" : "New Consumable")" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading consumable..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_generalError))
+            {
+                <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                    <i class="lucide-alert-circle"></i> @_generalError
+                </div>
+            }
+            <div class="row g-3">
+                <SelectField Label="Inventory Item" Required="true" ColumnClass="col-12"
+                             Options="_itemOptions" Placeholder="Select an inventory item"
+                             Value="@(_model.InventoryItemId == Guid.Empty ? "" : _model.InventoryItemId.ToString())"
+                             ValueChanged="@(v => _model.InventoryItemId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                             Error='@Err("InventoryItemId")' />
+                <TextField Label="Consumable Code" Required="true" Value="@_model.ConsumableCode" ValueChanged="@(v => _model.ConsumableCode = v)" Error='@Err("ConsumableCode")' />
+                <TextField Label="Name" Required="true" Value="@_model.Name" ValueChanged="@(v => _model.Name = v)" Error='@Err("Name")' />
+                <TextField Label="Description" ColumnClass="col-12" Multiline="true" Value="@_model.Description" ValueChanged="@(v => _model.Description = v)" Error='@Err("Description")' />
+                @if (IsEdit)
+                {
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cons-active" checked="@_model.IsActive" @onchange="e => _model.IsActive = (bool)e.Value!" />
+                            <label class="form-check-label text-caption" for="cons-active">Active</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? EditId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private ConsumableFormModel _model = new();
+    private List<SelectField.Option> _itemOptions = new();
+    private bool _loading;
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private bool IsEdit => EditId.HasValue;
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await InitializeAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task InitializeAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        _model = new ConsumableFormModel();
+        _loading = true;
+
+        var items = await InventoryApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "ItemName" });
+        if (items.IsSuccess && items.Data is not null)
+            _itemOptions = items.Data.Items.Select(i => new SelectField.Option(i.Id.ToString(), $"{i.ItemCode} — {i.ItemName}")).ToList();
+
+        if (EditId.HasValue)
+        {
+            var result = await ConsumableApiClient.GetByIdAsync(EditId.Value);
+            if (result.IsSuccess && result.Data is not null)
+                _model = ConsumableFormModel.FromItem(result.Data);
+            else
+                _generalError = result.Error?.Message ?? "Could not load this consumable.";
+        }
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (_model.InventoryItemId == Guid.Empty) _fieldErrors["InventoryItemId"] = "Inventory item is required.";
+        if (string.IsNullOrWhiteSpace(_model.ConsumableCode)) _fieldErrors["ConsumableCode"] = "Code is required.";
+        if (string.IsNullOrWhiteSpace(_model.Name)) _fieldErrors["Name"] = "Name is required.";
+        if (_fieldErrors.Count > 0) return;
+
+        _saving = true;
+        bool success;
+        ApiError? error;
+        if (IsEdit)
+        {
+            var res = await ConsumableApiClient.UpdateAsync(EditId!.Value, _model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        else
+        {
+            var res = await ConsumableApiClient.CreateAsync(_model);
+            success = res.IsSuccess; error = res.Error;
+        }
+        _saving = false;
+
+        if (!success)
+        {
+            _generalError = error?.Message ?? "Save failed. Please try again.";
+            if (error?.FieldErrors is not null)
+                foreach (var kv in error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnSaved.InvokeAsync();
+    }
+}

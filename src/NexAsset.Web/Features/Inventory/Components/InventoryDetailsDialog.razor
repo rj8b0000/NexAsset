@@ -1,0 +1,138 @@
+@using NexAsset.Web.Infrastructure.Inventory
+@using NexAsset.Web.Models.Inventory
+@inject IInventoryApiClient InventoryApiClient
+
+<Dialog IsOpen="IsOpen" Title="Inventory Item Details" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading item..." />
+        }
+        else if (_error is not null)
+        {
+            <div class="alert alert-danger py-2 px-3 border-0 text-caption rounded-3" style="background-color: var(--danger-light); color: var(--danger);">@_error</div>
+        }
+        else if (_item is not null)
+        {
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: var(--primary-light); color: var(--primary);">
+                    <i class="lucide-warehouse fs-4"></i>
+                </div>
+                <div>
+                    <div class="h2-title mb-0">@_item.ItemName</div>
+                    <span class="text-caption text-secondary">@_item.ItemCode</span>
+                    @if (_item.IsLowStock)
+                    {
+                        <span class="badge-custom badge-custom-danger ms-2">Low Stock</span>
+                    }
+                    <span class="badge-custom @(_item.IsActive ? "badge-custom-success" : "badge-custom-secondary") ms-2">@(_item.IsActive ? "Active" : "Inactive")</span>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="text-label mb-2">Stock</div>
+                    @Row("Current Stock", $"{_item.CurrentStock} {_item.UnitOfMeasure}")
+                    @Row("Reserved", $"{_item.ReservedStock} {_item.UnitOfMeasure}")
+                    @Row("Available", $"{_item.AvailableStock} {_item.UnitOfMeasure}")
+                    @Row("Reorder Level", $"{_item.ReorderLevel} {_item.UnitOfMeasure}")
+                </div>
+                <div class="col-md-6">
+                    <div class="text-label mb-2">Placement</div>
+                    @Row("Organization", Name(Organizations, _item.OrganizationId))
+                    @Row("Branch / Warehouse", Name(Branches, _item.BranchId))
+                </div>
+
+                <div class="col-12">
+                    <div class="text-label mb-2">Stock History</div>
+                    @if (_historyLoading)
+                    {
+                        <p class="text-caption text-secondary">Loading history...</p>
+                    }
+                    else if (!_history.Any())
+                    {
+                        <p class="text-caption text-secondary">No stock movements recorded for this item yet.</p>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var m in _history.OrderByDescending(h => h.MovementAtUtc))
+                            {
+                                <div class="d-flex align-items-start gap-3 p-2 rounded" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color);">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mt-1" style="width: 28px; height: 28px; flex-shrink: 0; background-color: var(--primary-light); color: var(--primary);">
+                                        <i class="@StockMovementType.Icon(m.MovementType)" style="font-size: 13px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-semibold text-caption" style="color: var(--text-primary);">@StockMovementType.Label(m.MovementType) · @m.Quantity @_item.UnitOfMeasure</span>
+                                            <span class="text-caption text-muted-custom">@m.MovementAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                        </div>
+                                        <span class="text-caption text-secondary">
+                                            Stock after: @m.StockAfterMovement
+                                            @if (!string.IsNullOrWhiteSpace(m.ReferenceNumber)) { <text> · Ref @m.ReferenceNumber</text> }
+                                            @if (!string.IsNullOrWhiteSpace(m.Remarks)) { <text> · @m.Remarks</text> }
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose">Close</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? ItemId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public Dictionary<Guid, string> Organizations { get; set; } = new();
+    [Parameter] public Dictionary<Guid, string> Branches { get; set; } = new();
+
+    private InventoryItemModel? _item;
+    private List<StockMovementRecord> _history = new();
+    private bool _loading;
+    private bool _historyLoading;
+    private string? _error;
+    private bool _open;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await LoadAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task LoadAsync()
+    {
+        _item = null; _error = null; _history = new();
+        if (ItemId is null) return;
+        _loading = true;
+        var result = await InventoryApiClient.GetByIdAsync(ItemId.Value);
+        _loading = false;
+        if (result.IsSuccess && result.Data is not null)
+        {
+            _item = result.Data;
+            _historyLoading = true;
+            StateHasChanged();
+            var history = await InventoryApiClient.GetStockHistoryAsync(ItemId.Value);
+            if (history.IsSuccess && history.Data is not null) _history = history.Data;
+            _historyLoading = false;
+        }
+        else
+        {
+            _error = result.Error?.Message ?? "Could not load this item.";
+        }
+    }
+
+    private static string Name(Dictionary<Guid, string> map, Guid? id) =>
+        id is { } g && map.TryGetValue(g, out var n) ? n : "—";
+
+    private RenderFragment Row(string label, string value) => @<div class="d-flex justify-content-between py-1 border-bottom" style="border-color: var(--border-color) !important;">
+        <span class="text-caption text-secondary">@label</span>
+        <span class="text-caption fw-semibold" style="color: var(--text-primary);">@value</span>
+    </div>;
+}

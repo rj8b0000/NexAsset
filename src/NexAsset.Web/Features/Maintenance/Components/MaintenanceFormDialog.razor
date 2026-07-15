@@ -1,0 +1,124 @@
+@using System.Globalization
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Assets
+@using NexAsset.Web.Models.Maintenance
+@using NexAsset.Web.Shared.Models
+@inject NexAsset.Web.Infrastructure.Maintenance.IMaintenanceRecordApiClient MaintenanceApiClient
+@inject IAssetApiClient AssetApiClient
+
+<Dialog IsOpen="IsOpen" Title="New Maintenance Request" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="Asset" Required="true" ColumnClass="col-12" Options="_assetOptions" Placeholder="Select an asset"
+                         Value="@(_model.AssetId == Guid.Empty ? "" : _model.AssetId.ToString())"
+                         ValueChanged="@(v => _model.AssetId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         Error='@Err("AssetId")' />
+            <TextField Label="Title" Required="true" ColumnClass="col-12" Value="@_model.Title" ValueChanged="@(v => _model.Title = v)" Error='@Err("Title")' />
+            <SelectField Label="Type" Required="true" Options="_typeOptions" Placeholder="Select type"
+                         Value="@_model.MaintenanceType.ToString()"
+                         ValueChanged="@(v => _model.MaintenanceType = int.TryParse(v, out var t) ? t : MaintenanceType.Corrective)"
+                         Error='@Err("MaintenanceType")' />
+            <TextField Label="Estimated Cost" Type="number" Value="@_costStr" ValueChanged="@(v => _costStr = v)" Error='@Err("Cost")' />
+            <TextField Label="Requested Date" Required="true" Type="date" Value="@_model.RequestedDate" ValueChanged="@(v => _model.RequestedDate = v)" Error='@Err("RequestedDate")' />
+            <TextField Label="Scheduled Date" Type="date" Value="@_model.ScheduledDate" ValueChanged="@(v => _model.ScheduledDate = v)" Error='@Err("ScheduledDate")' />
+            <TextField Label="Description" ColumnClass="col-12" Multiline="true" Value="@_model.Description" ValueChanged="@(v => _model.Description = v)" Error='@Err("Description")' />
+            <TextField Label="Remarks" ColumnClass="col-12" Multiline="true" Value="@_model.Remarks" ValueChanged="@(v => _model.Remarks = v)" Error='@Err("Remarks")' />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private MaintenanceFormModel _model = new();
+    private string _costStr = "";
+    private List<SelectField.Option> _assetOptions = new();
+    private readonly List<SelectField.Option> _typeOptions =
+        MaintenanceType.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
+
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _model = new MaintenanceFormModel();
+            _costStr = "";
+            await LoadAssetsAsync();
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task LoadAssetsAsync()
+    {
+        var assets = await AssetApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "AssetName" });
+        if (assets.IsSuccess && assets.Data is not null)
+            _assetOptions = assets.Data.Items.Select(a => new SelectField.Option(a.Id.ToString(), $"{a.AssetCode} — {a.AssetName}")).ToList();
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+
+        if (_model.AssetId == Guid.Empty) _fieldErrors["AssetId"] = "Asset is required.";
+        if (string.IsNullOrWhiteSpace(_model.Title)) _fieldErrors["Title"] = "Title is required.";
+        if (string.IsNullOrWhiteSpace(_model.RequestedDate)) _fieldErrors["RequestedDate"] = "Requested date is required.";
+        if (!string.IsNullOrWhiteSpace(_costStr))
+        {
+            if (decimal.TryParse(_costStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var cost) && cost >= 0) _model.Cost = cost;
+            else _fieldErrors["Cost"] = "Enter a valid amount.";
+        }
+        if (_fieldErrors.Count > 0) return;
+
+        _model.ScheduledDate = string.IsNullOrWhiteSpace(_model.ScheduledDate) ? null : _model.ScheduledDate;
+
+        _saving = true;
+        var result = await MaintenanceApiClient.CreateAsync(_model);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Save failed. Please try again.";
+            if (result.Error?.FieldErrors is not null)
+                foreach (var kv in result.Error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnSaved.InvokeAsync();
+    }
+}

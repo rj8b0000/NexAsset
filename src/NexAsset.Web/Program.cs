@@ -25,7 +25,6 @@ builder.Services.AddSingleton<NavigationState>();
 // Organization/Branch/Department/Designation, HR (Employee/Role/Permission), and Asset/AssetCategory
 // now use real NexAsset.API clients (see AddNexAssetApiInfrastructure).
 builder.Services.AddScoped<IProcurementApiClient, ProcurementApiClient>();
-builder.Services.AddScoped<IMaintenanceApiClient, MaintenanceApiClient>();
 builder.Services.AddScoped<IFinanceApiClient, FinanceApiClient>();
 builder.Services.AddScoped<IAuditLogApiClient, AuditLogApiClient>();
 

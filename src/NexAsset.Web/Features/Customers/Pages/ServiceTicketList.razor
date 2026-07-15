@@ -1,0 +1,179 @@
+@page "/service-tickets"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Customers
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Customers
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Customers.Components
+@inject IServiceTicketApiClient ServiceTicketApiClient
+@inject ICustomerApiClient CustomerApiClient
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Service Tickets</h1>
+            <span class="text-caption text-secondary">Track customer service requests and their resolution.</span>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
+            <i class="lucide-plus"></i> New Ticket
+        </button>
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading service tickets..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load service tickets" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="ServiceTicketItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Service Ticket"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="t => t.Id.ToString()"
+                   OnViewDetails="OpenDetails"
+                   CustomRowActions="UpdateAction" />
+    }
+</div>
+
+<ServiceTicketCreateDialog IsOpen="_formOpen" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+<ServiceTicketUpdateDialog IsOpen="_updateOpen" Ticket="_updateTarget" TicketLabel="@_updateLabel"
+                           EmployeeOptions="_employeeOptions"
+                           OnClose="() => _updateOpen = false" OnCompleted="OnUpdateCompleted" />
+
+<Dialog IsOpen="_detailsTarget is not null" Title="Service Ticket Details" Size="md" OnClose="() => _detailsTarget = null">
+    <ChildContent>
+        @if (_detailsTarget is not null)
+        {
+            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                <span class="h2-title mb-0">@_detailsTarget.TicketNumber</span>
+                <span class="badge-custom @(TicketStatus.BadgeClass(_detailsTarget.Status))">@TicketStatus.Label(_detailsTarget.Status)</span>
+                <span class="badge-custom @(TicketPriority.BadgeClass(_detailsTarget.Priority))">@TicketPriority.Label(_detailsTarget.Priority)</span>
+            </div>
+            @Row("Title", _detailsTarget.Title)
+            @Row("Customer", Lookup(_customerNames, _detailsTarget.CustomerId))
+            @Row("Assigned Engineer", _detailsTarget.AssignedToEmployeeId is { } e ? Lookup(_empNames, e) : "—")
+            @Row("Description", string.IsNullOrWhiteSpace(_detailsTarget.Description) ? "—" : _detailsTarget.Description!)
+            @Row("Resolution", string.IsNullOrWhiteSpace(_detailsTarget.Resolution) ? "—" : _detailsTarget.Resolution!)
+            @Row("Comments", string.IsNullOrWhiteSpace(_detailsTarget.Comments) ? "—" : _detailsTarget.Comments!)
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _detailsTarget = null">Close</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    private PagedResult<ServiceTicketItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private ServiceTicketItem? _detailsTarget;
+
+    private bool _updateOpen;
+    private ServiceTicketItem? _updateTarget;
+    private string _updateLabel = "";
+
+    private Dictionary<Guid, string> _customerNames = new();
+    private Dictionary<Guid, string> _empNames = new();
+    private List<SelectField.Option> _employeeOptions = new();
+    private List<ColumnDefinition<ServiceTicketItem>> _columns = new();
+
+    private RenderFragment<ServiceTicketItem> UpdateAction => item =>
+        @<button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => OpenUpdate(item)">
+            <i class="lucide-git-branch me-2"></i> Update Ticket
+        </button>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _columns = new()
+        {
+            new() { Header = "Ticket No", PropertySelector = t => t.TicketNumber, SortColumn = "TicketNumber" },
+            new() { Header = "Title", Sortable = true, SortColumn = "Title", Template = t =>
+                @<span class="fw-semibold" style="color: var(--text-primary);">@t.Title</span> },
+            new() { Header = "Customer", Sortable = false, Template = t => @<span>@Lookup(_customerNames, t.CustomerId)</span> },
+            new() { Header = "Engineer", Sortable = false, Template = t =>
+                @<span>@(t.AssignedToEmployeeId is { } e ? Lookup(_empNames, e) : "—")</span> },
+            new() { Header = "Priority", Sortable = false, Template = t =>
+                @<span class="badge-custom @(TicketPriority.BadgeClass(t.Priority))">@TicketPriority.Label(t.Priority)</span> },
+            new() { Header = "Status", Sortable = false, Template = t =>
+                @<span class="badge-custom @(TicketStatus.BadgeClass(t.Status))">@TicketStatus.Label(t.Status)</span> }
+        };
+
+        await LoadLookupsAsync();
+        await LoadAsync(_query);
+    }
+
+    private static string Lookup(Dictionary<Guid, string> map, Guid id) =>
+        map.TryGetValue(id, out var n) ? n : "—";
+
+    private async Task LoadLookupsAsync()
+    {
+        var customers = await CustomerApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" });
+        if (customers.IsSuccess && customers.Data is not null)
+            _customerNames = customers.Data.Items.ToDictionary(c => c.Id, c => c.Name);
+
+        var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
+        if (emps.IsSuccess && emps.Data is not null)
+        {
+            _empNames = emps.Data.Items.ToDictionary(e => e.Id, e => $"{e.FirstName} {e.LastName}");
+            _employeeOptions = emps.Data.Items.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
+        }
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await ServiceTicketApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading service tickets.";
+    }
+
+    private void OpenDetails(ServiceTicketItem item) => _detailsTarget = item;
+
+    private void OpenUpdate(ServiceTicketItem item)
+    {
+        _updateTarget = item;
+        _updateLabel = item.TicketNumber;
+        _updateOpen = true;
+    }
+
+    private async Task OnUpdateCompleted()
+    {
+        _updateOpen = false;
+        Notifications.ShowSuccess("Updated", "Service ticket updated.");
+        await LoadAsync(_query);
+    }
+
+    private async Task OnSaved()
+    {
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "Service ticket created.");
+        await LoadAsync(_query);
+    }
+
+    private RenderFragment Row(string label, string value) => @<div class="d-flex justify-content-between py-1 border-bottom" style="border-color: var(--border-color) !important;">
+        <span class="text-caption text-secondary">@label</span>
+        <span class="text-caption fw-semibold text-end" style="color: var(--text-primary); max-width: 65%;">@value</span>
+    </div>;
+}

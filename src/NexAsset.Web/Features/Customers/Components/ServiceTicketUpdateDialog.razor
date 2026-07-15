@@ -1,0 +1,113 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Customers
+@using NexAsset.Web.Models.Customers
+@using NexAsset.Web.Shared.Models
+@inject IServiceTicketApiClient ServiceTicketApiClient
+
+@*
+    Workflow update for a service ticket: assignment, priority, status, resolution, comments.
+    Title/description are fixed at creation — the backend's PUT does not accept them.
+*@
+<Dialog IsOpen="IsOpen" Title="@($"Update Ticket — {TicketLabel}")" Size="md" OnClose="OnClose">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="Status" Required="true" Options="_statusOptions" Placeholder="Select status"
+                         Value="@(_model.Status == 0 ? "" : _model.Status.ToString())"
+                         ValueChanged="@(v => _model.Status = int.TryParse(v, out var s) ? s : 0)"
+                         Error='@Err("Status")' />
+            <SelectField Label="Priority" Required="true" Options="_priorityOptions" Placeholder="Select priority"
+                         Value="@(_model.Priority == 0 ? "" : _model.Priority.ToString())"
+                         ValueChanged="@(v => _model.Priority = int.TryParse(v, out var p) ? p : 0)"
+                         Error='@Err("Priority")' />
+            <SelectField Label="Assigned Engineer" ColumnClass="col-12" Options="EmployeeOptions" Placeholder="(Unassigned)"
+                         Value="@(_model.AssignedToEmployeeId?.ToString() ?? "")"
+                         ValueChanged="@(v => _model.AssignedToEmployeeId = Guid.TryParse(v, out var g) ? g : null)"
+                         Error='@Err("AssignedToEmployeeId")' />
+            <TextField Label="Resolution" ColumnClass="col-12" Multiline="true" Value="@_model.Resolution"
+                       ValueChanged="@(v => _model.Resolution = v)" Error='@Err("Resolution")' />
+            <TextField Label="Comments" ColumnClass="col-12" Multiline="true" Value="@_model.Comments"
+                       ValueChanged="@(v => _model.Comments = v)" Error='@Err("Comments")' />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Updating...</span>
+            }
+            else
+            {
+                <i class="lucide-check"></i>
+                <span>Update</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public ServiceTicketItem? Ticket { get; set; }
+    [Parameter] public string TicketLabel { get; set; } = "";
+    [Parameter] public IReadOnlyList<SelectField.Option> EmployeeOptions { get; set; } = Array.Empty<SelectField.Option>();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCompleted { get; set; }
+
+    private ServiceTicketUpdateModel _model = new();
+    private readonly List<SelectField.Option> _statusOptions =
+        TicketStatus.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
+    private readonly List<SelectField.Option> _priorityOptions =
+        TicketPriority.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
+
+    private bool _saving;
+    private string? _generalError;
+    private Dictionary<string, string> _fieldErrors = new();
+    private bool _open;
+
+    private string? Err(string field) => _fieldErrors.TryGetValue(field, out var e) ? e : null;
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !_open)
+        {
+            _open = true;
+            _generalError = null;
+            _fieldErrors = new();
+            _model = Ticket is not null ? ServiceTicketUpdateModel.FromItem(Ticket) : new ServiceTicketUpdateModel();
+        }
+        else if (!IsOpen && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = null;
+        _fieldErrors = new();
+        if (_model.Status == 0) _fieldErrors["Status"] = "Status is required.";
+        if (_model.Priority == 0) _fieldErrors["Priority"] = "Priority is required.";
+        if (_fieldErrors.Count > 0 || Ticket is null) return;
+
+        _saving = true;
+        var result = await ServiceTicketApiClient.UpdateAsync(Ticket.Id, _model);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Update failed. Please try again.";
+            if (result.Error?.FieldErrors is not null)
+                foreach (var kv in result.Error.FieldErrors)
+                    _fieldErrors[kv.Key] = string.Join(" ", kv.Value);
+            return;
+        }
+        await OnCompleted.InvokeAsync();
+    }
+}

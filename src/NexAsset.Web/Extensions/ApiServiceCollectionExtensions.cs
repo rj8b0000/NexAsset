@@ -6,8 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using NexAsset.Web.Infrastructure.API;
 using NexAsset.Web.Infrastructure.Assets;
 using NexAsset.Web.Infrastructure.Authentication;
+using NexAsset.Web.Infrastructure.Customers;
+using NexAsset.Web.Infrastructure.Dashboard;
 using NexAsset.Web.Infrastructure.Foundation;
 using NexAsset.Web.Infrastructure.HR;
+using NexAsset.Web.Infrastructure.Inventory;
 using NexAsset.Web.Infrastructure.Procurement;
 
 namespace NexAsset.Web.Extensions
@@ -59,6 +62,18 @@ namespace NexAsset.Web.Extensions
             services.AddNexAssetApiClient<IVendorApiClient, VendorApiClient>(settings);
             services.AddNexAssetApiClient<IPurchaseRequestApiClient, PurchaseRequestApiClient>(settings);
             services.AddNexAssetApiClient<IPurchaseOrderApiClient, PurchaseOrderApiClient>(settings);
+
+            // Inventory module clients (real HTTP, /api/enterprise-operations/*).
+            services.AddNexAssetApiClient<IInventoryApiClient, InventoryApiClient>(settings);
+            services.AddNexAssetApiClient<IConsumableApiClient, ConsumableApiClient>(settings);
+
+            // Maintenance + Customers/Service-Tickets clients (real HTTP, /api/enterprise-operations/*).
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Maintenance.IMaintenanceRecordApiClient, NexAsset.Web.Infrastructure.Maintenance.MaintenanceRecordApiClient>(settings);
+            services.AddNexAssetApiClient<ICustomerApiClient, CustomerApiClient>(settings);
+            services.AddNexAssetApiClient<IServiceTicketApiClient, ServiceTicketApiClient>(settings);
+
+            // Dashboard summary client (real HTTP, /api/enterprise-operations/dashboard).
+            services.AddNexAssetApiClient<IDashboardApiClient, DashboardApiClient>(settings);
 
             return services;
         }

@@ -1,26 +1,71 @@
 @page "/"
 @page "/dashboard"
+@attribute [Authorize]
 @using NexAsset.Web.State
-@using NexAsset.Web.Infrastructure.Services
-@inject MockDatabaseService Db
+@using NexAsset.Web.Infrastructure.Dashboard
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Models.Dashboard
+@using NexAsset.Web.Shared.Models
+@inject IDashboardApiClient DashboardApiClient
+@inject IOrganizationApiClient OrganizationApiClient
 @inject NotificationState NotificationState
 @inject NavigationManager NavigationManager
 
 <!-- DASHBOARD VIEW -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3 col-sm-6">
-        <StatCard Title="Total Assets" Value="@($"${Db.Assets.Sum(a => a.Value):#,0}")" IconClass="lucide-box" TrendLabel="+14%" Trend="up" Subtext="from last quarter" Status="primary" />
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <StatCard Title="Assigned Assets" Value="@Db.Assets.Count(a => a.Status == "Assigned").ToString()" IconClass="lucide-user-check" TrendLabel="@($"{Db.Assets.Count(a => a.Status == "Assigned") * 100 / Math.Max(1, Db.Assets.Count)}% util")" Trend="neutral" Subtext="of total stock" Status="success" />
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <StatCard Title="Available Assets" Value="@Db.Assets.Count(a => a.Status == "Available").ToString()" IconClass="lucide-box-select" TrendLabel="Ready" Trend="neutral" Subtext="in warehouses" Status="info" />
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <StatCard Title="Pending Approvals" Value="@Db.ProcurementRequests.Count(r => r.Status == "Pending").ToString()" IconClass="lucide-check-square" TrendLabel="Urgent" Trend="down" Subtext="require review" Status="warning" />
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <span class="text-caption text-secondary">Live operational summary for the selected organization.</span>
+    <div style="min-width: 260px;">
+        <select class="form-control-custom py-1 px-2" value="@(_selectedOrgId?.ToString() ?? "")" @onchange="OnOrgChangedAsync">
+            @foreach (var org in _orgs)
+            {
+                <option value="@org.Id" selected="@(org.Id == _selectedOrgId)">@org.Code — @org.Name</option>
+            }
+        </select>
     </div>
 </div>
+
+@if (_loadError is not null)
+{
+    <EmptyState Title="Couldn't load the dashboard" Description="@_loadError"
+                IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                OnActionClick="LoadSummaryAsync" />
+}
+else if (_summary is null)
+{
+    <LoadingState Message="Loading dashboard..." />
+}
+else
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Total Assets" Value="@_summary.Assets.ToString()" IconClass="lucide-box" TrendLabel="@UtilizationLabel" Trend="neutral" Subtext="registered assets" Status="primary" />
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Assigned Assets" Value="@_summary.AssignedAssets.ToString()" IconClass="lucide-user-check" TrendLabel="In use" Trend="neutral" Subtext="with employees" Status="success" />
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Available Assets" Value="@_summary.AvailableAssets.ToString()" IconClass="lucide-box-select" TrendLabel="Ready" Trend="neutral" Subtext="ready to assign" Status="info" />
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Pending Approvals" Value="@_summary.PendingPurchaseRequests.ToString()" IconClass="lucide-check-square" TrendLabel="@($"{_summary.PendingPurchaseOrders} POs")" Trend="neutral" Subtext="purchase requests" Status="warning" />
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Employees" Value="@_summary.Employees.ToString()" IconClass="lucide-users" TrendLabel="Active" Trend="neutral" Subtext="in this organization" Status="primary" />
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Low Stock Items" Value="@_summary.LowStockItems.ToString()" IconClass="lucide-warehouse" TrendLabel="@(_summary.LowStockItems > 0 ? "Reorder" : "OK")" Trend="@(_summary.LowStockItems > 0 ? "down" : "neutral")" Subtext="at or below reorder level" Status="@(_summary.LowStockItems > 0 ? "danger" : "success")" />
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Open Service Tickets" Value="@_summary.OpenServiceTickets.ToString()" IconClass="lucide-headphones" TrendLabel="Support" Trend="neutral" Subtext="awaiting resolution" Status="info" />
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <StatCard Title="Under Maintenance" Value="@_summary.AssetsUnderMaintenance.ToString()" IconClass="lucide-wrench" TrendLabel="Repairs" Trend="neutral" Subtext="assets in service" Status="warning" />
+        </div>
+    </div>
+}
 
 <div class="row g-4 mb-4">
     <div class="col-lg-6 col-md-12">
@@ -48,7 +93,7 @@
                 <h3 class="h2-title"><i class="lucide-history me-1 text-primary"></i> Recent System Activity</h3>
                 <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick='() => NavigationManager.NavigateTo("/administration/timeline")'>Full Log</button>
             </div>
-            
+
             <div class="d-flex flex-column gap-3" style="max-height: 380px; overflow-y: auto;">
                 @foreach (var act in NotificationState.Activities.Take(5))
                 {
@@ -100,7 +145,7 @@
                         </button>
                     </div>
                     <div class="col-6">
-                        <button type="button" class="dashboard-shortcut-btn w-100" @onclick='() => NavigationManager.NavigateTo("/maintenance/create")'>
+                        <button type="button" class="dashboard-shortcut-btn w-100" @onclick='() => NavigationManager.NavigateTo("/maintenance")'>
                             <i class="lucide-wrench fs-3 text-warning"></i>
                             <span class="fw-semibold">Maint. Ticket</span>
                         </button>
@@ -116,3 +161,49 @@
         </div>
     </div>
 </div>
+
+@code {
+    private DashboardSummary? _summary;
+    private string? _loadError;
+    private Guid? _selectedOrgId;
+    private List<(Guid Id, string Code, string Name)> _orgs = new();
+
+    private string UtilizationLabel =>
+        _summary is null || _summary.Assets == 0
+            ? "—"
+            : $"{_summary.AssignedAssets * 100 / _summary.Assets}% util";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (orgs.IsSuccess && orgs.Data is not null)
+            _orgs = orgs.Data.Items.Select(o => (o.Id, o.Code, o.Name)).ToList();
+
+        _selectedOrgId = _orgs.FirstOrDefault().Id is var id && id != Guid.Empty ? id : null;
+        if (_selectedOrgId is null)
+        {
+            _loadError = "No organizations exist yet. Create one to see dashboard data.";
+            return;
+        }
+        await LoadSummaryAsync();
+    }
+
+    private async Task OnOrgChangedAsync(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            _selectedOrgId = id;
+            await LoadSummaryAsync();
+        }
+    }
+
+    private async Task LoadSummaryAsync()
+    {
+        if (_selectedOrgId is null) return;
+        _loadError = null;
+        _summary = null;
+        var result = await DashboardApiClient.GetSummaryAsync(_selectedOrgId.Value);
+        if (result.IsSuccess && result.Data is not null) _summary = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading the dashboard.";
+    }
+}
