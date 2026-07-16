@@ -1,77 +1,126 @@
 @page "/approvalcenter"
-@using NexAsset.Web.Infrastructure.Services
-@inject IProcurementApiClient ProcurementApiClient
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Infrastructure.Procurement
+@using NexAsset.Web.Models.Procurement
+@using NexAsset.Web.Shared.Models
+@inject IPurchaseRequestApiClient PurchaseRequestApiClient
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+@inject INotificationService Notifications
 
 <div class="animate-fade-in">
-    <div class="mb-4">
-        <h1 class="h1-title">Approval Center</h1>
-        <span class="text-caption text-secondary">Review and authorize pending procurement purchase requests.</span>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Approval Center</h1>
+            <span class="text-caption text-secondary">Review purchase requests and approve or reject them.</span>
+        </div>
     </div>
 
-    <!-- Approval Requests List -->
-    <div class="row g-4">
-        @if (PendingRequests == null)
-        {
-            <LoadingState />
-        }
-        else
-        {
-            @foreach (var pr in PendingRequests)
-            {
-                <div class="col-md-6">
-                    <div class="card-custom">
-                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
-                            <div>
-                                <span class="badge-custom badge-custom-info mb-2">Procurement Request</span>
-                                <h4 class="h2-title">@pr.ItemName</h4>
-                                <span class="text-caption text-muted-custom">Requested by: @pr.Requester</span>
-                            </div>
-                            <h3 class="h2-title text-primary">@((pr.TotalValue).ToString("C"))</h3>
-                        </div>
-                        <div class="d-flex justify-content-between text-caption mb-3">
-                            <span>Quantity: <strong>@pr.Quantity</strong></span>
-                            <span>Unit Price: <strong>@((pr.UnitPrice).ToString("C"))</strong></span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn-custom btn-custom-danger py-1 px-3 text-caption flex-grow-1" @onclick="() => RejectProcurement(pr.Id)">Reject</button>
-                            <button class="btn-custom btn-custom-primary py-1 px-3 text-caption flex-grow-1" @onclick="() => ApproveProcurement(pr.Id)">Approve</button>
-                        </div>
-                    </div>
-                </div>
-            }
-            @if (!PendingRequests.Any())
-            {
-                <div class="col-12">
-                    <EmptyState Title="Zero Pending Requests" Description="No pending procurement approval items require action. All requests have been settled." IconClass="lucide-thumbs-up" />
-                </div>
-            }
-        }
-    </div>
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading approvals..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load approvals" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="PurchaseRequestItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Approval"
+                   ShowFilterPanel="false"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="r => r.Id.ToString()"
+                   CustomRowActions="ApprovalActions" />
+    }
 </div>
 
 @code {
-    private List<ProcurementMock>? PendingRequests;
+    private PagedResult<PurchaseRequestItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private Dictionary<Guid, string> _empNames = new();
+    private List<ColumnDefinition<PurchaseRequestItem>> _columns = new();
+
+    // Approve/Reject only make sense while a request is awaiting a decision; the backend
+    // enforces the actual transition rules.
+    private RenderFragment<PurchaseRequestItem> ApprovalActions => item =>
+        @<text>
+            @if (item.Status is ProcurementStatus.Draft or ProcurementStatus.PendingApproval)
+            {
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--success);" @onclick="() => DecideAsync(item, ProcurementStatus.Approved)">
+                    <i class="lucide-check me-2"></i> Approve
+                </button>
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption text-danger border-0 bg-transparent" @onclick="() => DecideAsync(item, ProcurementStatus.Rejected)">
+                    <i class="lucide-x me-2"></i> Reject
+                </button>
+            }
+        </text>;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadPendingRequests();
+        _columns = new()
+        {
+            new() { Header = "PR Number", PropertySelector = r => r.RequestNumber, SortColumn = "RequestNumber" },
+            new() { Header = "Title", Sortable = true, SortColumn = "Title", Template = r =>
+                @<span class="fw-semibold" style="color: var(--text-primary);">@r.Title</span> },
+            new() { Header = "Requester", Sortable = false, Template = r =>
+                @<span>@(_empNames.TryGetValue(r.RequestedByEmployeeId, out var n) ? n : "—")</span> },
+            new() { Header = "Amount", Sortable = true, SortColumn = "EstimatedAmount", Template = r => @<span>@r.EstimatedAmount.ToString("C")</span> },
+            new() { Header = "Status", Sortable = false, Template = r =>
+                @<span class="badge-custom @(ProcurementStatus.BadgeClass(r.Status))">@ProcurementStatus.Label(r.Status)</span> }
+        };
+
+        var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
+        if (emps.IsSuccess && emps.Data is not null)
+            _empNames = emps.Data.Items.ToDictionary(e => e.Id, e => $"{e.FirstName} {e.LastName}");
+
+        await LoadAsync(_query);
     }
 
-    private async Task LoadPendingRequests()
+    private async Task LoadAsync(PagedQuery query)
     {
-        var all = await ProcurementApiClient.GetProcurementRequestsAsync();
-        PendingRequests = all.Where(r => r.Status == "Pending").ToList();
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await PurchaseRequestApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading approvals.";
     }
 
-    private async Task ApproveProcurement(string id)
+    private async Task DecideAsync(PurchaseRequestItem item, int status)
     {
-        await ProcurementApiClient.ApproveProcurementRequestAsync(id);
-        await LoadPendingRequests();
-    }
+        _busy = true;
+        var result = await PurchaseRequestApiClient.SetStatusAsync(item.Id, new SetProcurementStatusRequest
+        {
+            Status = status,
+            ApprovalRemarks = status == ProcurementStatus.Approved ? "Approved via Approval Center" : "Rejected via Approval Center",
+            Remarks = status == ProcurementStatus.Approved ? "Approved via Approval Center" : "Rejected via Approval Center"
+        });
+        _busy = false;
 
-    private async Task RejectProcurement(string id)
-    {
-        await ProcurementApiClient.RejectProcurementRequestAsync(id);
-        await LoadPendingRequests();
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess(status == ProcurementStatus.Approved ? "Approved" : "Rejected",
+                $"Purchase request {item.RequestNumber} {(status == ProcurementStatus.Approved ? "approved" : "rejected")}.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Failed", result.Error?.Message ?? "Could not update the request.");
+        }
     }
 }

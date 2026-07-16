@@ -26,4 +26,7 @@ namespace NexAsset.Web.Models.HR
 
     /// <summary>Body for POST /api/permissions/roles/assign (role↔permission mapping).</summary>
     public sealed record AssignPermissionToRoleRequest(Guid RoleId, Guid PermissionId);
+
+    /// <summary>Body for POST /api/permissions/designations/assign (designation↔permission mapping).</summary>
+    public sealed record AssignPermissionToDesignationRequest(Guid DesignationId, Guid PermissionId);
 }

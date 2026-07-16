@@ -1,0 +1,156 @@
+@using NexAsset.Web.Infrastructure.HR
+@using NexAsset.Web.Models.HR
+@using NexAsset.Web.Shared.Models
+@inject IPermissionApiClient PermissionApiClient
+@inject NexAsset.Web.Infrastructure.Notifications.INotificationService Notify
+
+@*
+    Maps permissions to a designation (job title), so employees inherit module capabilities
+    from their designation. Mirrors the role↔permission dialog on the Roles page.
+*@
+<Dialog IsOpen="IsOpen" Title="@($"Permissions — {DesignationTitle}")" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading permissions..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert alert-danger py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">@_error</div>
+            }
+
+            <div class="mb-4">
+                <div class="text-label mb-2">Assign a permission</div>
+                <div class="d-flex gap-2">
+                    <select class="form-control-custom" @bind="_selectedPermissionId">
+                        <option value="">Select a permission...</option>
+                        @foreach (var group in UnassignedByModule)
+                        {
+                            <optgroup label="@group.Key">
+                                @foreach (var p in group)
+                                {
+                                    <option value="@p.Id">@p.Code — @p.Name</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                    <button class="btn-custom btn-custom-primary" style="white-space: nowrap;" disabled="@(_busy || string.IsNullOrEmpty(_selectedPermissionId))" @onclick="AssignAsync">
+                        <i class="lucide-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-label mb-2">Assigned permissions (@_assigned.Count)</div>
+            @if (_assigned.Count == 0)
+            {
+                <p class="text-caption text-secondary">No permissions assigned to this designation yet.</p>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var p in _assigned)
+                    {
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color);">
+                            <div>
+                                <span class="badge-custom badge-custom-primary me-2">@ModuleOf(p.Code)</span>
+                                <span class="fw-semibold text-caption" style="color: var(--text-primary);">@p.Name</span>
+                                <span class="text-caption text-secondary ms-2">@p.Code</span>
+                            </div>
+                            <button class="btn-custom btn-custom-secondary p-1 px-2 text-caption text-danger" disabled="@_busy" @onclick="() => RemoveAsync(p)">
+                                <i class="lucide-x"></i> Remove
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose">Close</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? DesignationId { get; set; }
+    [Parameter] public string DesignationTitle { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private List<PermissionListItem> _assigned = new();
+    private List<PermissionListItem> _all = new();
+    private string _selectedPermissionId = "";
+    private bool _loading;
+    private bool _busy;
+    private string? _error;
+    private bool _open;
+
+    private static string ModuleOf(string code)
+    {
+        var idx = code.IndexOf('.');
+        return idx > 0 ? code[..idx] : "General";
+    }
+
+    private IEnumerable<IGrouping<string, PermissionListItem>> UnassignedByModule =>
+        _all.Where(p => _assigned.All(a => a.Id != p.Id))
+            .GroupBy(p => ModuleOf(p.Code))
+            .OrderBy(g => g.Key);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await LoadAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task LoadAsync()
+    {
+        if (DesignationId is null) return;
+        _loading = true;
+        _error = null;
+        _selectedPermissionId = "";
+
+        var all = await PermissionApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Code" });
+        if (all.IsSuccess && all.Data is not null) _all = all.Data.Items.ToList();
+
+        var assigned = await PermissionApiClient.GetForDesignationAsync(DesignationId.Value);
+        if (assigned.IsSuccess && assigned.Data is not null) _assigned = assigned.Data;
+        else _error = assigned.Error?.Message ?? "Could not load assigned permissions.";
+
+        _loading = false;
+    }
+
+    private async Task AssignAsync()
+    {
+        if (DesignationId is null || !Guid.TryParse(_selectedPermissionId, out var permId)) return;
+        _busy = true;
+        var result = await PermissionApiClient.AssignToDesignationAsync(DesignationId.Value, permId);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notify.ShowSuccess("Assigned", "Permission added to designation.");
+            await LoadAsync();
+        }
+        else
+        {
+            Notify.ShowError("Assign failed", result.Error?.Message ?? "Could not assign the permission.");
+        }
+    }
+
+    private async Task RemoveAsync(PermissionListItem p)
+    {
+        if (DesignationId is null) return;
+        _busy = true;
+        var result = await PermissionApiClient.RemoveFromDesignationAsync(DesignationId.Value, p.Id);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notify.ShowSuccess("Removed", "Permission removed from designation.");
+            await LoadAsync();
+        }
+        else
+        {
+            Notify.ShowError("Remove failed", result.Error?.Message ?? "Could not remove the permission.");
+        }
+    }
+}

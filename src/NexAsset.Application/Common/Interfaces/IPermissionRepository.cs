@@ -47,4 +47,25 @@ public interface IPermissionRepository
     void Update(Permission permission);
 
     void RemoveRolePermission(RolePermission rolePermission);
+
+    // Designation ↔ permission mapping (mirrors the role mapping above).
+    Task<bool> DesignationPermissionExistsAsync(
+        Guid designationId,
+        Guid permissionId,
+        CancellationToken cancellationToken);
+
+    Task AddDesignationPermissionAsync(
+        DesignationPermission designationPermission,
+        CancellationToken cancellationToken);
+
+    Task<DesignationPermission?> GetDesignationPermissionAsync(
+        Guid designationId,
+        Guid permissionId,
+        CancellationToken cancellationToken);
+
+    Task<List<Permission>> GetByDesignationIdAsync(
+        Guid designationId,
+        CancellationToken cancellationToken);
+
+    void RemoveDesignationPermission(DesignationPermission designationPermission);
 }

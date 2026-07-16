@@ -22,5 +22,10 @@ namespace NexAsset.Web.Infrastructure.HR
         Task<ApiResult<List<PermissionListItem>>> GetForRoleAsync(Guid roleId, CancellationToken cancellationToken = default);
         Task<ApiResult> AssignToRoleAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default);
         Task<ApiResult> RemoveFromRoleAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default);
+
+        // Designation ↔ permission mapping
+        Task<ApiResult<List<PermissionListItem>>> GetForDesignationAsync(Guid designationId, CancellationToken cancellationToken = default);
+        Task<ApiResult> AssignToDesignationAsync(Guid designationId, Guid permissionId, CancellationToken cancellationToken = default);
+        Task<ApiResult> RemoveFromDesignationAsync(Guid designationId, Guid permissionId, CancellationToken cancellationToken = default);
     }
 }

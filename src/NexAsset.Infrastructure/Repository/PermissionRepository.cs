@@ -146,4 +146,48 @@ public sealed class PermissionRepository : IPermissionRepository
     {
         _context.RolePermissions.Remove(rolePermission);
     }
+
+    public async Task<bool> DesignationPermissionExistsAsync(
+        Guid designationId,
+        Guid permissionId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.DesignationPermissions.AnyAsync(
+            x => x.DesignationId == designationId && x.PermissionId == permissionId,
+            cancellationToken);
+    }
+
+    public async Task AddDesignationPermissionAsync(
+        DesignationPermission designationPermission,
+        CancellationToken cancellationToken)
+    {
+        await _context.DesignationPermissions.AddAsync(designationPermission, cancellationToken);
+    }
+
+    public async Task<DesignationPermission?> GetDesignationPermissionAsync(
+        Guid designationId,
+        Guid permissionId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.DesignationPermissions.FirstOrDefaultAsync(
+            x => x.DesignationId == designationId && x.PermissionId == permissionId,
+            cancellationToken);
+    }
+
+    public async Task<List<Permission>> GetByDesignationIdAsync(
+        Guid designationId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.DesignationPermissions
+            .AsNoTracking()
+            .Where(x => x.DesignationId == designationId && !x.Permission.IsDeleted)
+            .Select(x => x.Permission)
+            .OrderBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public void RemoveDesignationPermission(DesignationPermission designationPermission)
+    {
+        _context.DesignationPermissions.Remove(designationPermission);
+    }
 }

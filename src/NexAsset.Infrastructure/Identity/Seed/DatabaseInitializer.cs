@@ -19,6 +19,8 @@ public static class DatabaseInitializer
 
         await OrganizationSeeder.SeedAsync(context);
 
+        await PermissionSeeder.SeedAsync(context);
+
         var roleManager =
             scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
 

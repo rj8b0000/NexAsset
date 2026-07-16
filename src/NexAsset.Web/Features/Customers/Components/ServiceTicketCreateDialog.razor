@@ -18,9 +18,9 @@
         <div class="row g-3">
             <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
                          Value="@(_model.OrganizationId == Guid.Empty ? "" : _model.OrganizationId.ToString())"
-                         ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         ValueChanged="OnOrgChanged"
                          Error='@Err("OrganizationId")' />
-            <SelectField Label="Customer" Required="true" Options="_customerOptions" Placeholder="Select a customer"
+            <SelectField Label="Customer" Required="true" Options="CustomerOptions" Placeholder="Select a customer"
                          Value="@(_model.CustomerId == Guid.Empty ? "" : _model.CustomerId.ToString())"
                          ValueChanged="@(v => _model.CustomerId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
                          Error='@Err("CustomerId")' />
@@ -57,7 +57,19 @@
 
     private ServiceTicketCreateModel _model = new();
     private List<SelectField.Option> _orgOptions = new();
-    private List<SelectField.Option> _customerOptions = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _customers = new();
+
+    // Customers must belong to the selected organization.
+    private IReadOnlyList<SelectField.Option> CustomerOptions => _customers
+        .Where(c => c.OrgId == _model.OrganizationId)
+        .Select(c => new SelectField.Option(c.Id.ToString(), c.Label)).ToList();
+
+    private void OnOrgChanged(string v)
+    {
+        _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty;
+        if (_model.CustomerId != Guid.Empty && !_customers.Any(c => c.Id == _model.CustomerId && c.OrgId == _model.OrganizationId))
+            _model.CustomerId = Guid.Empty;
+    }
     private readonly List<SelectField.Option> _priorityOptions =
         TicketPriority.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
 
@@ -92,7 +104,7 @@
             _orgOptions = orgs.Data.Items.Select(o => new SelectField.Option(o.Id.ToString(), $"{o.Code} — {o.Name}")).ToList();
         var customers = await CustomerApiClient.GetPagedAsync(big);
         if (customers.IsSuccess && customers.Data is not null)
-            _customerOptions = customers.Data.Items.Select(c => new SelectField.Option(c.Id.ToString(), $"{c.Code} — {c.Name}")).ToList();
+            _customers = customers.Data.Items.Select(c => (c.Id, c.OrganizationId, $"{c.Code} — {c.Name}")).ToList();
     }
 
     private async Task SaveAsync()

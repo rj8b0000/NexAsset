@@ -20,13 +20,10 @@ builder.Services.AddSingleton<ThemeState>();
 builder.Services.AddSingleton<NotificationState>();
 builder.Services.AddSingleton<NavigationState>();
 
-// Mock API Client registrations — remaining gradual-migration placeholders backed by
-// MockDatabaseService, for modules not yet integrated (Procurement/Maintenance/Finance/AuditLog).
-// Organization/Branch/Department/Designation, HR (Employee/Role/Permission), and Asset/AssetCategory
-// now use real NexAsset.API clients (see AddNexAssetApiInfrastructure).
-builder.Services.AddScoped<IProcurementApiClient, ProcurementApiClient>();
+// Last remaining mock client: Finance — NexAsset.API has no finance/invoice endpoints yet,
+// so the Finance page stays on MockDatabaseService until that backend module exists.
+// Every other module now uses real NexAsset.API clients (see AddNexAssetApiInfrastructure).
 builder.Services.AddScoped<IFinanceApiClient, FinanceApiClient>();
-builder.Services.AddScoped<IAuditLogApiClient, AuditLogApiClient>();
 
 // Infrastructure preparation — API, Authentication, and cross-cutting services.
 // Additive only: nothing below changes what the app does today. See the

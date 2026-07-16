@@ -1,45 +1,107 @@
 @page "/notifications"
-@using NexAsset.Web.State
-@inject NotificationState NotificationState
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.Administration
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Administration
+@using NexAsset.Web.Shared.Models
+@inject INotificationApiClient NotificationApiClient
+@inject INotificationService Notify
 
 <div class="animate-fade-in">
-    <div class="card-custom">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="h2-title">Notification Logs</h3>
-            @if (NotificationState.Notifications.Any())
-            {
-                <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick="ClearNotifications">Clear Logs</button>
-            }
-        </div>
-        <div class="d-flex flex-column gap-3 mt-3">
-            @if (NotificationState.Notifications.Any())
-            {
-                @foreach (var not in NotificationState.Notifications)
-                {
-                    <div class="p-3 border rounded-3 d-flex align-items-start gap-3 @(not.IsRead ? "" : "bg-light-custom")" style="background-color: @(not.IsRead ? "transparent" : "var(--primary-light)"); transition: background-color var(--transition-fast);">
-                        <div class="p-2 rounded-circle" style="background-color: var(--primary-light); color: var(--primary);">
-                            <i class="lucide-bell"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold">@not.Title</div>
-                            <p class="text-caption text-secondary mb-1 mt-0.5" style="line-height: 1.4;">@not.Message</p>
-                            <span class="text-caption text-muted-custom" style="font-size: 10px;">@not.Timestamp.ToString("g") (Urgency: @not.Urgency)</span>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="py-5 text-center text-secondary text-caption">No notifications yet</div>
-            }
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Notifications</h1>
+            <span class="text-caption text-secondary">System notifications delivered by the backend.</span>
         </div>
     </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading notifications..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load notifications" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="ServerNotification"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Notification"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="n => n.Id.ToString()"
+                   CustomRowActions="MarkReadAction" />
+    }
 </div>
 
 @code {
-    private void ClearNotifications()
+    private PagedResult<ServerNotification>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private List<ColumnDefinition<ServerNotification>> _columns = new();
+
+    private RenderFragment<ServerNotification> MarkReadAction => item =>
+        @<text>
+            @if (!item.IsRead)
+            {
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => MarkReadAsync(item)">
+                    <i class="lucide-check me-2"></i> Mark as Read
+                </button>
+            }
+        </text>;
+
+    protected override Task OnInitializedAsync()
     {
-        NotificationState.ClearNotifications();
-        NotificationState.AddToast("Logs Cleared", "System notifications list cleared.", ToastType.Info);
+        _columns = new()
+        {
+            new() { Header = "Title", Sortable = true, SortColumn = "Title", Template = n =>
+                @<span class="@(n.IsRead ? "" : "fw-semibold")" style="color: var(--text-primary);">@n.Title</span> },
+            new() { Header = "Message", Sortable = false, Template = n => @<span>@n.Message</span> },
+            new() { Header = "Type", Sortable = false, Template = n =>
+                @<span class="badge-custom @(NotificationType.BadgeClass(n.NotificationType))">@NotificationType.Label(n.NotificationType)</span> },
+            new() { Header = "Read", Sortable = false, Template = n =>
+                @<span class="badge-custom @(n.IsRead ? "badge-custom-secondary" : "badge-custom-warning")">@(n.IsRead ? "Read" : "Unread")</span> },
+            new() { Header = "Read At", Sortable = false, Template = n =>
+                @<span>@(n.ReadAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—")</span> }
+        };
+        return LoadAsync(_query);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await NotificationApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading notifications.";
+    }
+
+    private async Task MarkReadAsync(ServerNotification item)
+    {
+        _busy = true;
+        var result = await NotificationApiClient.MarkReadAsync(item.Id);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notify.ShowSuccess("Done", "Notification marked as read.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notify.ShowError("Failed", result.Error?.Message ?? "Could not mark as read.");
+        }
     }
 }

@@ -62,7 +62,7 @@
                     Organizations="_orgNames" Categories="_categoryNames" Branches="_branchNames"
                     Departments="_deptNames" Employees="_empNames" />
 
-<AssignAssetDialog IsOpen="_assignOpen" AssetId="_actionAssetId" AssetName="@_actionAssetName"
+<AssignAssetDialog IsOpen="_assignOpen" AssetId="_actionAssetId" OrganizationId="_actionAssetOrgId" AssetName="@_actionAssetName"
                    OnClose="() => _assignOpen = false" OnCompleted='() => OnLifecycleCompleted("assigned")' />
 
 <UnassignAssetDialog IsOpen="_unassignOpen" AssetId="_actionAssetId" AssetName="@_actionAssetName"
@@ -95,6 +95,7 @@
     private bool _transferOpen;
     private bool _returnOpen;
     private Guid? _actionAssetId;
+    private Guid? _actionAssetOrgId;
     private string _actionAssetName = "";
 
     private Dictionary<Guid, string> _orgNames = new();
@@ -185,6 +186,7 @@
     private void SetActionTarget(AssetListItem item)
     {
         _actionAssetId = item.Id;
+        _actionAssetOrgId = item.OrganizationId;
         _actionAssetName = $"{item.AssetCode} · {item.AssetName}";
     }
 

@@ -1,11 +1,14 @@
 @using NexAsset.Web.State
 @using NexAsset.Web.Infrastructure.Services
 @using NexAsset.Web.Infrastructure.Authentication
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Shared.Models
 @inject NavigationState NavigationState
 @inject IAuthenticationService AuthenticationService
 @inject ICurrentUserService CurrentUser
 @inject NotificationState NotificationState
 @inject MockDatabaseService Db
+@inject IOrganizationApiClient OrganizationApiClient
 @inject NavigationManager NavigationManager
 @implements IDisposable
 
@@ -54,12 +57,12 @@
                 
                 <div class="dropdown-menu p-1 w-100 @(OrgDropdownOpen ? "show" : "")" 
                      style="display: @(OrgDropdownOpen ? "block" : "none"); background-color: var(--sidebar-active-bg); border: 1px solid var(--sidebar-border); border-radius: var(--radius-8); position: absolute; left: 0; right: 0; z-index: 1010; margin-top: 4px;">
-                    @foreach (var org in Db.Organizations)
+                    @foreach (var org in _organizations)
                     {
-                        <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" 
-                                style="color: @(NavigationState.ActiveOrganization == org ? "var(--primary)" : "var(--sidebar-text)");"
-                                @onclick="() => SwitchOrg(org)">
-                            @org
+                        <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent"
+                                style="color: @(NavigationState.ActiveOrganizationId == org.Id ? "var(--primary)" : "var(--sidebar-text)");"
+                                @onclick="() => SwitchOrg(org.Id, org.Name)">
+                            @org.Name
                         </button>
                     }
                 </div>
@@ -73,9 +76,9 @@
         <div class="p-3 border-bottom" style="border-color: var(--sidebar-border);">
             <div class="position-relative w-100">
                 <i class="lucide-search position-absolute text-muted-custom" style="left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px;"></i>
-                <input type="text" class="form-control-custom border-0 py-1.5" 
-                       style="padding-left: 32px; background-color: var(--sidebar-active-bg); color: var(--sidebar-text); font-size: 12px;" 
-                       placeholder="Quick jump..." @bind-value="QuickSearchQuery" @bind-value:event="oninput" @onkeyup="HandleQuickSearch" />
+                <input type="text" class="form-control-custom border-0 py-1.5"
+                       style="padding-left: 32px; background-color: var(--sidebar-active-bg); color: var(--sidebar-text); font-size: 12px;"
+                       placeholder="Quick jump..." @bind-value="QuickSearchQuery" @bind-value:event="oninput" @onkeyup="HandleQuickSearchKey" />
             </div>
         </div>
     }
@@ -173,11 +176,22 @@
 @code {
     private bool OrgDropdownOpen = false;
     private string QuickSearchQuery = "";
+    private List<(Guid Id, string Name)> _organizations = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         NavigationState.OnChange += StateHasChanged;
         CurrentUser.OnChange += StateHasChanged;
+
+        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (orgs.IsSuccess && orgs.Data is not null)
+        {
+            _organizations = orgs.Data.Items.Select(o => (o.Id, o.Name)).ToList();
+            if (_organizations.Count > 0)
+            {
+                NavigationState.InitializeOrganization(_organizations[0].Id, _organizations[0].Name);
+            }
+        }
     }
 
     private void ToggleSidebar()
@@ -190,9 +204,9 @@
         OrgDropdownOpen = !OrgDropdownOpen;
     }
 
-    private void SwitchOrg(string org)
+    private void SwitchOrg(Guid id, string name)
     {
-        NavigationState.SwitchOrganization(org);
+        NavigationState.SwitchOrganization(id, name);
         OrgDropdownOpen = false;
     }
 
@@ -234,20 +248,24 @@
         };
     }
 
-    private void HandleQuickSearch()
+    // Enter: jump to a matching module, otherwise fall through to global record search.
+    private void HandleQuickSearchKey(KeyboardEventArgs e)
     {
-        if (string.IsNullOrEmpty(QuickSearchQuery)) return;
-        
-        // Find matching module
+        if (e.Key != "Enter" || string.IsNullOrWhiteSpace(QuickSearchQuery)) return;
+
         var match = PrimaryNavItems.Concat(SecondaryNavItems)
             .FirstOrDefault(n => n.Name.Contains(QuickSearchQuery, StringComparison.OrdinalIgnoreCase));
-            
+
         if (match != null)
         {
             NavigationManager.NavigateTo(GetNavUrl(match.Module));
-            QuickSearchQuery = "";
             NotificationState.AddToast("Module Jumped", $"Navigated directly to: {match.Name}", ToastType.Info);
         }
+        else
+        {
+            NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(QuickSearchQuery)}");
+        }
+        QuickSearchQuery = "";
     }
 
     public void Dispose()

@@ -1,29 +1,244 @@
 @page "/settings"
+@attribute [Authorize]
 @using NexAsset.Web.State
+@using NexAsset.Web.Infrastructure.Administration
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.Notifications
 @using NexAsset.Web.Infrastructure.Services
+@using NexAsset.Web.Models.Administration
+@using NexAsset.Web.Shared.Models
 @inject NavigationState NavigationState
-@inject MockDatabaseService Db
+@inject ISystemSettingApiClient SystemSettingApiClient
+@inject IOrganizationApiClient OrganizationApiClient
+@inject IBranchApiClient BranchApiClient
+@inject INotificationService Notifications
 
 <div class="animate-fade-in">
-    <div class="card-custom" style="max-width: 600px;">
-        <h3 class="h2-title border-bottom pb-3 mb-3">System Preferences</h3>
+    <div class="card-custom mb-4" style="max-width: 600px;">
+        <h3 class="h2-title border-bottom pb-3 mb-3">Workspace Preferences</h3>
         <div class="form-group-custom mb-3">
             <label class="form-label-custom">Operating Organization</label>
-            <select class="form-control-custom" value="@NavigationState.ActiveOrganization" @onchange="@(e => NavigationState.SwitchOrganization(e.Value?.ToString() ?? ""))">
-                @foreach (var org in Db.Organizations)
+            <select class="form-control-custom" value="@(NavigationState.ActiveOrganizationId?.ToString() ?? "")" @onchange="OnPreferredOrgChanged">
+                @foreach (var org in _workspaceOrgs)
                 {
-                    <option value="@org">@org</option>
+                    <option value="@org.Id" selected="@(org.Id == NavigationState.ActiveOrganizationId)">@org.Name</option>
                 }
             </select>
         </div>
         <div class="form-group-custom">
             <label class="form-label-custom">Operations Branch Office</label>
-            <select class="form-control-custom" value="@NavigationState.ActiveBranch" @onchange="@(e => NavigationState.SwitchBranch(e.Value?.ToString() ?? ""))">
-                @foreach (var br in Db.Branches)
+            <select class="form-control-custom" value="@(NavigationState.ActiveBranchId?.ToString() ?? "")" @onchange="OnPreferredBranchChanged">
+                <option value="">All branches</option>
+                @foreach (var br in WorkspaceBranches)
                 {
-                    <option value="@br">@br</option>
+                    <option value="@br.Id" selected="@(br.Id == NavigationState.ActiveBranchId)">@br.Name</option>
                 }
             </select>
         </div>
     </div>
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h3 class="h2-title mb-0">System Settings</h3>
+            <span class="text-caption text-secondary">Backend configuration values, per organization or global.</span>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+            <i class="lucide-plus"></i> New Setting
+        </button>
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading settings..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load system settings" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="SystemSettingRecord"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="System Setting"
+                   ShowFilterPanel="false"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="s => s.Id.ToString()"
+                   OnEdit="OpenEdit" />
+    }
 </div>
+
+<Dialog IsOpen="_formOpen" Title="@(_editing ? "Edit Setting" : "New Setting")" Size="md" OnClose="() => _formOpen = false">
+    <ChildContent>
+        @if (!string.IsNullOrEmpty(_generalError))
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">
+                <i class="lucide-alert-circle"></i> @_generalError
+            </div>
+        }
+        <div class="row g-3">
+            <SelectField Label="Organization" ColumnClass="col-12" Options="_orgOptions" Placeholder="(Global)"
+                         Value="@(_model.OrganizationId?.ToString() ?? "")"
+                         ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : null)" />
+            <TextField Label="Key" Required="true" Value="@_model.Key" ValueChanged="@(v => _model.Key = v)"
+                       Error='@_keyError' />
+            <TextField Label="Value" Required="true" Value="@_model.Value" ValueChanged="@(v => _model.Value = v)"
+                       Error='@_valueError' />
+            <TextField Label="Description" ColumnClass="col-12" Multiline="true" Value="@_model.Description" ValueChanged="@(v => _model.Description = v)" />
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="set-enc" checked="@_model.IsEncrypted" @onchange="e => _model.IsEncrypted = (bool)e.Value!" />
+                    <label class="form-check-label text-caption" for="set-enc">Encrypted</label>
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _formOpen = false" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    private PagedResult<SystemSettingRecord>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private bool _editing;
+    private SystemSettingFormModel _model = new();
+    private List<SelectField.Option> _orgOptions = new();
+    private bool _saving;
+    private string? _generalError;
+    private string? _keyError;
+    private string? _valueError;
+
+    private Dictionary<Guid, string> _orgNames = new();
+    private List<(Guid Id, string Name)> _workspaceOrgs = new();
+    private List<(Guid Id, Guid OrganizationId, string Name)> _workspaceBranches = new();
+    private List<ColumnDefinition<SystemSettingRecord>> _columns = new();
+
+    private IEnumerable<(Guid Id, Guid OrganizationId, string Name)> WorkspaceBranches =>
+        NavigationState.ActiveOrganizationId is { } org
+            ? _workspaceBranches.Where(b => b.OrganizationId == org)
+            : _workspaceBranches;
+
+    private void OnPreferredOrgChanged(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            var name = _workspaceOrgs.FirstOrDefault(o => o.Id == id).Name ?? "";
+            NavigationState.SwitchOrganization(id, name);
+        }
+    }
+
+    private void OnPreferredBranchChanged(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            var name = _workspaceBranches.FirstOrDefault(b => b.Id == id).Name ?? "";
+            NavigationState.SwitchBranch(id, name);
+        }
+        else
+        {
+            NavigationState.SwitchBranch(null, "All branches");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _columns = new()
+        {
+            new() { Header = "Key", PropertySelector = s => s.Key, SortColumn = "Key" },
+            new() { Header = "Value", Sortable = false, Template = s =>
+                @<span>@(s.IsEncrypted ? "••••••" : s.Value)</span> },
+            new() { Header = "Scope", Sortable = false, Template = s =>
+                @<span>@(s.OrganizationId is { } o && _orgNames.TryGetValue(o, out var n) ? n : "Global")</span> },
+            new() { Header = "Description", Sortable = false, Template = s =>
+                @<span class="text-caption text-secondary">@(string.IsNullOrWhiteSpace(s.Description) ? "—" : s.Description)</span> },
+            new() { Header = "Encrypted", Sortable = false, Template = s =>
+                @<span class="badge-custom @(s.IsEncrypted ? "badge-custom-warning" : "badge-custom-secondary")">@(s.IsEncrypted ? "Yes" : "No")</span> }
+        };
+
+        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (orgs.IsSuccess && orgs.Data is not null)
+        {
+            _orgNames = orgs.Data.Items.ToDictionary(o => o.Id, o => o.Name);
+            _orgOptions = orgs.Data.Items.Select(o => new SelectField.Option(o.Id.ToString(), $"{o.Code} — {o.Name}")).ToList();
+            _workspaceOrgs = orgs.Data.Items.Select(o => (o.Id, o.Name)).ToList();
+        }
+
+        var branches = await BranchApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" });
+        if (branches.IsSuccess && branches.Data is not null)
+            _workspaceBranches = branches.Data.Items.Select(b => (b.Id, b.OrganizationId, b.Name)).ToList();
+
+        await LoadAsync(_query);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await SystemSettingApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading settings.";
+    }
+
+    private void OpenCreate()
+    {
+        _editing = false;
+        _model = new SystemSettingFormModel();
+        _generalError = _keyError = _valueError = null;
+        _formOpen = true;
+    }
+
+    private void OpenEdit(SystemSettingRecord item)
+    {
+        _editing = true;
+        _model = SystemSettingFormModel.FromRecord(item);
+        _generalError = _keyError = _valueError = null;
+        _formOpen = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _generalError = _keyError = _valueError = null;
+        if (string.IsNullOrWhiteSpace(_model.Key)) { _keyError = "Key is required."; return; }
+        if (string.IsNullOrWhiteSpace(_model.Value)) { _valueError = "Value is required."; return; }
+
+        _saving = true;
+        var result = await SystemSettingApiClient.UpsertAsync(_model);
+        _saving = false;
+
+        if (!result.IsSuccess)
+        {
+            _generalError = result.Error?.Message ?? "Save failed. Please try again.";
+            return;
+        }
+        _formOpen = false;
+        Notifications.ShowSuccess("Saved", "System setting saved.");
+        await LoadAsync(_query);
+    }
+}

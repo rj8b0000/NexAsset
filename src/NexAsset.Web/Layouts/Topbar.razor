@@ -1,12 +1,14 @@
 @using NexAsset.Web.State
 @using NexAsset.Web.Infrastructure.Services
 @using NexAsset.Web.Infrastructure.Authentication
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Shared.Models
 @inject NavigationState NavigationState
 @inject IAuthenticationService AuthenticationService
 @inject ICurrentUserService CurrentUser
 @inject NotificationState NotificationState
 @inject ThemeState ThemeState
-@inject MockDatabaseService Db
+@inject IBranchApiClient BranchApiClient
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -32,12 +34,17 @@
                 </button>
                 <div class="dropdown-menu p-1 @(BranchDropdownOpen ? "show" : "")" 
                      style="display: @(BranchDropdownOpen ? "block" : "none"); position: absolute; left: 0; z-index: 1020; margin-top: 4px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-8); box-shadow: var(--shadow-md);">
-                    @foreach (var br in Db.Branches)
+                    <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent"
+                            style="color: @(NavigationState.ActiveBranchId is null ? "var(--primary)" : "var(--text-primary)");"
+                            @onclick='() => SwitchBranch(null, "All branches")'>
+                        All branches
+                    </button>
+                    @foreach (var br in ActiveOrgBranches)
                     {
-                        <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" 
-                                style="color: @(NavigationState.ActiveBranch == br ? "var(--primary)" : "var(--text-primary)");"
-                                @onclick="() => SwitchBranch(br)">
-                            @br
+                        <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent"
+                                style="color: @(NavigationState.ActiveBranchId == br.Id ? "var(--primary)" : "var(--text-primary)");"
+                                @onclick="() => SwitchBranch(br.Id, br.Name)">
+                            @br.Name
                         </button>
                     }
                 </div>
@@ -49,8 +56,8 @@
     <div class="d-none d-lg-flex align-items-center flex-grow-1 mx-5" style="max-width: 400px;">
         <div class="position-relative w-100">
             <i class="lucide-search position-absolute text-muted-custom" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px;"></i>
-            <input type="text" class="form-control-custom" style="padding-left: 36px; border-radius: 9999px; height: 38px;" 
-                   placeholder="Search assets, employees, tickets..." @bind-value="GlobalSearchText" @bind-value:event="oninput" @onkeyup="HandleGlobalSearch" />
+            <input type="text" class="form-control-custom" style="padding-left: 36px; border-radius: 9999px; height: 38px;"
+                   placeholder="Search assets, employees, tickets..." @bind-value="GlobalSearchText" @bind-value:event="oninput" @onkeyup="HandleGlobalSearchKey" />
         </div>
     </div>
 
@@ -162,13 +169,23 @@
     private bool NotificationPanelOpen = false;
     private bool ProfileDropdownOpen = false;
     private string GlobalSearchText = "";
+    private List<(Guid Id, Guid OrganizationId, string Name)> _branches = new();
 
-    protected override void OnInitialized()
+    private IEnumerable<(Guid Id, Guid OrganizationId, string Name)> ActiveOrgBranches =>
+        NavigationState.ActiveOrganizationId is { } org
+            ? _branches.Where(b => b.OrganizationId == org)
+            : _branches;
+
+    protected override async Task OnInitializedAsync()
     {
         NavigationState.OnChange += StateHasChanged;
         ThemeState.OnChange += StateHasChanged;
         NotificationState.OnChange += StateHasChanged;
         CurrentUser.OnChange += StateHasChanged;
+
+        var branches = await BranchApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" });
+        if (branches.IsSuccess && branches.Data is not null)
+            _branches = branches.Data.Items.Select(b => (b.Id, b.OrganizationId, b.Name)).ToList();
     }
 
     private void ToggleBranchDropdown()
@@ -208,15 +225,19 @@
         NotificationPanelOpen = false;
     }
 
-    private void SwitchBranch(string branch)
+    private void SwitchBranch(Guid? id, string name)
     {
-        NavigationState.SwitchBranch(branch);
+        NavigationState.SwitchBranch(id, name);
         BranchDropdownOpen = false;
     }
 
-    private void HandleGlobalSearch()
+    // Enter navigates to the global record search across modules.
+    private void HandleGlobalSearchKey(KeyboardEventArgs e)
     {
+        if (e.Key != "Enter" || string.IsNullOrWhiteSpace(GlobalSearchText)) return;
         NavigationState.SetSearchQuery(GlobalSearchText);
+        NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(GlobalSearchText)}");
+        GlobalSearchText = "";
     }
 
     private async Task ToggleTheme()

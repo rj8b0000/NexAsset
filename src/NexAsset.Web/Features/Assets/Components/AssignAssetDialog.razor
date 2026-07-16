@@ -45,6 +45,7 @@
 @code {
     [Parameter] public bool IsOpen { get; set; }
     [Parameter] public Guid? AssetId { get; set; }
+    [Parameter] public Guid? OrganizationId { get; set; }
     [Parameter] public string AssetName { get; set; } = "";
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnCompleted { get; set; }
@@ -79,6 +80,8 @@
         var result = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
         if (result.IsSuccess && result.Data is not null)
             _employeeOptions = result.Data.Items
+                // Only employees from the asset's organization can receive it.
+                .Where(e => OrganizationId is null || e.OrganizationId == OrganizationId)
                 .Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}"))
                 .ToList();
     }

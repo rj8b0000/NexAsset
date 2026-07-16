@@ -44,11 +44,15 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="d => d.Id.ToString()"
                    OnEdit="OpenEdit"
-                   OnDelete="AskDelete" />
+                   OnDelete="AskDelete"
+                   CustomRowActions="PermissionsAction" />
     }
 </div>
 
 <DesignationFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
+
+<DesignationPermissionsDialog IsOpen="_permsOpen" DesignationId="_permsDesignationId" DesignationTitle="@_permsDesignationTitle"
+                              OnClose="() => _permsOpen = false" />
 
 <ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="designation"
                      OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />
@@ -63,8 +67,24 @@
     private Guid? _editId;
     private DesignationListItem? _deleteTarget;
 
+    private bool _permsOpen;
+    private Guid? _permsDesignationId;
+    private string _permsDesignationTitle = "";
+
     private Dictionary<Guid, string> _orgNames = new();
     private List<ColumnDefinition<DesignationListItem>> _columns = new();
+
+    private RenderFragment<DesignationListItem> PermissionsAction => item =>
+        @<button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => OpenPermissions(item)">
+            <i class="lucide-key-round me-2"></i> Permissions
+        </button>;
+
+    private void OpenPermissions(DesignationListItem item)
+    {
+        _permsDesignationId = item.Id;
+        _permsDesignationTitle = item.Title;
+        _permsOpen = true;
+    }
 
     protected override async Task OnInitializedAsync()
     {

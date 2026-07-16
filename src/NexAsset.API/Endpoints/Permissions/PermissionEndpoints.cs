@@ -1,7 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using NexAsset.Application.Features.Permissions.Commands.AssignPermissionToDesignation;
 using NexAsset.Application.Features.Permissions.Commands.AssignPermissionToRole;
 using NexAsset.Application.Features.Permissions.Commands.CreatePermission;
+using NexAsset.Application.Features.Permissions.Commands.RemovePermissionFromDesignation;
+using NexAsset.Application.Features.Permissions.Queries.GetDesignationPermissions;
 using NexAsset.Application.Features.Permissions.Commands.DeletePermission;
 using NexAsset.Application.Features.Permissions.Commands.RemovePermissionFromRole;
 using NexAsset.Application.Features.Permissions.Commands.UpdatePermission;
@@ -111,6 +114,41 @@ public static class PermissionEndpoints
             ISender sender) =>
         {
             var result = await sender.Send(new GetRolePermissionsQuery(roleId));
+            if (result.IsFailure)
+                return Results.BadRequest(result.Error);
+
+            return Results.Ok(result.Value);
+        });
+
+        group.MapPost("/designations/assign", async (
+            [FromBody] AssignPermissionToDesignationCommand command,
+            ISender sender) =>
+        {
+            var result = await sender.Send(command);
+            if (result.IsFailure)
+                return Results.BadRequest(result.Error);
+
+            return Results.NoContent();
+        });
+
+        group.MapDelete("/designations/{designationId:guid}/{permissionId:guid}", async (
+            Guid designationId,
+            Guid permissionId,
+            ISender sender) =>
+        {
+            var result = await sender.Send(
+                new RemovePermissionFromDesignationCommand(designationId, permissionId));
+            if (result.IsFailure)
+                return Results.BadRequest(result.Error);
+
+            return Results.NoContent();
+        });
+
+        group.MapGet("/designations/{designationId:guid}", async (
+            Guid designationId,
+            ISender sender) =>
+        {
+            var result = await sender.Send(new GetDesignationPermissionsQuery(designationId));
             if (result.IsFailure)
                 return Results.BadRequest(result.Error);
 

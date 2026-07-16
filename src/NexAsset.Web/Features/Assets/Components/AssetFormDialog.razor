@@ -39,7 +39,7 @@
                 <SelectField Label="Department" Options="DeptOptions" Placeholder="(None)"
                              Value="@GuidStr(_model.DepartmentId)" ValueChanged="@(v => _model.DepartmentId = ParseGuid(v))" Error='@Err("DepartmentId")' />
 
-                <SelectField Label="Current Holder" Options="_employeeOptions" Placeholder="(None)"
+                <SelectField Label="Current Holder" Options="EmployeeOptions" Placeholder="(None)"
                              Value="@GuidStr(_model.CurrentEmployeeId)" ValueChanged="@(v => _model.CurrentEmployeeId = ParseGuid(v))" Error='@Err("CurrentEmployeeId")' />
                 <SelectField Label="Status" Required="true" Options="_statusOptions" Placeholder="Select status"
                              Value="@_model.AssetStatus.ToString()" ValueChanged="@(v => _model.AssetStatus = int.TryParse(v, out var s) ? s : NexAsset.Web.Models.Assets.AssetStatus.Available)" Error='@Err("AssetStatus")' />
@@ -92,7 +92,7 @@
     private List<(Guid Id, Guid OrgId, string Label)> _categories = new();
     private List<(Guid Id, Guid OrgId, string Label)> _branches = new();
     private List<(Guid Id, Guid OrgId, string Label)> _departments = new();
-    private List<SelectField.Option> _employeeOptions = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _employees = new();
     private readonly List<SelectField.Option> _statusOptions =
         NexAsset.Web.Models.Assets.AssetStatus.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
 
@@ -111,6 +111,8 @@
     private IReadOnlyList<SelectField.Option> CategoryOptions => Filtered(_categories);
     private IReadOnlyList<SelectField.Option> BranchOptions => Filtered(_branches);
     private IReadOnlyList<SelectField.Option> DeptOptions => Filtered(_departments);
+    // The holder must belong to the same organization as the asset.
+    private IReadOnlyList<SelectField.Option> EmployeeOptions => Filtered(_employees);
 
     private IReadOnlyList<SelectField.Option> Filtered(List<(Guid Id, Guid OrgId, string Label)> src) =>
         src.Where(x => x.OrgId == _model.OrganizationId).Select(x => new SelectField.Option(x.Id.ToString(), x.Label)).ToList();
@@ -121,6 +123,7 @@
         if (_model.CategoryId != Guid.Empty && !_categories.Any(x => x.Id == _model.CategoryId && x.OrgId == _model.OrganizationId)) _model.CategoryId = Guid.Empty;
         if (_model.BranchId is { } b && !_branches.Any(x => x.Id == b && x.OrgId == _model.OrganizationId)) _model.BranchId = null;
         if (_model.DepartmentId is { } d && !_departments.Any(x => x.Id == d && x.OrgId == _model.OrganizationId)) _model.DepartmentId = null;
+        if (_model.CurrentEmployeeId is { } h && !_employees.Any(x => x.Id == h && x.OrgId == _model.OrganizationId)) _model.CurrentEmployeeId = null;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -178,7 +181,7 @@
 
         var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
         if (emps.IsSuccess && emps.Data is not null)
-            _employeeOptions = emps.Data.Items.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
+            _employees = emps.Data.Items.Select(e => (e.Id, e.OrganizationId, $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
     }
 
     private async Task SaveAsync()

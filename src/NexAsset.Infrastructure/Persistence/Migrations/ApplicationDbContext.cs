@@ -18,6 +18,7 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<DesignationPermission> DesignationPermissions => Set<DesignationPermission>();
     public DbSet<AssetCategory> AssetCategories => Set<AssetCategory>();
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<AssetAssignment> AssetAssignments => Set<AssetAssignment>();

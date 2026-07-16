@@ -20,14 +20,14 @@
         <div class="row g-3">
             <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
                          Value="@(_model.OrganizationId == Guid.Empty ? "" : _model.OrganizationId.ToString())"
-                         ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         ValueChanged="OnOrgChanged"
                          Error='@Err("OrganizationId")' />
             <TextField Label="PO Number" Required="true" Value="@_model.OrderNumber" ValueChanged="@(v => _model.OrderNumber = v)" Error='@Err("OrderNumber")' />
-            <SelectField Label="Vendor" Required="true" Options="_vendorOptions" Placeholder="Select a vendor"
+            <SelectField Label="Vendor" Required="true" Options="VendorOptions" Placeholder="Select a vendor"
                          Value="@(_model.VendorId == Guid.Empty ? "" : _model.VendorId.ToString())"
                          ValueChanged="@(v => _model.VendorId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
                          Error='@Err("VendorId")' />
-            <SelectField Label="Purchase Request" Options="_prOptions" Placeholder="(None)"
+            <SelectField Label="Purchase Request" Options="PrOptions" Placeholder="(None)"
                          Value="@(_model.PurchaseRequestId?.ToString() ?? "")"
                          ValueChanged="@(v => _model.PurchaseRequestId = Guid.TryParse(v, out var g) ? g : null)"
                          Error='@Err("PurchaseRequestId")' />
@@ -62,8 +62,25 @@
     private PurchaseOrderFormModel _model = new();
     private string _amountStr = "";
     private List<SelectField.Option> _orgOptions = new();
-    private List<SelectField.Option> _vendorOptions = new();
-    private List<SelectField.Option> _prOptions = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _vendors = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _prs = new();
+
+    // Vendors and purchase requests must belong to the selected organization.
+    private IReadOnlyList<SelectField.Option> VendorOptions => _vendors
+        .Where(x => x.OrgId == _model.OrganizationId)
+        .Select(x => new SelectField.Option(x.Id.ToString(), x.Label)).ToList();
+    private IReadOnlyList<SelectField.Option> PrOptions => _prs
+        .Where(x => x.OrgId == _model.OrganizationId)
+        .Select(x => new SelectField.Option(x.Id.ToString(), x.Label)).ToList();
+
+    private void OnOrgChanged(string v)
+    {
+        _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty;
+        if (_model.VendorId != Guid.Empty && !_vendors.Any(x => x.Id == _model.VendorId && x.OrgId == _model.OrganizationId))
+            _model.VendorId = Guid.Empty;
+        if (_model.PurchaseRequestId is { } pr && !_prs.Any(x => x.Id == pr && x.OrgId == _model.OrganizationId))
+            _model.PurchaseRequestId = null;
+    }
     private bool _saving;
     private string? _generalError;
     private Dictionary<string, string> _fieldErrors = new();
@@ -98,12 +115,12 @@
 
         var vendors = await VendorApiClient.GetPagedAsync(big);
         if (vendors.IsSuccess && vendors.Data is not null)
-            _vendorOptions = vendors.Data.Items.Select(v => new SelectField.Option(v.Id.ToString(), $"{v.Code} — {v.Name}")).ToList();
+            _vendors = vendors.Data.Items.Select(v => (v.Id, v.OrganizationId, $"{v.Code} — {v.Name}")).ToList();
 
         var prs = await PurchaseRequestApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200 });
         if (prs.IsSuccess && prs.Data is not null)
-            _prOptions = prs.Data.Items
-                .Select(r => new SelectField.Option(r.Id.ToString(), $"{r.RequestNumber} — {r.Title} ({ProcurementStatus.Label(r.Status)})"))
+            _prs = prs.Data.Items
+                .Select(r => (r.Id, r.OrganizationId, $"{r.RequestNumber} — {r.Title} ({ProcurementStatus.Label(r.Status)})"))
                 .ToList();
     }
 

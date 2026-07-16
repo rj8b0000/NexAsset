@@ -19,11 +19,11 @@
         <div class="row g-3">
             <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
                          Value="@(_model.OrganizationId == Guid.Empty ? "" : _model.OrganizationId.ToString())"
-                         ValueChanged="@(v => _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
+                         ValueChanged="OnOrgChanged"
                          Error='@Err("OrganizationId")' />
             <TextField Label="Request Number" Required="true" Value="@_model.RequestNumber" ValueChanged="@(v => _model.RequestNumber = v)" Error='@Err("RequestNumber")' />
             <TextField Label="Title" Required="true" ColumnClass="col-12" Value="@_model.Title" ValueChanged="@(v => _model.Title = v)" Error='@Err("Title")' />
-            <SelectField Label="Requested By" Required="true" Options="_employeeOptions" Placeholder="Select an employee"
+            <SelectField Label="Requested By" Required="true" Options="EmployeeOptions" Placeholder="Select an employee"
                          Value="@(_model.RequestedByEmployeeId == Guid.Empty ? "" : _model.RequestedByEmployeeId.ToString())"
                          ValueChanged="@(v => _model.RequestedByEmployeeId = Guid.TryParse(v, out var g) ? g : Guid.Empty)"
                          Error='@Err("RequestedByEmployeeId")' />
@@ -57,7 +57,20 @@
     private PurchaseRequestFormModel _model = new();
     private string _amountStr = "";
     private List<SelectField.Option> _orgOptions = new();
-    private List<SelectField.Option> _employeeOptions = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _employees = new();
+
+    // The requester must belong to the selected organization.
+    private IReadOnlyList<SelectField.Option> EmployeeOptions => _employees
+        .Where(e => e.OrgId == _model.OrganizationId)
+        .Select(e => new SelectField.Option(e.Id.ToString(), e.Label)).ToList();
+
+    private void OnOrgChanged(string v)
+    {
+        _model.OrganizationId = Guid.TryParse(v, out var g) ? g : Guid.Empty;
+        if (_model.RequestedByEmployeeId != Guid.Empty &&
+            !_employees.Any(e => e.Id == _model.RequestedByEmployeeId && e.OrgId == _model.OrganizationId))
+            _model.RequestedByEmployeeId = Guid.Empty;
+    }
     private bool _saving;
     private string? _generalError;
     private Dictionary<string, string> _fieldErrors = new();
@@ -90,7 +103,7 @@
 
         var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
         if (emps.IsSuccess && emps.Data is not null)
-            _employeeOptions = emps.Data.Items.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
+            _employees = emps.Data.Items.Select(e => (e.Id, e.OrganizationId, $"{e.EmployeeCode} — {e.FirstName} {e.LastName}")).ToList();
     }
 
     private async Task SaveAsync()

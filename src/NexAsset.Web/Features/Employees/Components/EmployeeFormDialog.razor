@@ -44,7 +44,7 @@
                              Value="@GuidStr(_model.DepartmentId)" ValueChanged="@(v => _model.DepartmentId = ParseGuid(v))" Error='@Err("DepartmentId")' />
                 <SelectField Label="Designation" Options="DesignationOptions" Placeholder="(None)"
                              Value="@GuidStr(_model.DesignationId)" ValueChanged="@(v => _model.DesignationId = ParseGuid(v))" Error='@Err("DesignationId")' />
-                <SelectField Label="Reporting Manager" Options="_managerOptions" Placeholder="(None)"
+                <SelectField Label="Reporting Manager" Options="ManagerOptions" Placeholder="(None)"
                              Value="@GuidStr(_model.ReportingManagerId)" ValueChanged="@(v => _model.ReportingManagerId = ParseGuid(v))" Error='@Err("ReportingManagerId")' />
 
                 <TextField Label="Joining Date" Required="true" Type="date" Value="@_model.JoiningDate" ValueChanged="@(v => _model.JoiningDate = v)" Error='@Err("JoiningDate")' />
@@ -88,7 +88,7 @@
     private List<(Guid Id, Guid OrgId, string Label)> _branches = new();
     private List<(Guid Id, Guid OrgId, string Label)> _departments = new();
     private List<(Guid Id, Guid OrgId, string Label)> _designations = new();
-    private List<SelectField.Option> _managerOptions = new();
+    private List<(Guid Id, Guid OrgId, string Label)> _managers = new();
     private readonly List<SelectField.Option> _statusOptions =
         NexAsset.Web.Models.HR.EmploymentStatus.Options.Select(o => new SelectField.Option(o.Value.ToString(), o.Label)).ToList();
 
@@ -107,6 +107,8 @@
     private IReadOnlyList<SelectField.Option> BranchOptions => Filtered(_branches);
     private IReadOnlyList<SelectField.Option> DeptOptions => Filtered(_departments);
     private IReadOnlyList<SelectField.Option> DesignationOptions => Filtered(_designations);
+    // Managers are employees of the same organization (and never the employee being edited).
+    private IReadOnlyList<SelectField.Option> ManagerOptions => Filtered(_managers);
 
     private IReadOnlyList<SelectField.Option> Filtered(List<(Guid Id, Guid OrgId, string Label)> src) =>
         src.Where(x => x.OrgId == _model.OrganizationId).Select(x => new SelectField.Option(x.Id.ToString(), x.Label)).ToList();
@@ -118,6 +120,7 @@
         if (_model.BranchId is { } b && !_branches.Any(x => x.Id == b && x.OrgId == _model.OrganizationId)) _model.BranchId = null;
         if (_model.DepartmentId is { } d && !_departments.Any(x => x.Id == d && x.OrgId == _model.OrganizationId)) _model.DepartmentId = null;
         if (_model.DesignationId is { } s && !_designations.Any(x => x.Id == s && x.OrgId == _model.OrganizationId)) _model.DesignationId = null;
+        if (_model.ReportingManagerId is { } m && !_managers.Any(x => x.Id == m && x.OrgId == _model.OrganizationId)) _model.ReportingManagerId = null;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -168,9 +171,9 @@
 
         var emps = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "FirstName" });
         if (emps.IsSuccess && emps.Data is not null)
-            _managerOptions = emps.Data.Items
+            _managers = emps.Data.Items
                 .Where(e => !EditId.HasValue || e.Id != EditId.Value) // can't report to self
-                .Select(e => new SelectField.Option(e.Id.ToString(), $"{e.EmployeeCode} — {e.FirstName} {e.LastName}"))
+                .Select(e => (e.Id, e.OrganizationId, $"{e.EmployeeCode} — {e.FirstName} {e.LastName}"))
                 .ToList();
     }
 

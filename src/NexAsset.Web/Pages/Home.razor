@@ -9,7 +9,9 @@
 @inject IDashboardApiClient DashboardApiClient
 @inject IOrganizationApiClient OrganizationApiClient
 @inject NotificationState NotificationState
+@inject NavigationState NavigationState
 @inject NavigationManager NavigationManager
+@implements IDisposable
 
 <!-- DASHBOARD VIEW -->
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -175,17 +177,37 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        NavigationState.OnChange += OnWorkspaceChanged;
+
         var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
         if (orgs.IsSuccess && orgs.Data is not null)
             _orgs = orgs.Data.Items.Select(o => (o.Id, o.Code, o.Name)).ToList();
 
-        _selectedOrgId = _orgs.FirstOrDefault().Id is var id && id != Guid.Empty ? id : null;
+        // Follow the workspace organization (sidebar switcher); fall back to the first org.
+        _selectedOrgId = NavigationState.ActiveOrganizationId
+                         ?? (_orgs.FirstOrDefault().Id is var id && id != Guid.Empty ? id : null);
         if (_selectedOrgId is null)
         {
             _loadError = "No organizations exist yet. Create one to see dashboard data.";
             return;
         }
+        if (NavigationState.ActiveOrganizationId is null)
+        {
+            var org = _orgs.First(o => o.Id == _selectedOrgId);
+            NavigationState.InitializeOrganization(org.Id, org.Name);
+        }
         await LoadSummaryAsync();
+    }
+
+    // The sidebar/settings switcher changed the workspace org — follow it.
+    private async void OnWorkspaceChanged()
+    {
+        if (NavigationState.ActiveOrganizationId is { } id && id != _selectedOrgId)
+        {
+            _selectedOrgId = id;
+            await LoadSummaryAsync();
+            StateHasChanged();
+        }
     }
 
     private async Task OnOrgChangedAsync(ChangeEventArgs e)
@@ -193,8 +215,15 @@ else
         if (Guid.TryParse(e.Value?.ToString(), out var id))
         {
             _selectedOrgId = id;
+            var org = _orgs.FirstOrDefault(o => o.Id == id);
+            if (org.Id != Guid.Empty) NavigationState.SwitchOrganization(org.Id, org.Name);
             await LoadSummaryAsync();
         }
+    }
+
+    public void Dispose()
+    {
+        NavigationState.OnChange -= OnWorkspaceChanged;
     }
 
     private async Task LoadSummaryAsync()

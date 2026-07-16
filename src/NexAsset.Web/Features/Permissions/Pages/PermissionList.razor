@@ -65,11 +65,20 @@
 
     private readonly List<ColumnDefinition<PermissionListItem>> _columns = new()
     {
+        new() { Header = "Module", Sortable = false, Template = p =>
+            @<span class="badge-custom badge-custom-primary">@ModuleOf(p.Code)</span> },
         new() { Header = "Code", PropertySelector = p => p.Code, SortColumn = "Code" },
         new() { Header = "Name", PropertySelector = p => p.Name, SortColumn = "Name" },
         new() { Header = "Status", SortColumn = "IsActive", Template = p =>
             @<span class="badge-custom @(p.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(p.IsActive ? "Active" : "Inactive")</span> }
     };
+
+    // Permission codes follow "Module.Action"; the prefix is the owning module.
+    private static string ModuleOf(string code)
+    {
+        var idx = code.IndexOf('.');
+        return idx > 0 ? code[..idx] : "General";
+    }
 
     protected override Task OnInitializedAsync() => LoadAsync(_query);
 

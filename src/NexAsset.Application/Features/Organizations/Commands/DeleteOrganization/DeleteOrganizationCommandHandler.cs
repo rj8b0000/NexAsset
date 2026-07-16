@@ -31,6 +31,10 @@ public sealed class DeleteOrganizationCommandHandler
             return Result.Failure("Organization not found.");
         }
 
+        // Cascade first so a deleted organization leaves no orphaned branches, employees,
+        // assets, vendors, inventory, tickets, etc. behind (all soft-deleted).
+        await _repository.CascadeSoftDeleteAsync(request.Id, cancellationToken);
+
         organization.IsDeleted = true;
         organization.DeletedAtUtc = DateTime.UtcNow;
 

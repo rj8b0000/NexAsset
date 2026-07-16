@@ -120,4 +120,60 @@ public sealed class OrganizationRepository : IOrganizationRepository
     {
         _context.Organizations.Remove(organization);
     }
+
+    public async Task CascadeSoftDeleteAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+
+        // Children keyed through Asset / InventoryItem first (subqueries reference the parent by
+        // OrganizationId, not IsDeleted, so ordering is safe either way).
+        await _context.AssetAssignments
+            .Where(x => !x.IsDeleted && _context.Assets.Any(a => a.Id == x.AssetId && a.OrganizationId == organizationId))
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.AssetTransfers
+            .Where(x => !x.IsDeleted && _context.Assets.Any(a => a.Id == x.AssetId && a.OrganizationId == organizationId))
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.AssetReturns
+            .Where(x => !x.IsDeleted && _context.Assets.Any(a => a.Id == x.AssetId && a.OrganizationId == organizationId))
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.MaintenanceRecords
+            .Where(x => !x.IsDeleted && _context.Assets.Any(a => a.Id == x.AssetId && a.OrganizationId == organizationId))
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.StockMovements
+            .Where(x => !x.IsDeleted && _context.InventoryItems.Any(i => i.Id == x.InventoryItemId && i.OrganizationId == organizationId))
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Consumables
+            .Where(x => !x.IsDeleted && _context.InventoryItems.Any(i => i.Id == x.InventoryItemId && i.OrganizationId == organizationId))
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+
+        // Directly organization-scoped entities.
+        await _context.Branches.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Departments.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Designations.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Employees.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.AssetCategories.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Assets.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Vendors.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.PurchaseRequests.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.PurchaseOrders.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.InventoryItems.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.Customers.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.ServiceTickets.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+        await _context.SystemSettings.Where(x => x.OrganizationId == organizationId && !x.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDeleted, true).SetProperty(x => x.DeletedAtUtc, now), cancellationToken);
+    }
 }

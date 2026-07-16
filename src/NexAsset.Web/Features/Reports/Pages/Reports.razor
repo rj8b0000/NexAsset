@@ -1,18 +1,113 @@
 @page "/reports"
-@using NexAsset.Web.State
-@inject NotificationState NotificationState
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.Dashboard
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Models.Dashboard
+@using NexAsset.Web.Shared.Models
+@inject IDashboardApiClient DashboardApiClient
+@inject IOrganizationApiClient OrganizationApiClient
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h1-title">Custom Asset Reporting</h1>
-            <span class="text-caption text-secondary">Export operational reporting indexes, audit logs, and capital depreciation assets ledger.</span>
+            <h1 class="h1-title">Operational Reports</h1>
+            <span class="text-caption text-secondary">Cross-organization operational summary, aggregated live from the backend.</span>
         </div>
     </div>
 
-    <EmptyState Title="Custom Asset Reporting" 
-                Description="Operational report lists, audit trails, capital depreciation graphs, and vendor purchase logs are ready to compile." 
-                IconClass="lucide-bar-chart-3" 
-                ActionLabel="Compile Asset Audit" 
-                OnActionClick='() => NotificationState.AddToast("Report Compiled", "Successfully compiled custom asset capital report.", ToastType.Success)' />
+    @if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load reports" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="LoadAsync" />
+    }
+    else if (_rows is null)
+    {
+        <LoadingState Message="Compiling report..." />
+    }
+    else if (!_rows.Any())
+    {
+        <EmptyState Title="Nothing to report yet"
+                    Description="Create an organization to see its operational summary here."
+                    IconClass="lucide-bar-chart-3" />
+    }
+    else
+    {
+        <div class="card-custom p-0" style="overflow: hidden; border: 1px solid var(--border-color);">
+            <div class="table-responsive">
+                <table class="table-custom w-100">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Employees</th>
+                            <th>Assets</th>
+                            <th>Assigned</th>
+                            <th>Available</th>
+                            <th>Low Stock</th>
+                            <th>Pending PRs</th>
+                            <th>Pending POs</th>
+                            <th>Open Tickets</th>
+                            <th>In Maintenance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td style="vertical-align: middle;">
+                                    <div class="fw-semibold" style="color: var(--text-primary);">@row.OrgName</div>
+                                    <span class="text-caption text-secondary">@row.OrgCode</span>
+                                </td>
+                                <td style="vertical-align: middle;">@row.Summary.Employees</td>
+                                <td style="vertical-align: middle;">@row.Summary.Assets</td>
+                                <td style="vertical-align: middle;">@row.Summary.AssignedAssets</td>
+                                <td style="vertical-align: middle;">@row.Summary.AvailableAssets</td>
+                                <td style="vertical-align: middle;">
+                                    <span class="@(row.Summary.LowStockItems > 0 ? "badge-custom badge-custom-danger" : "")">@row.Summary.LowStockItems</span>
+                                </td>
+                                <td style="vertical-align: middle;">@row.Summary.PendingPurchaseRequests</td>
+                                <td style="vertical-align: middle;">@row.Summary.PendingPurchaseOrders</td>
+                                <td style="vertical-align: middle;">@row.Summary.OpenServiceTickets</td>
+                                <td style="vertical-align: middle;">@row.Summary.AssetsUnderMaintenance</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="text-caption text-secondary mt-3">
+            <i class="lucide-info me-1"></i> Figures are computed live per organization by the backend dashboard summary.
+        </p>
+    }
 </div>
+
+@code {
+    private sealed record ReportRow(string OrgCode, string OrgName, DashboardSummary Summary);
+
+    private List<ReportRow>? _rows;
+    private string? _loadError;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loadError = null;
+        _rows = null;
+
+        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+        if (!orgs.IsSuccess || orgs.Data is null)
+        {
+            _loadError = orgs.Error?.Message ?? "Could not load organizations.";
+            return;
+        }
+
+        var rows = new List<ReportRow>();
+        foreach (var org in orgs.Data.Items)
+        {
+            var summary = await DashboardApiClient.GetSummaryAsync(org.Id);
+            if (summary.IsSuccess && summary.Data is not null)
+                rows.Add(new ReportRow(org.Code, org.Name, summary.Data));
+        }
+        _rows = rows;
+    }
+}

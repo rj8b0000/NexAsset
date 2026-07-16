@@ -1,0 +1,139 @@
+@page "/search"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.Assets
+@using NexAsset.Web.Infrastructure.Customers
+@using NexAsset.Web.Infrastructure.Inventory
+@using NexAsset.Web.Infrastructure.Procurement
+@using NexAsset.Web.Shared.Models
+@inject NexAsset.Web.Infrastructure.Assets.IAssetApiClient AssetApiClient
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
+@inject IVendorApiClient VendorApiClient
+@inject ICustomerApiClient CustomerApiClient
+@inject IInventoryApiClient InventoryApiClient
+@inject IPurchaseRequestApiClient PurchaseRequestApiClient
+@inject IServiceTicketApiClient ServiceTicketApiClient
+@inject NavigationManager NavigationManager
+
+<div class="animate-fade-in">
+    <div class="mb-4">
+        <h1 class="h1-title">Search Results</h1>
+        <span class="text-caption text-secondary">Matches for "<strong>@_query</strong>" across the system.</span>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingState Message="Searching across modules..." />
+    }
+    else if (!_groups.Any(g => g.Hits.Any()))
+    {
+        <EmptyState Title="No results found"
+                    Description="@($"Nothing matched \"{_query}\". Try different keywords.")"
+                    IconClass="lucide-search" />
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var group in _groups.Where(g => g.Hits.Any()))
+            {
+                <div class="col-lg-6 col-md-12">
+                    <div class="card-custom h-100">
+                        <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
+                            <h3 class="h2-title mb-0"><i class="@group.Icon me-1 text-primary"></i> @group.Title</h3>
+                            <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick="() => NavigationManager.NavigateTo(group.Url)">Open module</button>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var hit in group.Hits)
+                            {
+                                <div class="d-flex justify-content-between align-items-center p-2 rounded" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color);">
+                                    <div>
+                                        <div class="fw-semibold text-caption" style="color: var(--text-primary);">@hit.Primary</div>
+                                        <span class="text-caption text-secondary">@hit.Secondary</span>
+                                    </div>
+                                    <button class="btn-custom btn-custom-secondary p-1 px-2 text-caption" @onclick="() => NavigationManager.NavigateTo(group.Url)">
+                                        <i class="lucide-arrow-right"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private sealed record SearchHit(string Primary, string Secondary);
+    private sealed record SearchGroup(string Title, string Icon, string Url, List<SearchHit> Hits);
+
+    private string _query = "";
+    private bool _loading = true;
+    private List<SearchGroup> _groups = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query.TrimStart('?');
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var idx = pair.IndexOf('=');
+            if (idx > 0 && pair[..idx] == "q")
+            {
+                _query = Uri.UnescapeDataString(pair[(idx + 1)..].Replace('+', ' '));
+                break;
+            }
+        }
+
+        await RunSearchAsync();
+    }
+
+    private async Task RunSearchAsync()
+    {
+        _loading = true;
+        _groups = new();
+        var page = new PagedQuery { PageNumber = 1, PageSize = 5, Search = _query };
+
+        var assets = await AssetApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Assets", "lucide-box", "/assets",
+            assets.IsSuccess && assets.Data is not null
+                ? assets.Data.Items.Select(a => new SearchHit($"{a.AssetCode} — {a.AssetName}", a.SerialNumber ?? "")).ToList()
+                : new()));
+
+        var employees = await EmployeeApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Employees", "lucide-users", "/employees",
+            employees.IsSuccess && employees.Data is not null
+                ? employees.Data.Items.Select(e => new SearchHit($"{e.EmployeeCode} — {e.FirstName} {e.LastName}", e.Email)).ToList()
+                : new()));
+
+        var vendors = await VendorApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Vendors", "lucide-store", "/vendors",
+            vendors.IsSuccess && vendors.Data is not null
+                ? vendors.Data.Items.Select(v => new SearchHit($"{v.Code} — {v.Name}", v.Email)).ToList()
+                : new()));
+
+        var customers = await CustomerApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Customers", "lucide-contact", "/customers",
+            customers.IsSuccess && customers.Data is not null
+                ? customers.Data.Items.Select(c => new SearchHit($"{c.Code} — {c.Name}", c.Email)).ToList()
+                : new()));
+
+        var inventory = await InventoryApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Inventory", "lucide-warehouse", "/inventory",
+            inventory.IsSuccess && inventory.Data is not null
+                ? inventory.Data.Items.Select(i => new SearchHit($"{i.ItemCode} — {i.ItemName}", $"{i.CurrentStock} {i.UnitOfMeasure} in stock")).ToList()
+                : new()));
+
+        var prs = await PurchaseRequestApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Purchase Requests", "lucide-shopping-cart", "/procurement",
+            prs.IsSuccess && prs.Data is not null
+                ? prs.Data.Items.Select(r => new SearchHit($"{r.RequestNumber} — {r.Title}", r.EstimatedAmount.ToString("C"))).ToList()
+                : new()));
+
+        var tickets = await ServiceTicketApiClient.GetPagedAsync(page);
+        _groups.Add(new SearchGroup("Service Tickets", "lucide-headphones", "/service-tickets",
+            tickets.IsSuccess && tickets.Data is not null
+                ? tickets.Data.Items.Select(t => new SearchHit($"{t.TicketNumber} — {t.Title}", "")).ToList()
+                : new()));
+
+        _loading = false;
+    }
+}

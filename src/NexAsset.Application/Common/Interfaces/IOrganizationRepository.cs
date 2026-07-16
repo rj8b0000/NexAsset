@@ -32,4 +32,15 @@ public interface IOrganizationRepository
     void Update(Organization organization);
 
     void Delete(Organization organization);
+
+    /// <summary>
+    /// Soft-deletes every record that belongs to the organization (branches, departments,
+    /// designations, employees, asset categories, assets and their lifecycle records,
+    /// vendors, purchase requests/orders, inventory items with movements and consumables,
+    /// maintenance records, customers, service tickets, and org-scoped settings), so a
+    /// deleted organization leaves no orphaned data behind.
+    /// </summary>
+    Task CascadeSoftDeleteAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken);
 }

@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NexAsset.Web.Infrastructure.Administration;
 using NexAsset.Web.Infrastructure.API;
 using NexAsset.Web.Infrastructure.Assets;
 using NexAsset.Web.Infrastructure.Authentication;
@@ -74,6 +75,11 @@ namespace NexAsset.Web.Extensions
 
             // Dashboard summary client (real HTTP, /api/enterprise-operations/dashboard).
             services.AddNexAssetApiClient<IDashboardApiClient, DashboardApiClient>(settings);
+
+            // Administration clients: notifications, audit trail, system settings.
+            services.AddNexAssetApiClient<INotificationApiClient, NotificationApiClient>(settings);
+            services.AddNexAssetApiClient<IAuditTrailApiClient, AuditTrailApiClient>(settings);
+            services.AddNexAssetApiClient<ISystemSettingApiClient, SystemSettingApiClient>(settings);
 
             return services;
         }
