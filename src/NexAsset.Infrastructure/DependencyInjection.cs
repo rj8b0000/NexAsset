@@ -49,7 +49,11 @@ public static class DependencyInjection
         services.AddScoped<IAssetReturnRepository, AssetReturnRepository>();
         services.AddScoped<IEnterpriseOperationsRepository, EnterpriseOperationsRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        
+
+        // Permission enforcement: cached role+designation permission resolution.
+        services.AddMemoryCache();
+        services.AddScoped<Authorization.IEffectivePermissionService, Authorization.EffectivePermissionService>();
+
 
         return services;
     }

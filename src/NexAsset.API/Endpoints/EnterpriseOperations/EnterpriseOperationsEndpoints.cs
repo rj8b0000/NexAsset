@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NexAsset.Application.Features.EnterpriseOperations;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.EnterpriseOperations;
 
@@ -9,7 +10,9 @@ public static class EnterpriseOperationsEndpoints
     public static IEndpointRouteBuilder MapEnterpriseOperationsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/enterprise-operations")
-            .WithTags("Enterprise Operations");
+            .WithTags("Enterprise Operations")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         MapVendors(group);
         MapCustomers(group);

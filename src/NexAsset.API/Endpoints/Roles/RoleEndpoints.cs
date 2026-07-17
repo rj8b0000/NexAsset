@@ -6,6 +6,7 @@ using NexAsset.Application.Features.Roles.Commands.DeleteRole;
 using NexAsset.Application.Features.Roles.Commands.UpdateRole;
 using NexAsset.Application.Features.Roles.Queries.GetRole;
 using NexAsset.Application.Features.Roles.Queries.GetRoles;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Roles;
 
@@ -15,7 +16,9 @@ public static class RoleEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/roles")
-            .WithTags("Roles");
+            .WithTags("Roles")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/", async (
             [FromBody] CreateRoleCommand command,

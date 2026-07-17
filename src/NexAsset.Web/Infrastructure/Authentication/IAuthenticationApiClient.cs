@@ -21,5 +21,8 @@ namespace NexAsset.Web.Infrastructure.Authentication
 
         /// <summary>GET /api/auth/me — the signed-in user, or a 401 failure when the cookie is absent/expired.</summary>
         Task<ApiResult<CurrentUserResponse>> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>GET /api/auth/me/permissions — the signed-in user's effective permission codes.</summary>
+        Task<ApiResult<MyPermissionsResponse>> GetMyPermissionsAsync(CancellationToken cancellationToken = default);
     }
 }

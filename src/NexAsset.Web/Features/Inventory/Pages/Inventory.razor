@@ -11,6 +11,7 @@
 @inject IOrganizationApiClient OrganizationApiClient
 @inject IBranchApiClient BranchApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -18,9 +19,12 @@
             <h1 class="h1-title">Inventory</h1>
             <span class="text-caption text-secondary">Monitor stock levels, record movements, and track reorder points.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Item
-        </button>
+        @if (Perms.HasPermission("Inventory.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Item
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -48,6 +52,7 @@
                    IdSelector="i => i.Id.ToString()"
                    OnViewDetails="OpenDetails"
                    OnEdit="OpenEdit"
+                   EditPermission="Inventory.Update"
                    CustomRowActions="MovementAction" />
     }
 </div>

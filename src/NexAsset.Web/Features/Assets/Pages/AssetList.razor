@@ -14,6 +14,7 @@
 @inject IDepartmentApiClient DepartmentApiClient
 @inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -21,9 +22,12 @@
             <h1 class="h1-title">Assets</h1>
             <span class="text-caption text-secondary">Track physical assets, their placement, and lifecycle status.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Asset
-        </button>
+        @if (Perms.HasPermission("Assets.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Asset
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -51,7 +55,9 @@
                    IdSelector="a => a.Id.ToString()"
                    OnViewDetails="OpenDetails"
                    OnEdit="OpenEdit"
+                   EditPermission="Assets.Update"
                    OnDelete="AskDelete"
+                   DeletePermission="Assets.Delete"
                    CustomRowActions="LifecycleActions" />
     }
 </div>

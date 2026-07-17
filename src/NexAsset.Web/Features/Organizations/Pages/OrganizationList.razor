@@ -7,6 +7,7 @@
 @using NexAsset.Web.Features.Organizations.Components
 @inject IOrganizationApiClient OrganizationApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -14,9 +15,12 @@
             <h1 class="h1-title">Organizations</h1>
             <span class="text-caption text-secondary">Manage operational organizations, legal entities, and workspaces.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Organization
-        </button>
+        @if (Perms.HasPermission("Organizations.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Organization
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -46,7 +50,9 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="o => o.Id.ToString()"
                    OnEdit="OpenEdit"
-                   OnDelete="AskDelete" />
+                   EditPermission="Organizations.Update"
+                   OnDelete="AskDelete"
+                   DeletePermission="Organizations.Delete" />
     }
 </div>
 

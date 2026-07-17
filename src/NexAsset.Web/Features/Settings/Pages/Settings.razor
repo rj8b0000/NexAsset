@@ -13,18 +13,28 @@
 @inject IOrganizationApiClient OrganizationApiClient
 @inject IBranchApiClient BranchApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="card-custom mb-4" style="max-width: 600px;">
         <h3 class="h2-title border-bottom pb-3 mb-3">Workspace Preferences</h3>
+        @* Changing the operating organization is a SuperAdmin-only capability; everyone
+           else is pinned to their own and sees it read-only. *@
         <div class="form-group-custom mb-3">
             <label class="form-label-custom">Operating Organization</label>
-            <select class="form-control-custom" value="@(NavigationState.ActiveOrganizationId?.ToString() ?? "")" @onchange="OnPreferredOrgChanged">
-                @foreach (var org in _workspaceOrgs)
-                {
-                    <option value="@org.Id" selected="@(org.Id == NavigationState.ActiveOrganizationId)">@org.Name</option>
-                }
-            </select>
+            @if (Perms.IsSuperAdmin)
+            {
+                <select class="form-control-custom" value="@(NavigationState.ActiveOrganizationId?.ToString() ?? "")" @onchange="OnPreferredOrgChanged">
+                    @foreach (var org in _workspaceOrgs)
+                    {
+                        <option value="@org.Id" selected="@(org.Id == NavigationState.ActiveOrganizationId)">@org.Name</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input class="form-control-custom" value="@NavigationState.ActiveOrganization" disabled />
+            }
         </div>
         <div class="form-group-custom">
             <label class="form-label-custom">Operations Branch Office</label>

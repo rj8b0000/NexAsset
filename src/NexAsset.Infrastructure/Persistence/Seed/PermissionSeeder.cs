@@ -33,10 +33,11 @@ public static class PermissionSeeder
         ("Customers", new[] { "View", "Create", "Update", "Delete" }),
         ("ServiceTickets", new[] { "View", "Create", "Update" }),
         ("Notifications", new[] { "View", "Create", "MarkRead" }),
-        ("AuditLogs", new[] { "View" }),
+        ("AuditLogs", new[] { "View", "Create" }),
         ("SystemSettings", new[] { "View", "Manage" }),
         ("Dashboard", new[] { "View" }),
         ("Reports", new[] { "View" }),
+        ("Finance", new[] { "View" }),
     };
 
     public static async Task SeedAsync(ApplicationDbContext context)

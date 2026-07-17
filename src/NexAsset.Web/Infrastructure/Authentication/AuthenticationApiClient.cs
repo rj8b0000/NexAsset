@@ -26,5 +26,8 @@ namespace NexAsset.Web.Infrastructure.Authentication
 
         public Task<ApiResult<CurrentUserResponse>> GetCurrentUserAsync(CancellationToken cancellationToken = default)
             => GetAsync<CurrentUserResponse>("api/auth/me", cancellationToken);
+
+        public Task<ApiResult<MyPermissionsResponse>> GetMyPermissionsAsync(CancellationToken cancellationToken = default)
+            => GetAsync<MyPermissionsResponse>("api/auth/me/permissions", cancellationToken);
     }
 }

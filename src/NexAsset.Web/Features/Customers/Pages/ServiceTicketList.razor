@@ -10,6 +10,7 @@
 @inject ICustomerApiClient CustomerApiClient
 @inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -17,9 +18,12 @@
             <h1 class="h1-title">Service Tickets</h1>
             <span class="text-caption text-secondary">Track customer service requests and their resolution.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
-            <i class="lucide-plus"></i> New Ticket
-        </button>
+        @if (Perms.HasPermission("ServiceTickets.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
+                <i class="lucide-plus"></i> New Ticket
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)

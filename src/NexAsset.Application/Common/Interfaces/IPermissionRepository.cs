@@ -68,4 +68,12 @@ public interface IPermissionRepository
         CancellationToken cancellationToken);
 
     void RemoveDesignationPermission(DesignationPermission designationPermission);
+
+    /// <summary>
+    /// Drops every role and designation mapping for a permission. Called when the permission is
+    /// deleted so the join rows don't linger and silently reapply if the code is ever restored.
+    /// </summary>
+    Task RemoveMappingsForPermissionAsync(
+        Guid permissionId,
+        CancellationToken cancellationToken);
 }

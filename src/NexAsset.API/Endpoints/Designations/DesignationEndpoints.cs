@@ -5,6 +5,7 @@ using NexAsset.Application.Features.Designations.Commands.DeleteDesignation;
 using NexAsset.Application.Features.Designations.Commands.UpdateDesignation;
 using NexAsset.Application.Features.Designations.Queries.GetDesignation;
 using NexAsset.Application.Features.Designations.Queries.GetDesignations;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Designations;
 
@@ -14,7 +15,9 @@ public static class DesignationEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/designations")
-            .WithTags("Designations");
+            .WithTags("Designations")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/",

@@ -8,6 +8,7 @@
 @using NexAsset.Web.Features.Permissions.Components
 @inject IPermissionApiClient PermissionApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -15,9 +16,12 @@
             <h1 class="h1-title">Permissions</h1>
             <span class="text-caption text-secondary">Define system permissions and map them to roles.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Permission
-        </button>
+        @if (Perms.HasPermission("Permissions.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Permission
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -44,7 +48,9 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="p => p.Id.ToString()"
                    OnEdit="OpenEdit"
-                   OnDelete="AskDelete" />
+                   EditPermission="Permissions.Update"
+                   OnDelete="AskDelete"
+                   DeletePermission="Permissions.Delete" />
     }
 </div>
 

@@ -8,6 +8,7 @@
 @using NexAsset.Web.Features.Customers.Components
 @inject ICustomerApiClient CustomerApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -15,9 +16,12 @@
             <h1 class="h1-title">Customers</h1>
             <span class="text-caption text-secondary">Manage customer accounts and their service history.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Customer
-        </button>
+        @if (Perms.HasPermission("Customers.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Customer
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -44,7 +48,9 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="c => c.Id.ToString()"
                    OnEdit="OpenEdit"
-                   OnDelete="AskDelete" />
+                   EditPermission="Customers.Update"
+                   OnDelete="AskDelete"
+                   DeletePermission="Customers.Delete" />
     }
 </div>
 

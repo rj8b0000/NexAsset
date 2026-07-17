@@ -5,6 +5,7 @@ using NexAsset.Application.Features.Assets.Commands.DeleteAsset;
 using NexAsset.Application.Features.Assets.Commands.UpdateAsset;
 using NexAsset.Application.Features.Assets.Queries.GetAsset;
 using NexAsset.Application.Features.Assets.Queries.GetAssets;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Assets;
 
@@ -12,7 +13,9 @@ public static class AssetEndpoints
 {
     public static IEndpointRouteBuilder MapAssetEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/assets").WithTags("Assets");
+        var group = app.MapGroup("/api/assets").WithTags("Assets")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/", async ([FromBody] CreateAssetCommand command, ISender sender) =>
         {

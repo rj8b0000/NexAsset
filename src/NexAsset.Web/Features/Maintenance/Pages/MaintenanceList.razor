@@ -9,6 +9,7 @@
 @inject NexAsset.Web.Infrastructure.Maintenance.IMaintenanceRecordApiClient MaintenanceApiClient
 @inject IAssetApiClient AssetApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -16,9 +17,12 @@
             <h1 class="h1-title">Maintenance</h1>
             <span class="text-caption text-secondary">Manage preventive and corrective maintenance across assets.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
-            <i class="lucide-plus"></i> New Request
-        </button>
+        @if (Perms.HasPermission("Maintenance.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
+                <i class="lucide-plus"></i> New Request
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)

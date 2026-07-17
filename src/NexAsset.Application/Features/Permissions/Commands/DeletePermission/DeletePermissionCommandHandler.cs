@@ -32,6 +32,11 @@ public sealed class DeletePermissionCommandHandler
         permission.DeletedAtUtc = DateTime.UtcNow;
 
         _repository.Update(permission);
+
+        // Drop the role/designation mappings too — a deleted permission must not leave grants
+        // behind that would silently take effect again if the code were ever recreated.
+        await _repository.RemoveMappingsForPermissionAsync(permission.Id, cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

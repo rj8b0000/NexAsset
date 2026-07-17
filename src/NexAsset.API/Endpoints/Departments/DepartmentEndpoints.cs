@@ -5,6 +5,7 @@ using NexAsset.Application.Features.Departments.Commands.DeleteDepartment;
 using NexAsset.Application.Features.Departments.Commands.UpdateDepartment;
 using NexAsset.Application.Features.Departments.Queries.GetDepartment;
 using NexAsset.Application.Features.Departments.Queries.GetDepartments;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Departments;
 
@@ -14,7 +15,9 @@ public static class DepartmentEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/departments")
-            .WithTags("Departments");
+            .WithTags("Departments")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/",

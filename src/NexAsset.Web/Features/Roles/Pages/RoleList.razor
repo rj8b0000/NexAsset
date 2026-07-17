@@ -7,7 +7,9 @@
 @using NexAsset.Web.Shared.Models
 @using NexAsset.Web.Features.Roles.Components
 @inject IRoleApiClient RoleApiClient
+@inject IPermissionApiClient PermissionApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -15,9 +17,12 @@
             <h1 class="h1-title">Roles</h1>
             <span class="text-caption text-secondary">Manage access roles and their assigned permissions.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Role
-        </button>
+        @if (Perms.HasPermission("Roles.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Role
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -44,14 +49,20 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="r => r.Id.ToString()"
                    OnEdit="OpenEdit"
+                   EditPermission="Roles.Update"
                    OnDelete="AskDelete"
+                   DeletePermission="Roles.Delete"
                    CustomRowActions="ManagePermissionsAction" />
     }
 </div>
 
 <RoleFormDialog IsOpen="_formOpen" EditId="_editId" EditName="@_editName" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
 
-<RolePermissionsDialog IsOpen="_permsOpen" RoleId="_permsRoleId" RoleName="@_permsRoleName" OnClose="() => _permsOpen = false" />
+<PermissionTreeDialog IsOpen="_permsOpen" SubjectName="@_permsRoleName"
+                      LoadAssigned="() => PermissionApiClient.GetForRoleAsync(_permsRoleId!.Value)"
+                      Assign="pid => PermissionApiClient.AssignToRoleAsync(_permsRoleId!.Value, pid)"
+                      Remove="pid => PermissionApiClient.RemoveFromRoleAsync(_permsRoleId!.Value, pid)"
+                      OnClose="() => _permsOpen = false" />
 
 <ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="role"
                      OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />

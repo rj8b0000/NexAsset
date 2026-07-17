@@ -190,4 +190,17 @@ public sealed class PermissionRepository : IPermissionRepository
     {
         _context.DesignationPermissions.Remove(designationPermission);
     }
+
+    public async Task RemoveMappingsForPermissionAsync(
+        Guid permissionId,
+        CancellationToken cancellationToken)
+    {
+        await _context.RolePermissions
+            .Where(x => x.PermissionId == permissionId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await _context.DesignationPermissions
+            .Where(x => x.PermissionId == permissionId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

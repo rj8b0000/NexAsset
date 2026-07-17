@@ -11,6 +11,7 @@ using NexAsset.Application.Features.Permissions.Commands.UpdatePermission;
 using NexAsset.Application.Features.Permissions.Queries.GetPermission;
 using NexAsset.Application.Features.Permissions.Queries.GetPermissions;
 using NexAsset.Application.Features.Permissions.Queries.GetRolePermissions;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Permissions;
 
@@ -20,7 +21,9 @@ public static class PermissionEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/permissions")
-            .WithTags("Permissions");
+            .WithTags("Permissions")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/", async (
             [FromBody] CreatePermissionCommand command,

@@ -1,6 +1,7 @@
 @typeparam TItem
 @using NexAsset.Web.State
 @inject NotificationState NotificationState
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="card-custom p-0 animate-fade-in" style="overflow: hidden; border: 1px solid var(--border-color);">
     <!-- Table Controls Header -->
@@ -129,7 +130,7 @@
             </span>
             <div class="d-flex gap-2">
                 <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" style="background: var(--bg-surface);" @onclick="BulkClearSelection">Clear Selection</button>
-                @if (OnBulkDelete.HasDelegate)
+                @if (CanBulkDelete)
                 {
                     <button class="btn-custom btn-custom-danger py-1 px-3 text-caption" @onclick="BulkDelete">Delete Selected</button>
                 }
@@ -173,7 +174,7 @@
                     }
                     
                     <!-- Actions Header spacer -->
-                    @if (OnViewDetails.HasDelegate || OnEdit.HasDelegate || OnDelete.HasDelegate || CustomRowActions != null)
+                    @if (OnViewDetails.HasDelegate || CanEdit || CanDelete || CustomRowActions != null)
                     {
                         <th style="text-align: right; width: 80px;">Actions</th>
                     }
@@ -240,7 +241,7 @@
                             }
 
                             <!-- Row Actions Menu -->
-                            @if (OnViewDetails.HasDelegate || OnEdit.HasDelegate || OnDelete.HasDelegate || CustomRowActions != null)
+                            @if (OnViewDetails.HasDelegate || CanEdit || CanDelete || CustomRowActions != null)
                             {
                                 <td style="text-align: right; vertical-align: middle;">
                                     <div class="dropdown d-inline-block">
@@ -254,7 +255,7 @@
                                                     <i class="lucide-eye me-2"></i> Details
                                                 </button>
                                             }
-                                            @if (OnEdit.HasDelegate)
+                                            @if (CanEdit)
                                             {
                                                 <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => EditItem(item)">
                                                     <i class="lucide-edit-2 me-2"></i> Edit
@@ -266,7 +267,7 @@
                                                 @CustomRowActions(item)
                                             }
 
-                                            @if (OnDelete.HasDelegate)
+                                            @if (CanDelete)
                                             {
                                                 <div class="dropdown-divider"></div>
                                                 <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption text-danger border-0 bg-transparent" @onclick="() => DeleteItem(item)">
@@ -283,7 +284,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="@(Columns.Count(c => c.Visible) + (IdSelector != null ? 1 : 0) + (OnViewDetails.HasDelegate || OnEdit.HasDelegate || OnDelete.HasDelegate || CustomRowActions != null ? 1 : 0))" class="text-center py-5">
+                        <td colspan="@(Columns.Count(c => c.Visible) + (IdSelector != null ? 1 : 0) + (OnViewDetails.HasDelegate || CanEdit || CanDelete || CustomRowActions != null ? 1 : 0))" class="text-center py-5">
                             <div class="d-flex flex-column align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-light-custom" style="background-color: var(--bg-app); color: var(--text-muted);">
                                     <i class="lucide-search fs-3"></i>
@@ -365,6 +366,16 @@
     [Parameter] public EventCallback<TItem> OnEdit { get; set; }
     [Parameter] public EventCallback<TItem> OnDelete { get; set; }
     [Parameter] public EventCallback<List<TItem>> OnBulkDelete { get; set; }
+
+    // Optional "Module.Action" permission codes gating the edit/delete actions. When set, the
+    // action is hidden unless the signed-in user holds the permission (the backend enforces the
+    // same permission again on the API call).
+    [Parameter] public string? EditPermission { get; set; }
+    [Parameter] public string? DeletePermission { get; set; }
+
+    private bool CanEdit => OnEdit.HasDelegate && (EditPermission is null || Perms.HasPermission(EditPermission));
+    private bool CanDelete => OnDelete.HasDelegate && (DeletePermission is null || Perms.HasPermission(DeletePermission));
+    private bool CanBulkDelete => OnBulkDelete.HasDelegate && (DeletePermission is null || Perms.HasPermission(DeletePermission));
 
     private string LocalSearchQuery = "";
     private bool FilterPanelOpen = false;

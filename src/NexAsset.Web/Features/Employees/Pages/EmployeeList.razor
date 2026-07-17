@@ -12,6 +12,7 @@
 @inject IDepartmentApiClient DepartmentApiClient
 @inject IDesignationApiClient DesignationApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -19,9 +20,12 @@
             <h1 class="h1-title">Employees</h1>
             <span class="text-caption text-secondary">Manage employee records, employment details, and org placement.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Employee
-        </button>
+        @if (Perms.HasPermission("Employees.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Employee
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -49,7 +53,9 @@
                    IdSelector="e => e.Id.ToString()"
                    OnViewDetails="OpenDetails"
                    OnEdit="OpenEdit"
+                   EditPermission="Employees.Update"
                    OnDelete="AskDelete"
+                   DeletePermission="Employees.Delete"
                    CustomRowActions="ActivateDeactivateAction" />
     }
 </div>

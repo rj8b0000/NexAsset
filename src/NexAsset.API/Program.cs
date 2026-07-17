@@ -44,6 +44,19 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/access-denied";
     options.SlidingExpiration = true;
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
+
+    // This host only serves the API — return status codes instead of the cookie
+    // middleware's default browser redirects so the WASM client sees 401/403.
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddControllers();

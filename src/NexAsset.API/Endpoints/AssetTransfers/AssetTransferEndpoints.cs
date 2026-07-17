@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NexAsset.Application.Features.AssetTransfers.Commands.TransferAsset;
 using NexAsset.Application.Features.AssetTransfers.Queries.GetAssetTransferHistory;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.AssetTransfers;
 
@@ -9,7 +10,9 @@ public static class AssetTransferEndpoints
 {
     public static IEndpointRouteBuilder MapAssetTransferEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/asset-transfers").WithTags("Asset Transfers");
+        var group = app.MapGroup("/api/asset-transfers").WithTags("Asset Transfers")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/", async ([FromBody] TransferAssetCommand command, ISender sender) =>
         {

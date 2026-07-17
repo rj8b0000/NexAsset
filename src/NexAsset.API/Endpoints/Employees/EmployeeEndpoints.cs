@@ -5,6 +5,7 @@ using NexAsset.Application.Features.Employees.Commands.DeleteEmployee;
 using NexAsset.Application.Features.Employees.Commands.UpdateEmployee;
 using NexAsset.Application.Features.Employees.Queries.GetEmployee;
 using NexAsset.Application.Features.Employees.Queries.GetEmployees;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Employees;
 
@@ -14,7 +15,9 @@ public static class EmployeeEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/employees")
-            .WithTags("Employees");
+            .WithTags("Employees")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/", async (
             [FromBody] CreateEmployeeCommand command,

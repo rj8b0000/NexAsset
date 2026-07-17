@@ -9,6 +9,7 @@
 @inject IConsumableApiClient ConsumableApiClient
 @inject IInventoryApiClient InventoryApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -16,9 +17,12 @@
             <h1 class="h1-title">Consumables</h1>
             <span class="text-caption text-secondary">Track consumable items backed by inventory stock.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Consumable
-        </button>
+        @if (Perms.HasPermission("Consumables.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Consumable
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -44,7 +48,8 @@
                    IsLoading="_busy"
                    OnQueryChanged="LoadAsync"
                    IdSelector="c => c.Id.ToString()"
-                   OnEdit="OpenEdit" />
+                   OnEdit="OpenEdit"
+                   EditPermission="Consumables.Update" />
     }
 </div>
 

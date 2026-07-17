@@ -14,17 +14,20 @@ namespace NexAsset.Web.Infrastructure.Authentication
         private readonly NexAssetAuthenticationStateProvider _stateProvider;
         private readonly INotificationService _notifications;
         private readonly IGlobalLoadingService _loading;
+        private readonly IPermissionChecker _permissions;
 
         public AuthenticationService(
             IAuthenticationApiClient apiClient,
             NexAssetAuthenticationStateProvider stateProvider,
             INotificationService notifications,
-            IGlobalLoadingService loading)
+            IGlobalLoadingService loading,
+            IPermissionChecker permissions)
         {
             _apiClient = apiClient;
             _stateProvider = stateProvider;
             _notifications = notifications;
             _loading = loading;
+            _permissions = permissions;
         }
 
         public async Task<ApiResult<AuthenticatedUser>> LoginAsync(string email, string password, bool rememberMe, CancellationToken cancellationToken = default)
@@ -38,6 +41,9 @@ namespace NexAsset.Web.Infrastructure.Authentication
             }
 
             var user = AuthenticatedUser.FromLogin(result.Data);
+            // Load permissions before announcing the session so the first render is already
+            // gated — otherwise the shell briefly shows navigation the user may not have.
+            await _permissions.LoadAsync(cancellationToken);
             _stateProvider.MarkAuthenticated(user);
             _notifications.ShowSuccess("Signed in", $"Welcome back, {user.DisplayName}.");
             return ApiResult<AuthenticatedUser>.Success(user);

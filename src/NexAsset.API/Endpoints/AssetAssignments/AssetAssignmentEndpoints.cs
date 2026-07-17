@@ -4,6 +4,7 @@ using NexAsset.Application.Features.AssetAssignments.Commands.AssignAsset;
 using NexAsset.Application.Features.AssetAssignments.Commands.UnassignAsset;
 using NexAsset.Application.Features.AssetAssignments.Queries.GetAssetAssignment;
 using NexAsset.Application.Features.AssetAssignments.Queries.GetAssetAssignmentHistory;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.AssetAssignments;
 
@@ -11,7 +12,9 @@ public static class AssetAssignmentEndpoints
 {
     public static IEndpointRouteBuilder MapAssetAssignmentEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/asset-assignments").WithTags("Asset Assignments");
+        var group = app.MapGroup("/api/asset-assignments").WithTags("Asset Assignments")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/assign", async ([FromBody] AssignAssetCommand command, ISender sender) =>
         {

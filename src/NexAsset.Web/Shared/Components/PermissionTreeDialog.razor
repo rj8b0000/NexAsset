@@ -1,0 +1,208 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.HR
+@using NexAsset.Web.Models.HR
+@using NexAsset.Web.Shared.Models
+@inject IPermissionApiClient PermissionApiClient
+@inject NexAsset.Web.Infrastructure.Notifications.INotificationService Notify
+
+@*
+    Shared permission mapper used by both Roles and Designations: permissions are grouped by
+    module (the "Module." code prefix) into cards with a parent checkbox that toggles all of the
+    module's actions, while every action stays individually checkable. Saving applies the diff
+    through the Assign/Remove delegates supplied by the host page.
+*@
+<Dialog IsOpen="IsOpen" Title="@($"Permissions — {SubjectName}")" Size="lg" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading permissions..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert alert-danger py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">@_error</div>
+            }
+
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="text-caption text-secondary">@_checked.Count of @_all.Count permissions selected</span>
+                <div class="d-flex gap-2">
+                    <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick="SelectAll">Select all</button>
+                    <button class="btn-custom btn-custom-secondary py-1 px-3 text-caption" @onclick="ClearAll">Clear all</button>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                @foreach (var module in _modules)
+                {
+                    var granted = module.Permissions.Count(p => _checked.Contains(p.Id));
+                    <div class="col-md-6">
+                        <div class="p-3 rounded h-100" style="background-color: var(--bg-surface-hover); border: 1px solid @(granted > 0 ? "var(--primary)" : "var(--border-color)");">
+                            <div class="form-check border-bottom pb-2 mb-2" style="border-color: var(--border-color) !important;">
+                                <input class="form-check-input" type="checkbox" id="mod-@module.Name"
+                                       checked="@(granted == module.Permissions.Count)"
+                                       @onchange="() => ToggleModule(module)" />
+                                <label class="form-check-label fw-semibold text-caption" for="mod-@module.Name" style="color: var(--text-primary);">
+                                    @module.Name
+                                    <span class="text-muted-custom ms-1" style="font-weight: 400;">(@granted/@module.Permissions.Count)</span>
+                                </label>
+                            </div>
+                            @foreach (var p in module.Permissions)
+                            {
+                                <div class="form-check py-1 ms-3">
+                                    <input class="form-check-input" type="checkbox" id="perm-@p.Id"
+                                           checked="@_checked.Contains(p.Id)"
+                                           @onchange="() => TogglePermission(p.Id)" />
+                                    <label class="form-check-label text-caption" for="perm-@p.Id" style="color: var(--text-primary);">
+                                        @p.Action
+                                        <span class="text-muted-custom ms-1" style="font-size: 11px;">@p.Name</span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save Permissions</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    /// <summary>Name of the role or designation shown in the dialog title.</summary>
+    [Parameter] public string SubjectName { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>Returns the permissions currently assigned to the subject.</summary>
+    [Parameter] public Func<Task<ApiResult<List<PermissionListItem>>>>? LoadAssigned { get; set; }
+    /// <summary>Assigns one permission (by id) to the subject.</summary>
+    [Parameter] public Func<Guid, Task<ApiResult>>? Assign { get; set; }
+    /// <summary>Removes one permission (by id) from the subject.</summary>
+    [Parameter] public Func<Guid, Task<ApiResult>>? Remove { get; set; }
+
+    private sealed record PermissionNode(Guid Id, string Code, string Name, string Action);
+    private sealed record ModuleNode(string Name, List<PermissionNode> Permissions);
+
+    private List<PermissionNode> _all = new();
+    private List<ModuleNode> _modules = new();
+    private HashSet<Guid> _checked = new();
+    private HashSet<Guid> _originallyAssigned = new();
+
+    private bool _loading;
+    private bool _saving;
+    private string? _error;
+    private bool _open;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await LoadAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private static (string Module, string Action) Split(string code)
+    {
+        var idx = code.IndexOf('.');
+        return idx > 0 ? (code[..idx], code[(idx + 1)..]) : ("General", code);
+    }
+
+    private async Task LoadAsync()
+    {
+        if (LoadAssigned is null) return;
+        _loading = true;
+        _error = null;
+
+        var all = await PermissionApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Code" });
+        if (all.IsSuccess && all.Data is not null)
+        {
+            _all = all.Data.Items
+                .Select(p => { var (_, action) = Split(p.Code); return new PermissionNode(p.Id, p.Code, p.Name, action); })
+                .ToList();
+            _modules = _all
+                .GroupBy(p => Split(p.Code).Module)
+                .OrderBy(g => g.Key)
+                .Select(g => new ModuleNode(g.Key, g.OrderBy(p => p.Action).ToList()))
+                .ToList();
+        }
+
+        var assigned = await LoadAssigned();
+        if (assigned.IsSuccess && assigned.Data is not null)
+        {
+            _originallyAssigned = assigned.Data.Select(p => p.Id).ToHashSet();
+            _checked = new HashSet<Guid>(_originallyAssigned);
+        }
+        else
+        {
+            _error = assigned.Error?.Message ?? "Could not load assigned permissions.";
+        }
+
+        _loading = false;
+    }
+
+    private void TogglePermission(Guid id)
+    {
+        if (!_checked.Remove(id))
+            _checked.Add(id);
+    }
+
+    private void ToggleModule(ModuleNode module)
+    {
+        var allChecked = module.Permissions.All(p => _checked.Contains(p.Id));
+        foreach (var p in module.Permissions)
+        {
+            if (allChecked) _checked.Remove(p.Id);
+            else _checked.Add(p.Id);
+        }
+    }
+
+    private void SelectAll() => _checked = _all.Select(p => p.Id).ToHashSet();
+    private void ClearAll() => _checked.Clear();
+
+    private async Task SaveAsync()
+    {
+        if (Assign is null || Remove is null) return;
+        _error = null;
+        _saving = true;
+
+        var toAssign = _checked.Except(_originallyAssigned).ToList();
+        var toRemove = _originallyAssigned.Except(_checked).ToList();
+        var failures = 0;
+
+        foreach (var id in toAssign)
+        {
+            var r = await Assign(id);
+            if (!r.IsSuccess) failures++;
+        }
+        foreach (var id in toRemove)
+        {
+            var r = await Remove(id);
+            if (!r.IsSuccess) failures++;
+        }
+
+        _saving = false;
+
+        if (failures > 0)
+        {
+            _error = $"{failures} change(s) failed to save. The list below reflects what is stored now.";
+            await LoadAsync();
+            return;
+        }
+
+        Notify.ShowSuccess("Saved", $"Permissions updated: {toAssign.Count} added, {toRemove.Count} removed.");
+        await OnClose.InvokeAsync();
+    }
+}

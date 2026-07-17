@@ -7,7 +7,9 @@
 @using NexAsset.Web.Features.Designations.Components
 @inject IDesignationApiClient DesignationApiClient
 @inject IOrganizationApiClient OrganizationApiClient
+@inject NexAsset.Web.Infrastructure.HR.IPermissionApiClient PermissionApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -15,9 +17,12 @@
             <h1 class="h1-title">Designations</h1>
             <span class="text-caption text-secondary">Define job titles and roles across organizations and departments.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Designation
-        </button>
+        @if (Perms.HasPermission("Designations.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Designation
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -44,15 +49,20 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="d => d.Id.ToString()"
                    OnEdit="OpenEdit"
+                   EditPermission="Designations.Update"
                    OnDelete="AskDelete"
+                   DeletePermission="Designations.Delete"
                    CustomRowActions="PermissionsAction" />
     }
 </div>
 
 <DesignationFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="OnSaved" />
 
-<DesignationPermissionsDialog IsOpen="_permsOpen" DesignationId="_permsDesignationId" DesignationTitle="@_permsDesignationTitle"
-                              OnClose="() => _permsOpen = false" />
+<PermissionTreeDialog IsOpen="_permsOpen" SubjectName="@_permsDesignationTitle"
+                      LoadAssigned="() => PermissionApiClient.GetForDesignationAsync(_permsDesignationId!.Value)"
+                      Assign="pid => PermissionApiClient.AssignToDesignationAsync(_permsDesignationId!.Value, pid)"
+                      Remove="pid => PermissionApiClient.RemoveFromDesignationAsync(_permsDesignationId!.Value, pid)"
+                      OnClose="() => _permsOpen = false" />
 
 <ConfirmDeleteDialog IsOpen="_deleteTarget is not null" EntityLabel="designation"
                      OnClose="() => _deleteTarget = null" OnConfirm="ConfirmDeleteAsync" />

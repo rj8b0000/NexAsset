@@ -5,6 +5,7 @@ using NexAsset.Application.Features.AssetCategories.Commands.DeleteAssetCategory
 using NexAsset.Application.Features.AssetCategories.Commands.UpdateAssetCategory;
 using NexAsset.Application.Features.AssetCategories.Queries.GetAssetCategories;
 using NexAsset.Application.Features.AssetCategories.Queries.GetAssetCategory;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.AssetCategories;
 
@@ -12,7 +13,9 @@ public static class AssetCategoryEndpoints
 {
     public static IEndpointRouteBuilder MapAssetCategoryEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/asset-categories").WithTags("Asset Categories");
+        var group = app.MapGroup("/api/asset-categories").WithTags("Asset Categories")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost("/", async ([FromBody] CreateAssetCategoryCommand command, ISender sender) =>
         {

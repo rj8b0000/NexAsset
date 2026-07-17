@@ -27,11 +27,13 @@ namespace NexAsset.Web.Infrastructure.Authentication
             new(new ClaimsPrincipal(new ClaimsIdentity()));
 
         private readonly IAuthenticationApiClient _apiClient;
+        private readonly IPermissionChecker _permissions;
         private AuthenticationState? _cached;
 
-        public NexAssetAuthenticationStateProvider(IAuthenticationApiClient apiClient)
+        public NexAssetAuthenticationStateProvider(IAuthenticationApiClient apiClient, IPermissionChecker permissions)
         {
             _apiClient = apiClient;
+            _permissions = permissions;
         }
 
         /// <summary>
@@ -53,6 +55,9 @@ namespace NexAsset.Web.Infrastructure.Authentication
                 ? new AuthenticationState(BuildPrincipal(AuthenticatedUser.FromCurrentUser(result.Data)))
                 : Anonymous;
 
+            if (result.IsSuccess)
+                await _permissions.LoadAsync();
+
             return _cached;
         }
 
@@ -66,6 +71,7 @@ namespace NexAsset.Web.Infrastructure.Authentication
         /// <summary>Drop to anonymous and push the change to the UI.</summary>
         public void MarkLoggedOut()
         {
+            _permissions.Clear();
             _cached = Anonymous;
             NotifyAuthenticationStateChanged(Task.FromResult(_cached));
         }

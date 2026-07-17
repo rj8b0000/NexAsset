@@ -19,6 +19,17 @@ namespace NexAsset.Web.Models.Auth
     public sealed record CurrentUserResponse(Guid UserId, string Email, string UserName);
 
     /// <summary>
+    /// Payload returned by <c>GET /api/auth/me/permissions</c> — the user's effective permission
+    /// codes plus the organization their employee record belongs to (null for accounts without
+    /// an employee record, such as the system administrator).
+    /// </summary>
+    public sealed record MyPermissionsResponse(
+        bool IsSuperAdmin,
+        Guid? OrganizationId,
+        string? OrganizationName,
+        List<string> Permissions);
+
+    /// <summary>
     /// Frontend-facing identity model. Normalizes the two backend shapes above
     /// (login returns <c>FullName</c>, /me returns <c>UserName</c>) onto a single
     /// <see cref="DisplayName"/> the UI and claims principal can rely on.

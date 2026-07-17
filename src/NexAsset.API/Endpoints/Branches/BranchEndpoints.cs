@@ -5,6 +5,7 @@ using NexAsset.Application.Features.Branches.Commands.DeleteBranch;
 using NexAsset.Application.Features.Branches.Commands.UpdateBranch;
 using NexAsset.Application.Features.Branches.Queries.GetBranch;
 using NexAsset.Application.Features.Branches.Queries.GetBranches;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Branches;
 
@@ -14,7 +15,9 @@ public static class BranchEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/branches")
-            .WithTags("Branches");
+            .WithTags("Branches")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/",

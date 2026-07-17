@@ -5,6 +5,7 @@ using NexAsset.Application.Features.Organizations.Commands.DeleteOrganization;
 using NexAsset.Application.Features.Organizations.Commands.UpdateOrganization;
 using NexAsset.Application.Features.Organizations.Queries.GetOrganization;
 using NexAsset.Application.Features.Organizations.Queries.GetOrganizations;
+using NexAsset.API.Authorization;
 
 namespace NexAsset.API.Endpoints.Organizations;
 
@@ -14,7 +15,9 @@ public static class OrganizationEndpoints
         this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/organizations")
-            .WithTags("Organizations");
+            .WithTags("Organizations")
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/",

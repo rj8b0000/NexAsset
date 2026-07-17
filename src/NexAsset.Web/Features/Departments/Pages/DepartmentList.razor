@@ -8,6 +8,7 @@
 @inject IDepartmentApiClient DepartmentApiClient
 @inject IOrganizationApiClient OrganizationApiClient
 @inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 
 <div class="animate-fade-in">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -15,9 +16,12 @@
             <h1 class="h1-title">Departments</h1>
             <span class="text-caption text-secondary">Organize functional departments within each organization.</span>
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Department
-        </button>
+        @if (Perms.HasPermission("Departments.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Department
+            </button>
+        }
     </div>
 
     @if (_page is null && _loadError is null)
@@ -44,7 +48,9 @@
                    OnQueryChanged="LoadAsync"
                    IdSelector="d => d.Id.ToString()"
                    OnEdit="OpenEdit"
-                   OnDelete="AskDelete" />
+                   EditPermission="Departments.Update"
+                   OnDelete="AskDelete"
+                   DeletePermission="Departments.Delete" />
     }
 </div>
 

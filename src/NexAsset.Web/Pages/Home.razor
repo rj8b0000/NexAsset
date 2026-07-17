@@ -11,19 +11,24 @@
 @inject NotificationState NotificationState
 @inject NavigationState NavigationState
 @inject NavigationManager NavigationManager
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
 @implements IDisposable
 
 <!-- DASHBOARD VIEW -->
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-    <span class="text-caption text-secondary">Live operational summary for the selected organization.</span>
-    <div style="min-width: 260px;">
-        <select class="form-control-custom py-1 px-2" value="@(_selectedOrgId?.ToString() ?? "")" @onchange="OnOrgChangedAsync">
-            @foreach (var org in _orgs)
-            {
-                <option value="@org.Id" selected="@(org.Id == _selectedOrgId)">@org.Code — @org.Name</option>
-            }
-        </select>
-    </div>
+    <span class="text-caption text-secondary">Live operational summary for @(Perms.IsSuperAdmin ? "the selected organization" : "your organization").</span>
+    @* Only SuperAdmin may look across organizations; everyone else is pinned to their own. *@
+    @if (Perms.IsSuperAdmin)
+    {
+        <div style="min-width: 260px;">
+            <select class="form-control-custom py-1 px-2" value="@(_selectedOrgId?.ToString() ?? "")" @onchange="OnOrgChangedAsync">
+                @foreach (var org in _orgs)
+                {
+                    <option value="@org.Id" selected="@(org.Id == _selectedOrgId)">@org.Code — @org.Name</option>
+                }
+            </select>
+        </div>
+    }
 </div>
 
 @if (_loadError is not null)
@@ -68,24 +73,6 @@ else
         </div>
     </div>
 }
-
-<div class="row g-4 mb-4">
-    <div class="col-lg-6 col-md-12">
-        <ChartCard Title="Asset Growth" Subtitle="Capital valuation trends ($k) over last 6 months" Type="area" />
-    </div>
-    <div class="col-lg-6 col-md-12">
-        <ChartCard Title="Asset Categories" Subtitle="Breakdown of physical assets by type" Type="donut" />
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <div class="col-lg-6 col-md-12">
-        <ChartCard Title="Monthly Procurement" Subtitle="Operational expense compared to budget limits" Type="bar" />
-    </div>
-    <div class="col-lg-6 col-md-12">
-        <ChartCard Title="Maintenance Tickets Trend" Subtitle="Support requests logged vs resolved issues" Type="line" />
-    </div>
-</div>
 
 <div class="row g-4">
     <!-- Left Side: Recent Activities -->
@@ -179,22 +166,32 @@ else
     {
         NavigationState.OnChange += OnWorkspaceChanged;
 
-        var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
-        if (orgs.IsSuccess && orgs.Data is not null)
-            _orgs = orgs.Data.Items.Select(o => (o.Id, o.Code, o.Name)).ToList();
+        // Only SuperAdmin can pick an organization, so only it needs (and may read) the list.
+        if (Perms.IsSuperAdmin)
+        {
+            var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
+            if (orgs.IsSuccess && orgs.Data is not null)
+                _orgs = orgs.Data.Items.Select(o => (o.Id, o.Code, o.Name)).ToList();
+        }
 
-        // Follow the workspace organization (sidebar switcher); fall back to the first org.
+        // Follow the workspace organization (sidebar switcher), then the user's own
+        // organization, then the first one a SuperAdmin can see.
         _selectedOrgId = NavigationState.ActiveOrganizationId
+                         ?? Perms.OrganizationId
                          ?? (_orgs.FirstOrDefault().Id is var id && id != Guid.Empty ? id : null);
         if (_selectedOrgId is null)
         {
-            _loadError = "No organizations exist yet. Create one to see dashboard data.";
+            _loadError = Perms.IsSuperAdmin
+                ? "No organizations exist yet. Create one to see dashboard data."
+                : "Your account isn't linked to an organization yet. Ask an administrator to link your employee record.";
             return;
         }
         if (NavigationState.ActiveOrganizationId is null)
         {
-            var org = _orgs.First(o => o.Id == _selectedOrgId);
-            NavigationState.InitializeOrganization(org.Id, org.Name);
+            var org = _orgs.FirstOrDefault(o => o.Id == _selectedOrgId);
+            NavigationState.InitializeOrganization(
+                _selectedOrgId.Value,
+                org.Id != Guid.Empty ? org.Name : Perms.OrganizationName ?? "My organization");
         }
         await LoadSummaryAsync();
     }

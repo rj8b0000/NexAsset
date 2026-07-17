@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using NexAsset.Infrastructure.Authorization;
 using NexAsset.Application.Features.Authentication.Commands.Login;
 using NexAsset.Application.Features.Authentication.Commands.Logout;
 using NexAsset.Application.Features.Authentication.Commands.Register;
@@ -75,6 +77,27 @@ public static class AuthenticationEnpoints
             })
             .RequireAuthorization();
 
+        // Effective permissions of the logged-in user (union of role and designation
+        // permissions), used by the frontend to gate navigation and actions.
+        group.MapGet(
+                "/me/permissions",
+                async (ClaimsPrincipal user, IEffectivePermissionService permissions, CancellationToken cancellationToken) =>
+                {
+                    var idClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(idClaim, out var userId))
+                        return Results.Unauthorized();
+
+                    var effective = await permissions.GetForUserAsync(userId, cancellationToken);
+                    return Results.Ok(new
+                    {
+                        effective.IsSuperAdmin,
+                        effective.OrganizationId,
+                        effective.OrganizationName,
+                        Permissions = effective.Permissions.OrderBy(p => p).ToList()
+                    });
+                })
+            .RequireAuthorization();
+
         group.MapPost(
             "/reset-password",
             async (
@@ -87,7 +110,8 @@ public static class AuthenticationEnpoints
                     return Results.BadRequest(result.Error);
 
                 return Results.NoContent();
-            });
+            })
+            .RequireAuthorization();
 
         group.MapPost(
             "/set-active",
@@ -101,7 +125,8 @@ public static class AuthenticationEnpoints
                     return Results.BadRequest(result.Error);
 
                 return Results.NoContent();
-            });
+            })
+            .RequireAuthorization();
 
         group.MapPost(
             "/lock",
@@ -115,7 +140,8 @@ public static class AuthenticationEnpoints
                     return Results.BadRequest(result.Error);
 
                 return Results.NoContent();
-            });
+            })
+            .RequireAuthorization();
 
         group.MapPost(
             "/unlock",
@@ -129,7 +155,8 @@ public static class AuthenticationEnpoints
                     return Results.BadRequest(result.Error);
 
                 return Results.NoContent();
-            });
+            })
+            .RequireAuthorization();
         return endpoints;
         
     }
