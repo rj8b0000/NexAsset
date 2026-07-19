@@ -55,13 +55,20 @@
                             @onclick="ToggleOrgDropdown">
                         <div class="d-flex align-items-center gap-2">
                             <i class="lucide-building-2" style="color: var(--primary);"></i>
-                            <span class="text-caption fw-semibold">@NavigationState.ActiveOrganization</span>
+                            <span class="text-caption fw-semibold">@(NavigationState.ActiveOrganizationId is null ? NavigationState.AllOrganizationsLabel : NavigationState.ActiveOrganization)</span>
                         </div>
                         <i class="lucide-chevrons-up-down text-muted-custom" style="font-size: 12px;"></i>
                     </button>
 
                     <div class="dropdown-menu p-1 w-100 @(OrgDropdownOpen ? "show" : "")"
                          style="display: @(OrgDropdownOpen ? "block" : "none"); background-color: var(--sidebar-active-bg); border: 1px solid var(--sidebar-border); border-radius: var(--radius-8); position: absolute; left: 0; right: 0; z-index: 1010; margin-top: 4px;">
+                        @* All organizations = no focus; every view shows every organization's data. *@
+                        <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent"
+                                style="color: @(NavigationState.ActiveOrganizationId is null ? "var(--primary)" : "var(--sidebar-text)");"
+                                @onclick="ViewAllOrgs">
+                            @NavigationState.AllOrganizationsLabel
+                        </button>
+                        <div class="dropdown-divider my-1"></div>
                         @foreach (var org in _organizations)
                         {
                             <button type="button" class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent"
@@ -99,55 +106,44 @@
 
     <!-- Navigation Scrollable -->
     <div class="flex-grow-1 overflow-auto py-3">
-        <!-- Main Section Header -->
-        @if (!NavigationState.SidebarCollapsed)
-        {
-            <div class="px-4 mb-2 text-label" style="font-size: 10px; color: var(--sidebar-text-muted);">Primary Navigation</div>
-        }
-
         <nav class="d-flex flex-column gap-1 px-2">
-            @foreach (var nav in PrimaryNavItems.Where(CanSee))
+            @foreach (var section in _navSections)
             {
-                <NavLink href="@GetNavUrl(nav.Module)" Match="@(nav.Module == "Dashboard" ? NavLinkMatch.All : NavLinkMatch.Prefix)" class="nav-btn-custom py-2 px-3 rounded-3 w-100 border-0 bg-transparent text-start d-flex align-items-center justify-content-between text-decoration-none" ActiveClass="active" style="cursor: pointer; transition: all var(--transition-fast);">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="@nav.Icon fs-5"></i>
+                var items = section.Items.Where(CanSee).ToList();
+                if (items.Count == 0)
+                {
+                    continue;
+                }
+
+                if (!NavigationState.SidebarCollapsed && section.Title is not null)
+                {
+                    <div class="px-4 mt-4 mb-2 text-label" style="font-size: 10px; color: var(--sidebar-text-muted);">@(section.Title)</div>
+                }
+
+                foreach (var nav in items)
+                {
+                    <NavLink href="@GetNavUrl(nav.Module)" Match="@(nav.Module == "Dashboard" ? NavLinkMatch.All : NavLinkMatch.Prefix)" class="nav-btn-custom py-2 px-3 rounded-3 w-100 border-0 bg-transparent text-start d-flex align-items-center justify-content-between text-decoration-none" ActiveClass="active" style="cursor: pointer; transition: all var(--transition-fast);">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="@nav.Icon fs-5"></i>
+                            @if (!NavigationState.SidebarCollapsed)
+                            {
+                                <span class="text-caption font-weight-semibold animate-fade-in">@nav.Name</span>
+                            }
+                        </div>
+
                         @if (!NavigationState.SidebarCollapsed)
                         {
-                            <span class="text-caption font-weight-semibold animate-fade-in">@nav.Name</span>
+                            @if (nav.Module == "Maintenance" && GetActiveMaintenanceCount() > 0)
+                            {
+                                <span class="badge-custom badge-custom-warning py-0.5 px-1.5" style="font-size: 10px;">@GetActiveMaintenanceCount()</span>
+                            }
+                            else if (nav.Module == "Administration" && GetPendingApprovalsCount() > 0)
+                            {
+                                <span class="badge-custom badge-custom-info py-0.5 px-1.5" style="font-size: 10px;">@GetPendingApprovalsCount()</span>
+                            }
                         }
-                    </div>
-                    
-                    @if (!NavigationState.SidebarCollapsed)
-                    {
-                        @if (nav.Module == "Maintenance" && GetActiveMaintenanceCount() > 0)
-                        {
-                            <span class="badge-custom badge-custom-warning py-0.5 px-1.5" style="font-size: 10px;">@GetActiveMaintenanceCount()</span>
-                        }
-                        else if (nav.Module == "Administration" && GetPendingApprovalsCount() > 0)
-                        {
-                            <span class="badge-custom badge-custom-info py-0.5 px-1.5" style="font-size: 10px;">@GetPendingApprovalsCount()</span>
-                        }
-                    }
-                </NavLink>
-            }
-
-            <!-- Expandable Secondary Nav header (only visible when expanded) -->
-            @if (!NavigationState.SidebarCollapsed)
-            {
-                <div class="px-4 mt-4 mb-2 text-label" style="font-size: 10px; color: var(--sidebar-text-muted);">Secondary Operations</div>
-            }
-
-            @foreach (var nav in SecondaryNavItems.Where(CanSee))
-            {
-                <NavLink href="@GetNavUrl(nav.Module)" Match="NavLinkMatch.Prefix" class="nav-btn-custom py-2 px-3 rounded-3 w-100 border-0 bg-transparent text-start d-flex align-items-center justify-content-between text-decoration-none" ActiveClass="active" style="cursor: pointer; transition: all var(--transition-fast);">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="@nav.Icon fs-5"></i>
-                        @if (!NavigationState.SidebarCollapsed)
-                        {
-                            <span class="text-caption font-weight-semibold animate-fade-in">@nav.Name</span>
-                        }
-                    </div>
-                </NavLink>
+                    </NavLink>
+                }
             }
         </nav>
     </div>
@@ -201,15 +197,10 @@
         if (Perms.IsSuperAdmin)
         {
             // Only SuperAdmin can move between organizations, so only it needs the full list.
+            // Start unfocused ("All organizations") — selecting one is what scopes the app.
             var orgs = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
             if (orgs.IsSuccess && orgs.Data is not null)
-            {
                 _organizations = orgs.Data.Items.Select(o => (o.Id, o.Name)).ToList();
-                if (_organizations.Count > 0)
-                {
-                    NavigationState.InitializeOrganization(_organizations[0].Id, _organizations[0].Name);
-                }
-            }
         }
         else if (Perms.OrganizationId is { } ownOrgId)
         {
@@ -229,9 +220,18 @@
         OrgDropdownOpen = !OrgDropdownOpen;
     }
 
+    // Switching organization re-scopes every API call. MainLayout keys the page on the active
+    // organization, so changing it recreates the current page and its data reloads under the new
+    // scope — no full reload needed (a reload would wipe the in-memory selection).
     private void SwitchOrg(Guid id, string name)
     {
         NavigationState.SwitchOrganization(id, name);
+        OrgDropdownOpen = false;
+    }
+
+    private void ViewAllOrgs()
+    {
+        NavigationState.ViewAllOrganizations();
         OrgDropdownOpen = false;
     }
 
@@ -278,7 +278,7 @@
     {
         if (e.Key != "Enter" || string.IsNullOrWhiteSpace(QuickSearchQuery)) return;
 
-        var match = PrimaryNavItems.Concat(SecondaryNavItems).Where(CanSee)
+        var match = _navSections.SelectMany(s => s.Items).Where(CanSee)
             .FirstOrDefault(n => n.Name.Contains(QuickSearchQuery, StringComparison.OrdinalIgnoreCase));
 
         if (match != null)
@@ -309,38 +309,70 @@
             ? Perms.IsSuperAdmin
             : nav.Permission is null || Perms.HasPermission(nav.Permission);
 
-    private List<NavItem> PrimaryNavItems = new()
+    // Navigation grouped by how an asset-management user actually works, not by database entity.
+    // A section renders its header (when expanded) only if the user can see at least one of its
+    // items; a null title (Dashboard) renders the item with no header. Icons/permissions are
+    // unchanged from the previous flat lists — only the grouping and ordering differ.
+    private readonly List<NavSection> _navSections = new()
     {
-        new NavItem { Name = "Dashboard", Module = "Dashboard", Icon = "lucide-layout-dashboard", Permission = "Dashboard.View" },
-        new NavItem { Name = "Organizations", Module = "Organizations", Icon = "lucide-building-2", SuperAdminOnly = true },
-        new NavItem { Name = "Branches", Module = "Branches", Icon = "lucide-git-branch", Permission = "Branches.View" },
-        new NavItem { Name = "Departments", Module = "Departments", Icon = "lucide-layers", Permission = "Departments.View" },
-        new NavItem { Name = "Designations", Module = "Designations", Icon = "lucide-award", Permission = "Designations.View" },
-        new NavItem { Name = "Employees", Module = "Employees", Icon = "lucide-users", Permission = "Employees.View" },
-        new NavItem { Name = "Users", Module = "Users", Icon = "lucide-user-cog", Permission = "Users.View" },
-        new NavItem { Name = "Roles", Module = "Roles", Icon = "lucide-shield", Permission = "Roles.View" },
-        new NavItem { Name = "Permissions", Module = "Permissions", Icon = "lucide-key-round", Permission = "Permissions.View" },
-        new NavItem { Name = "Asset Categories", Module = "asset-categories", Icon = "lucide-tags", Permission = "AssetCategories.View" },
-        new NavItem { Name = "Assets", Module = "Assets", Icon = "lucide-box", Permission = "Assets.View" },
-        new NavItem { Name = "Inventory", Module = "Inventory", Icon = "lucide-warehouse", Permission = "Inventory.View" },
-        new NavItem { Name = "Consumables", Module = "Consumables", Icon = "lucide-package-open", Permission = "Consumables.View" },
-        new NavItem { Name = "Vendors", Module = "Vendors", Icon = "lucide-store", Permission = "Vendors.View" },
-        new NavItem { Name = "Procurement", Module = "Procurement", Icon = "lucide-shopping-cart", Permission = "PurchaseRequests.View" },
-        new NavItem { Name = "Purchase Orders", Module = "purchase-orders", Icon = "lucide-clipboard-list", Permission = "PurchaseOrders.View" },
-        new NavItem { Name = "Maintenance", Module = "Maintenance", Icon = "lucide-wrench", Permission = "Maintenance.View" },
-        new NavItem { Name = "Customers", Module = "Customers", Icon = "lucide-contact", Permission = "Customers.View" },
-        new NavItem { Name = "Service Tickets", Module = "service-tickets", Icon = "lucide-headphones", Permission = "ServiceTickets.View" },
-        new NavItem { Name = "Finance", Module = "Finance", Icon = "lucide-credit-card", Permission = "Finance.View" },
-        new NavItem { Name = "Reports", Module = "Reports", Icon = "lucide-bar-chart-3", Permission = "Reports.View" },
-        new NavItem { Name = "Administration", Module = "Administration", Icon = "lucide-settings", Permission = "AuditLogs.View" }
+        new NavSection(null, new()
+        {
+            new NavItem { Name = "Dashboard", Module = "Dashboard", Icon = "lucide-layout-dashboard", Permission = "Dashboard.View" },
+        }),
+        new NavSection("Business Setup", new()
+        {
+            new NavItem { Name = "Organizations", Module = "Organizations", Icon = "lucide-building-2", SuperAdminOnly = true },
+            new NavItem { Name = "Branches", Module = "Branches", Icon = "lucide-git-branch", Permission = "Branches.View" },
+            new NavItem { Name = "Departments", Module = "Departments", Icon = "lucide-layers", Permission = "Departments.View" },
+            new NavItem { Name = "Designations", Module = "Designations", Icon = "lucide-award", Permission = "Designations.View" },
+        }),
+        new NavSection("People", new()
+        {
+            new NavItem { Name = "Employees", Module = "Employees", Icon = "lucide-users", Permission = "Employees.View" },
+            new NavItem { Name = "Users", Module = "Users", Icon = "lucide-user-cog", Permission = "Users.View" },
+        }),
+        new NavSection("Asset Management", new()
+        {
+            new NavItem { Name = "Asset Categories", Module = "asset-categories", Icon = "lucide-tags", Permission = "AssetCategories.View" },
+            new NavItem { Name = "Assets", Module = "Assets", Icon = "lucide-box", Permission = "Assets.View" },
+            new NavItem { Name = "Inventory", Module = "Inventory", Icon = "lucide-warehouse", Permission = "Inventory.View" },
+            new NavItem { Name = "Consumables", Module = "Consumables", Icon = "lucide-package-open", Permission = "Consumables.View" },
+        }),
+        new NavSection("Procurement", new()
+        {
+            new NavItem { Name = "Vendors", Module = "Vendors", Icon = "lucide-store", Permission = "Vendors.View" },
+            new NavItem { Name = "Procurement Requests", Module = "Procurement", Icon = "lucide-shopping-cart", Permission = "PurchaseRequests.View" },
+            new NavItem { Name = "Purchase Orders", Module = "purchase-orders", Icon = "lucide-clipboard-list", Permission = "PurchaseOrders.View" },
+        }),
+        new NavSection("Operations", new()
+        {
+            new NavItem { Name = "Maintenance", Module = "Maintenance", Icon = "lucide-wrench", Permission = "Maintenance.View" },
+            new NavItem { Name = "Customers", Module = "Customers", Icon = "lucide-contact", Permission = "Customers.View" },
+            new NavItem { Name = "Service Tickets", Module = "service-tickets", Icon = "lucide-headphones", Permission = "ServiceTickets.View" },
+        }),
+        new NavSection("Finance", new()
+        {
+            new NavItem { Name = "Finance", Module = "Finance", Icon = "lucide-credit-card", Permission = "Finance.View" },
+        }),
+        new NavSection("Analytics", new()
+        {
+            new NavItem { Name = "Reports", Module = "Reports", Icon = "lucide-bar-chart-3", Permission = "Reports.View" },
+        }),
+        new NavSection("Administration", new()
+        {
+            new NavItem { Name = "Roles", Module = "Roles", Icon = "lucide-shield", Permission = "Roles.View" },
+            new NavItem { Name = "Permissions", Module = "Permissions", Icon = "lucide-key-round", Permission = "Permissions.View" },
+            new NavItem { Name = "Administration", Module = "Administration", Icon = "lucide-settings", Permission = "AuditLogs.View" },
+        }),
+        new NavSection("Secondary Operations", new()
+        {
+            new NavItem { Name = "Notifications", Module = "Notifications", Icon = "lucide-bell", Permission = "Notifications.View" },
+            new NavItem { Name = "Approval Center", Module = "ApprovalCenter", Icon = "lucide-check-square", Permission = "PurchaseRequests.Approve" },
+            new NavItem { Name = "Settings", Module = "Settings", Icon = "lucide-sliders" },
+        }),
     };
 
-    private List<NavItem> SecondaryNavItems = new()
-    {
-        new NavItem { Name = "Notifications", Module = "Notifications", Icon = "lucide-bell", Permission = "Notifications.View" },
-        new NavItem { Name = "Approval Center", Module = "ApprovalCenter", Icon = "lucide-check-square", Permission = "PurchaseRequests.Approve" },
-        new NavItem { Name = "Settings", Module = "Settings", Icon = "lucide-sliders" }
-    };
+    private sealed record NavSection(string? Title, List<NavItem> Items);
 
     private class NavItem
     {

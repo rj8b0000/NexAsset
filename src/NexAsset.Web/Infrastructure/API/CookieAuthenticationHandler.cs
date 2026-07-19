@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Microsoft.Extensions.DependencyInjection;
 using NexAsset.Web.Infrastructure.Authentication;
 using NexAsset.Web.Infrastructure.Notifications;
+using NexAsset.Web.State;
 
 namespace NexAsset.Web.Infrastructure.API
 {
@@ -37,9 +38,22 @@ namespace NexAsset.Web.Infrastructure.API
             _services = services;
         }
 
+        // Header the API reads to scope a SuperAdmin's session to the organization picked in the
+        // sidebar switcher. Non-SuperAdmins are pinned server-side, so the header is ignored for them.
+        private const string OrganizationHeader = "X-Organization-Id";
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+
+            // Tell the API which organization the workspace is focused on. The API honors this
+            // only for SuperAdmin (everyone else is already restricted to their own organization).
+            var activeOrganizationId = _services.GetService<NavigationState>()?.ActiveOrganizationId;
+            if (activeOrganizationId is { } organizationId)
+            {
+                request.Headers.Remove(OrganizationHeader);
+                request.Headers.Add(OrganizationHeader, organizationId.ToString());
+            }
 
             var response = await base.SendAsync(request, cancellationToken);
 

@@ -30,7 +30,12 @@
 
             <!-- Core Main Content Window -->
             <main class="content-slot">
-                @Body
+                @* Keying on the active organization recreates the current page when a SuperAdmin
+                   switches organizations, so its data re-loads under the new scope without a full
+                   page reload (which would reset the in-memory workspace back to "All"). *@
+                <div @key="NavigationState.ActiveOrganizationId" class="h-100">
+                    @Body
+                </div>
             </main>
         </div>
     </Authorized>

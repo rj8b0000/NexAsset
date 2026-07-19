@@ -10,9 +10,14 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
 {
     private readonly ITenantContext? _tenant;
 
-    // Null when there is no organization boundary to apply — SuperAdmin, startup seeding, or
-    // design-time tooling. Read per query, so one context instance follows the current request.
+    // Null when there is no organization boundary to apply — an unscoped SuperAdmin, startup
+    // seeding, or design-time tooling. Read per query, so one context instance follows the
+    // current request.
     private Guid? TenantOrganizationId => _tenant?.FilterOrganizationId;
+
+    // Scope for the Organization entity itself; null for any SuperAdmin so the switcher and
+    // Organizations page always list every organization.
+    private Guid? OrganizationScopeId => _tenant?.OrganizationFilterId;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
@@ -62,9 +67,10 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
     /// </summary>
     private void ApplyOrganizationBoundary(ModelBuilder modelBuilder)
     {
-        // An organization is visible only to its own members.
+        // An organization is visible only to its own members — but a SuperAdmin always sees all,
+        // even while their workspace is focused on one organization (OrganizationScopeId stays null).
         modelBuilder.Entity<Organization>()
-            .HasQueryFilter(x => TenantOrganizationId == null || x.Id == TenantOrganizationId);
+            .HasQueryFilter(x => OrganizationScopeId == null || x.Id == OrganizationScopeId);
 
         modelBuilder.Entity<Branch>()
             .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);

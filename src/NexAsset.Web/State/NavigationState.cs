@@ -54,6 +54,24 @@ namespace NexAsset.Web.State
             NotifyStateChanged();
         }
 
+        /// <summary>
+        /// Clears the organization focus (SuperAdmin only): every view shows all organizations
+        /// again. This is the unscoped default a SuperAdmin starts in.
+        /// </summary>
+        public void ViewAllOrganizations()
+        {
+            if (ActiveOrganizationId is null) return;
+            ActiveOrganizationId = null;
+            ActiveOrganization = AllOrganizationsLabel;
+            ActiveBranchId = null;
+            ActiveBranch = "All branches";
+            _notificationState.AddActivity("Organization Switch", "Cleared organization focus — viewing all organizations.");
+            _notificationState.AddToast("Viewing all organizations", "The workspace is no longer focused on one organization.", ToastType.Info);
+            NotifyStateChanged();
+        }
+
+        public const string AllOrganizationsLabel = "All organizations";
+
         public void SwitchBranch(Guid? id, string name)
         {
             ActiveBranchId = id;

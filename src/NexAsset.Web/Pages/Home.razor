@@ -186,13 +186,10 @@ else
                 : "Your account isn't linked to an organization yet. Ask an administrator to link your employee record.";
             return;
         }
-        if (NavigationState.ActiveOrganizationId is null)
-        {
-            var org = _orgs.FirstOrDefault(o => o.Id == _selectedOrgId);
-            NavigationState.InitializeOrganization(
-                _selectedOrgId.Value,
-                org.Id != Guid.Empty ? org.Name : Perms.OrganizationName ?? "My organization");
-        }
+        // Deliberately do not write the workspace organization here: a SuperAdmin who merely
+        // opens the dashboard should stay unfocused ("All organizations"). The dashboard shows a
+        // concrete organization's summary locally; focusing the whole app happens only when the
+        // user picks one from the sidebar or the selector below.
         await LoadSummaryAsync();
     }
 
