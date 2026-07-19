@@ -103,8 +103,8 @@
                 @<span class="fw-semibold" style="color: var(--text-primary);">@e.FirstName @e.LastName</span> },
             new() { Header = "Email", PropertySelector = e => e.Email, SortColumn = "Email" },
             new() { Header = "Organization", Sortable = false, Template = e => @<span>@Lookup(_orgNames, e.OrganizationId)</span> },
-            new() { Header = "Branch", Sortable = false, Template = e => @<span>@Lookup(_branchNames, e.BranchId)</span> },
-            new() { Header = "Department", Sortable = false, Template = e => @<span>@Lookup(_deptNames, e.DepartmentId)</span> },
+            new() { Header = "Branch", Sortable = false, Template = e => @<span>@LookupOrAll(_branchNames, e.BranchId)</span> },
+            new() { Header = "Department", Sortable = false, Template = e => @<span>@LookupOrAll(_deptNames, e.DepartmentId)</span> },
             new() { Header = "Designation", Sortable = false, Template = e => @<span>@Lookup(_designationNames, e.DesignationId)</span> },
             new() { Header = "Employment", Sortable = false, Template = e => @<span>@EmploymentStatus.Label(e.EmploymentStatus)</span> },
             new() { Header = "Joining Date", Sortable = true, SortColumn = "JoiningDate", Template = e => @<span>@e.JoiningDate.ToString("yyyy-MM-dd")</span> },
@@ -118,6 +118,10 @@
 
     private static string Lookup(Dictionary<Guid, string> map, Guid? id) =>
         id is { } g && map.TryGetValue(g, out var n) ? n : "—";
+
+    // No branch/department means the employee spans the whole company (CEO, COO, MD).
+    private static string LookupOrAll(Dictionary<Guid, string> map, Guid? id) =>
+        id is null ? "All" : Lookup(map, id);
 
     private async Task LoadLookupsAsync()
     {

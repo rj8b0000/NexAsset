@@ -23,7 +23,7 @@
             <div class="row g-3">
                 <SelectField Label="Organization" Required="true" Options="_orgOptions" Placeholder="Select an organization"
                              Value="@OrgIdString" ValueChanged="OnOrgChanged" Error='@Err("OrganizationId")' />
-                <SelectField Label="Department" Options="DeptOptions" Placeholder="(None)"
+                <SelectField Label="Department" Options="DeptOptions" Placeholder="All departments (company-wide)"
                              Value="@DeptIdString" ValueChanged="OnDeptChanged" Error='@Err("DepartmentId")' />
                 <TextField Label="Title" Required="true" ColumnClass="col-12" Value="@_model.Title" ValueChanged="@(v => _model.Title = v)" Error='@Err("Title")' />
                 <TextField Label="Description" ColumnClass="col-12" Multiline="true" Value="@_model.Description" ValueChanged="@(v => _model.Description = v)" Error='@Err("Description")' />

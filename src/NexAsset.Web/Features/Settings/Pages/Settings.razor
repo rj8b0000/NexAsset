@@ -1,3 +1,4 @@
+
 @page "/settings"
 @attribute [Authorize]
 @using NexAsset.Web.State
@@ -48,41 +49,50 @@
         </div>
     </div>
 
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div>
-            <h3 class="h2-title mb-0">System Settings</h3>
-            <span class="text-caption text-secondary">Backend configuration values, per organization or global.</span>
+    @* Workspace preferences above are every user's own; the backend configuration table
+       below is only for those who may read it. *@
+    @if (Perms.HasPermission("SystemSettings.View"))
+    {
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h3 class="h2-title mb-0">System Settings</h3>
+                <span class="text-caption text-secondary">Backend configuration values, per organization or global.</span>
+            </div>
+            @if (Perms.HasPermission("SystemSettings.Manage"))
+            {
+                <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                    <i class="lucide-plus"></i> New Setting
+                </button>
+            }
         </div>
-        <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
-            <i class="lucide-plus"></i> New Setting
-        </button>
-    </div>
 
-    @if (_page is null && _loadError is null)
-    {
-        <LoadingState Message="Loading settings..." />
-    }
-    else if (_loadError is not null)
-    {
-        <EmptyState Title="Couldn't load system settings" Description="@_loadError"
-                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
-                    OnActionClick="() => LoadAsync(_query)" />
-    }
-    else
-    {
-        <DataTable TItem="SystemSettingRecord"
-                   Items="_page!.Items"
-                   Columns="_columns"
-                   Type="System Setting"
-                   ShowFilterPanel="false"
-                   ServerMode="true"
-                   ServerTotalCount="_page.TotalCount"
-                   ServerPageNumber="_page.PageNumber"
-                   ServerPageSize="_page.PageSize"
-                   IsLoading="_busy"
-                   OnQueryChanged="LoadAsync"
-                   IdSelector="s => s.Id.ToString()"
-                   OnEdit="OpenEdit" />
+        @if (_page is null && _loadError is null)
+        {
+            <LoadingState Message="Loading settings..." />
+        }
+        else if (_loadError is not null)
+        {
+            <EmptyState Title="Couldn't load system settings" Description="@_loadError"
+                        IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                        OnActionClick="() => LoadAsync(_query)" />
+        }
+        else
+        {
+            <DataTable TItem="SystemSettingRecord"
+                       Items="_page!.Items"
+                       Columns="_columns"
+                       Type="System Setting"
+                       ShowFilterPanel="false"
+                       ServerMode="true"
+                       ServerTotalCount="_page.TotalCount"
+                       ServerPageNumber="_page.PageNumber"
+                       ServerPageSize="_page.PageSize"
+                       IsLoading="_busy"
+                       OnQueryChanged="LoadAsync"
+                       IdSelector="s => s.Id.ToString()"
+                       EditPermission="SystemSettings.Manage"
+                       OnEdit="OpenEdit" />
+        }
     }
 </div>
 
@@ -202,7 +212,9 @@
         if (branches.IsSuccess && branches.Data is not null)
             _workspaceBranches = branches.Data.Items.Select(b => (b.Id, b.OrganizationId, b.Name)).ToList();
 
-        await LoadAsync(_query);
+        // The settings table is hidden without this permission — don't fetch what won't render.
+        if (Perms.HasPermission("SystemSettings.View"))
+            await LoadAsync(_query);
     }
 
     private async Task LoadAsync(PagedQuery query)

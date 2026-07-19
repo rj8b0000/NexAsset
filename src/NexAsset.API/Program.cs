@@ -12,6 +12,7 @@ using NexAsset.API.Endpoints.EnterpriseOperations;
 using NexAsset.API.Endpoints.Organizations;
 using NexAsset.API.Endpoints.Permissions;
 using NexAsset.API.Endpoints.Roles;
+using NexAsset.API.Endpoints.Users;
 using NexAsset.Api.Middlewares;
 using NexAsset.Application;
 using NexAsset.Infrastructure;
@@ -79,6 +80,9 @@ app.UseCors(WasmCorsPolicy);
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+// Must sit after authentication: it reads the signed-in user to decide which organization's
+// data the request may touch, which the DbContext query filters then enforce.
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.MapAuthenticationEndpoints();
 app.MapOrganizationEndpoints();
 app.MapBranchEndpoints();
@@ -86,6 +90,7 @@ app.MapDepartmentEndpoints();
 app.MapDesignationEndpoints();
 app.MapEmployeeEndpoints();
 app.MapRoleEndpoints();
+app.MapUserEndpoints();
 app.MapPermissionEndpoints();
 app.MapAssetCategoryEndpoints();
 app.MapAssetEndpoints();

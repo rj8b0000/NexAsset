@@ -302,17 +302,22 @@
 
     // A nav entry is visible when the user holds its module's View-level permission.
     // Settings has no code: it is every user's own workspace page, and the sections
-    // inside it are gated individually.
-    private bool CanSee(NavItem nav) => nav.Permission is null || Perms.HasPermission(nav.Permission);
+    // inside it are gated individually. Managing organizations is SuperAdmin-only —
+    // everyone else works inside a single organization and never chooses between them.
+    private bool CanSee(NavItem nav) =>
+        nav.SuperAdminOnly
+            ? Perms.IsSuperAdmin
+            : nav.Permission is null || Perms.HasPermission(nav.Permission);
 
     private List<NavItem> PrimaryNavItems = new()
     {
         new NavItem { Name = "Dashboard", Module = "Dashboard", Icon = "lucide-layout-dashboard", Permission = "Dashboard.View" },
-        new NavItem { Name = "Organizations", Module = "Organizations", Icon = "lucide-building-2", Permission = "Organizations.View" },
+        new NavItem { Name = "Organizations", Module = "Organizations", Icon = "lucide-building-2", SuperAdminOnly = true },
         new NavItem { Name = "Branches", Module = "Branches", Icon = "lucide-git-branch", Permission = "Branches.View" },
         new NavItem { Name = "Departments", Module = "Departments", Icon = "lucide-layers", Permission = "Departments.View" },
         new NavItem { Name = "Designations", Module = "Designations", Icon = "lucide-award", Permission = "Designations.View" },
         new NavItem { Name = "Employees", Module = "Employees", Icon = "lucide-users", Permission = "Employees.View" },
+        new NavItem { Name = "Users", Module = "Users", Icon = "lucide-user-cog", Permission = "Users.View" },
         new NavItem { Name = "Roles", Module = "Roles", Icon = "lucide-shield", Permission = "Roles.View" },
         new NavItem { Name = "Permissions", Module = "Permissions", Icon = "lucide-key-round", Permission = "Permissions.View" },
         new NavItem { Name = "Asset Categories", Module = "asset-categories", Icon = "lucide-tags", Permission = "AssetCategories.View" },
@@ -343,5 +348,6 @@
         public string Module { get; set; } = "";
         public string Icon { get; set; } = "";
         public string? Permission { get; set; }
+        public bool SuperAdminOnly { get; set; }
     }
 }

@@ -16,6 +16,7 @@ public static class PermissionRouteConvention
         ["employees"] = "Employees",
         ["roles"] = "Roles",
         ["permissions"] = "Permissions",
+        ["users"] = "Users",
         ["asset-categories"] = "AssetCategories",
         ["assets"] = "Assets",
         ["asset-assignments"] = "AssetAssignments",
@@ -52,11 +53,24 @@ public static class PermissionRouteConvention
 
         var moduleSegment = segments[start];
         var tail = segments[(start + 1)..];
-        if (!Modules.TryGetValue(moduleSegment, out var module))
-            return null;
-
         var method = http.Request.Method.ToUpperInvariant();
         var isPost = method == "POST";
+
+        // Account administration also hangs off /api/auth; it is guarded by the Users module
+        // so a signed-in user can't reset someone else's password or create accounts.
+        if (moduleSegment == "auth")
+        {
+            return tail switch
+            {
+                ["register"] => "Users.Create",
+                ["reset-password"] => "Users.ResetPassword",
+                ["set-active"] or ["lock"] or ["unlock"] => "Users.Update",
+                _ => null,
+            };
+        }
+
+        if (!Modules.TryGetValue(moduleSegment, out var module))
+            return null;
 
         switch (moduleSegment)
         {
@@ -73,7 +87,13 @@ public static class PermissionRouteConvention
             case "permissions" when tail.Length > 0 && tail[0] == "designations":
                 return method == "GET" ? "Designations.View" : "Designations.Update";
             case "roles" when tail is ["assign"]:
-                return "Roles.Update";
+                return "Users.ManageRoles";
+            case "users" when tail.Contains("roles"):
+                return "Users.ManageRoles";
+            case "users" when tail.Length > 0 && tail[^1] == "reset-password":
+                return "Users.ResetPassword";
+            case "users" when tail.Length > 0 && (tail[^1] is "active" or "lock" or "unlock"):
+                return "Users.Update";
             case "employees" when tail.Length > 0 && tail[^1] == "activate":
                 return "Employees.Activate";
             case "purchase-requests" when tail.Length > 0 && tail[^1] == "status":

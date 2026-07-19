@@ -1,0 +1,232 @@
+@page "/users"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Infrastructure.Users
+@using NexAsset.Web.Models.Users
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Users.Components
+@inject IUserApiClient UserApiClient
+@inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Users</h1>
+            <span class="text-caption text-secondary">Login accounts, their roles, and account state.</span>
+        </div>
+        @if (Perms.HasPermission("Users.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="() => _formOpen = true">
+                <i class="lucide-plus"></i> New User
+            </button>
+        }
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading users..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load users" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="UserListItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="User"
+                   ShowFilterPanel="false"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="u => u.Id.ToString()"
+                   CustomRowActions="RowActions" />
+    }
+</div>
+
+<UserFormDialog IsOpen="_formOpen" OnClose="() => _formOpen = false" OnSaved="OnCreated" />
+
+<UserRolesDialog IsOpen="_rolesOpen" UserId="_actionUserId" UserEmail="@_actionUserEmail"
+                 CurrentRoles="_actionUserRoles" IsEmployee="_actionUserIsEmployee"
+                 DesignationTitle="@_actionUserDesignation"
+                 OnClose="() => _rolesOpen = false" OnSaved="OnRolesSaved" />
+
+<ResetPasswordDialog IsOpen="_resetOpen" UserId="_actionUserId" UserEmail="@_actionUserEmail"
+                     OnClose="() => _resetOpen = false" />
+
+@code {
+    private PagedResult<UserListItem>? _page;
+    private PagedQuery _query = new();
+    private string? _loadError;
+    private bool _busy;
+
+    private bool _formOpen;
+    private bool _rolesOpen;
+    private bool _resetOpen;
+
+    private Guid? _actionUserId;
+    private string _actionUserEmail = "";
+    private List<string> _actionUserRoles = new();
+    private bool _actionUserIsEmployee;
+    private string? _actionUserDesignation;
+
+    private List<ColumnDefinition<UserListItem>> _columns = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        _columns = new()
+        {
+            new() { Header = "Email", PropertySelector = u => u.Email, SortColumn = "Email" },
+            new() { Header = "Roles", Sortable = false, Template = u =>
+                @<span>
+                    @if (u.Roles.Count == 0)
+                    {
+                        <span class="text-muted-custom">—</span>
+                    }
+                    else
+                    {
+                        @foreach (var role in u.Roles)
+                        {
+                            <span class="badge-custom @(role == "SuperAdmin" ? "badge-custom-warning" : "badge-custom-secondary") me-1">@role</span>
+                        }
+                    }
+                </span> },
+            // Makes the access model legible: a role on an employee account grants nothing.
+            new() { Header = "Access from", Sortable = false, Template = u =>
+                @<span class="text-caption">@AccessSource(u)</span> },
+            new() { Header = "Organization", Sortable = false, Template = u =>
+                @<span>@(u.OrganizationName ?? "All (system-wide)")</span> },
+            new() { Header = "Employee", Sortable = false, Template = u =>
+                @<span>@(u.EmployeeName ?? "—")</span> },
+            new() { Header = "Status", Sortable = false, Template = u =>
+                @<span class="badge-custom @StatusClass(u)">@StatusLabel(u)</span> }
+        };
+
+        return LoadAsync(_query);
+    }
+
+    private static string AccessSource(UserListItem user)
+    {
+        if (user.Roles.Contains("SuperAdmin"))
+            return "SuperAdmin — full access";
+        if (user.EmployeeId is not null)
+            return string.IsNullOrWhiteSpace(user.DesignationTitle)
+                ? "Designation — none set, no access"
+                : $"Designation: {user.DesignationTitle}";
+        return user.Roles.Count == 0 ? "Roles — none, no access" : "Roles";
+    }
+
+    private static string StatusLabel(UserListItem user) =>
+        user.IsLockedOut ? "Locked" : user.IsActive ? "Active" : "Inactive";
+
+    private static string StatusClass(UserListItem user) =>
+        user.IsLockedOut ? "badge-custom-danger" : user.IsActive ? "badge-custom-success" : "badge-custom-secondary";
+
+    private RenderFragment<UserListItem> RowActions => user =>
+        @<text>
+            @if (Perms.HasPermission("Users.ManageRoles"))
+            {
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => OpenRoles(user)">
+                    <i class="lucide-shield me-2"></i> Roles
+                </button>
+            }
+            @if (Perms.HasPermission("Users.ResetPassword"))
+            {
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => OpenReset(user)">
+                    <i class="lucide-key-round me-2"></i> Reset password
+                </button>
+            }
+            @if (Perms.HasPermission("Users.Update"))
+            {
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => ToggleActiveAsync(user)">
+                    <i class="@(user.IsActive ? "lucide-user-x" : "lucide-user-check") me-2"></i> @(user.IsActive ? "Deactivate" : "Activate")
+                </button>
+                <button class="dropdown-item py-2 px-3 w-100 text-start rounded text-caption border-0 bg-transparent" style="color: var(--text-primary);" @onclick="() => ToggleLockAsync(user)">
+                    <i class="@(user.IsLockedOut ? "lucide-unlock" : "lucide-lock") me-2"></i> @(user.IsLockedOut ? "Unlock" : "Lock")
+                </button>
+            }
+        </text>;
+
+    private void OpenRoles(UserListItem user)
+    {
+        _actionUserId = user.Id;
+        _actionUserEmail = user.Email;
+        _actionUserRoles = new List<string>(user.Roles);
+        _actionUserIsEmployee = user.EmployeeId is not null;
+        _actionUserDesignation = user.DesignationTitle;
+        _rolesOpen = true;
+    }
+
+    private void OpenReset(UserListItem user)
+    {
+        _actionUserId = user.Id;
+        _actionUserEmail = user.Email;
+        _resetOpen = true;
+    }
+
+    private async Task ToggleActiveAsync(UserListItem user)
+    {
+        _busy = true;
+        var result = await UserApiClient.SetActiveAsync(user.Id, !user.IsActive);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Saved", $"{user.Email} is now {(user.IsActive ? "inactive" : "active")}.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Update failed", result.Error?.Message ?? "Could not update this user.");
+        }
+    }
+
+    private async Task ToggleLockAsync(UserListItem user)
+    {
+        _busy = true;
+        var result = user.IsLockedOut
+            ? await UserApiClient.UnlockAsync(user.Id)
+            : await UserApiClient.LockAsync(user.Id);
+        _busy = false;
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Saved", $"{user.Email} is now {(user.IsLockedOut ? "unlocked" : "locked")}.");
+            await LoadAsync(_query);
+        }
+        else
+        {
+            Notifications.ShowError("Update failed", result.Error?.Message ?? "Could not update this user.");
+        }
+    }
+
+    private async Task OnCreated()
+    {
+        _formOpen = false;
+        Notifications.ShowSuccess("Created", "User created successfully.");
+        await LoadAsync(_query);
+    }
+
+    private async Task OnRolesSaved()
+    {
+        _rolesOpen = false;
+        await LoadAsync(_query);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await UserApiClient.GetPagedAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading users.";
+    }
+}

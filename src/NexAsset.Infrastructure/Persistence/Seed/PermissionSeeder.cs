@@ -20,6 +20,7 @@ public static class PermissionSeeder
         ("Designations", new[] { "View", "Create", "Update", "Delete" }),
         ("Employees", new[] { "View", "Create", "Update", "Delete", "Activate" }),
         ("Roles", new[] { "View", "Create", "Update", "Delete", "AssignPermissions" }),
+        ("Users", new[] { "View", "Create", "Update", "ManageRoles", "ResetPassword" }),
         ("Permissions", new[] { "View", "Create", "Update", "Delete" }),
         ("AssetCategories", new[] { "View", "Create", "Update", "Delete" }),
         ("Assets", new[] { "View", "Create", "Update", "Delete" }),

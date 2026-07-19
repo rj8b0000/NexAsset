@@ -52,6 +52,10 @@ namespace NexAsset.Web.Extensions
             services.AddNexAssetApiClient<IRoleApiClient, RoleApiClient>(settings);
             services.AddNexAssetApiClient<IPermissionApiClient, PermissionApiClient>(settings);
 
+            // Login-account administration (distinct from Employees, which are HR records).
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Users.IUserApiClient,
+                NexAsset.Web.Infrastructure.Users.UserApiClient>(settings);
+
             // Asset module clients (real HTTP). The Asset interface lives in Infrastructure.Assets
             // to coexist with the legacy mock IAssetApiClient the Dashboard/Procurement mocks use.
             services.AddNexAssetApiClient<IAssetCategoryApiClient, AssetCategoryApiClient>(settings);

@@ -38,9 +38,11 @@
                 <SelectField Label="Employment Status" Required="true" Options="_statusOptions" Placeholder="Select status"
                              Value="@_model.EmploymentStatus.ToString()" ValueChanged="@(v => _model.EmploymentStatus = int.TryParse(v, out var s) ? s : NexAsset.Web.Models.HR.EmploymentStatus.Active)" Error='@Err("EmploymentStatus")' />
 
-                <SelectField Label="Branch" Options="BranchOptions" Placeholder="(None)"
+                @* Company-wide roles (CEO, COO, MD) belong to no single branch or department:
+                   leaving these empty stores null, which reads as "all". *@
+                <SelectField Label="Branch" Options="BranchOptions" Placeholder="All branches (company-wide)"
                              Value="@GuidStr(_model.BranchId)" ValueChanged="@(v => _model.BranchId = ParseGuid(v))" Error='@Err("BranchId")' />
-                <SelectField Label="Department" Options="DeptOptions" Placeholder="(None)"
+                <SelectField Label="Department" Options="DeptOptions" Placeholder="All departments (company-wide)"
                              Value="@GuidStr(_model.DepartmentId)" ValueChanged="@(v => _model.DepartmentId = ParseGuid(v))" Error='@Err("DepartmentId")' />
                 <SelectField Label="Designation" Options="DesignationOptions" Placeholder="(None)"
                              Value="@GuidStr(_model.DesignationId)" ValueChanged="@(v => _model.DesignationId = ParseGuid(v))" Error='@Err("DesignationId")' />

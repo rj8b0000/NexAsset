@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using MediatR;
+using NexAsset.API.Authorization;
 using NexAsset.Infrastructure.Authorization;
 using NexAsset.Application.Features.Authentication.Commands.Login;
 using NexAsset.Application.Features.Authentication.Commands.Logout;
@@ -46,7 +47,9 @@ public static class AuthenticationEnpoints
                 }
 
                 return Results.Ok(result.Value);
-            });
+            })
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
         
         group.MapPost(
             "/logout",
@@ -111,7 +114,8 @@ public static class AuthenticationEnpoints
 
                 return Results.NoContent();
             })
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/set-active",
@@ -126,7 +130,8 @@ public static class AuthenticationEnpoints
 
                 return Results.NoContent();
             })
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/lock",
@@ -141,7 +146,8 @@ public static class AuthenticationEnpoints
 
                 return Results.NoContent();
             })
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
 
         group.MapPost(
             "/unlock",
@@ -156,7 +162,8 @@ public static class AuthenticationEnpoints
 
                 return Results.NoContent();
             })
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<PermissionEnforcementFilter>();
         return endpoints;
         
     }

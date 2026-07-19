@@ -7,6 +7,7 @@
 @using NexAsset.Web.Features.Designations.Components
 @inject IDesignationApiClient DesignationApiClient
 @inject IOrganizationApiClient OrganizationApiClient
+@inject IDepartmentApiClient DepartmentApiClient
 @inject NexAsset.Web.Infrastructure.HR.IPermissionApiClient PermissionApiClient
 @inject INotificationService Notifications
 @inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
@@ -82,6 +83,7 @@
     private string _permsDesignationTitle = "";
 
     private Dictionary<Guid, string> _orgNames = new();
+    private Dictionary<Guid, string> _departmentNames = new();
     private List<ColumnDefinition<DesignationListItem>> _columns = new();
 
     private RenderFragment<DesignationListItem> PermissionsAction => item =>
@@ -103,11 +105,15 @@
             new() { Header = "Title", PropertySelector = d => d.Title, SortColumn = "Title" },
             new() { Header = "Organization", Sortable = false, Template = d =>
                 @<span>@(_orgNames.TryGetValue(d.OrganizationId, out var n) ? n : "—")</span> },
+            @* No department means the designation spans the whole company (CEO, COO, MD). *@
+            new() { Header = "Department", Sortable = false, Template = d =>
+                @<span>@(d.DepartmentId is { } dept ? (_departmentNames.TryGetValue(dept, out var dn) ? dn : "—") : "All")</span> },
             new() { Header = "Status", SortColumn = "IsActive", Template = d =>
                 @<span class="badge-custom @(d.IsActive ? "badge-custom-success" : "badge-custom-secondary")">@(d.IsActive ? "Active" : "Inactive")</span> }
         };
 
         await LoadOrganizationNamesAsync();
+        await LoadDepartmentNamesAsync();
         await LoadAsync(_query);
     }
 
@@ -116,6 +122,13 @@
         var result = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" });
         if (result.IsSuccess && result.Data is not null)
             _orgNames = result.Data.Items.ToDictionary(o => o.Id, o => o.Name);
+    }
+
+    private async Task LoadDepartmentNamesAsync()
+    {
+        var result = await DepartmentApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 500, SortBy = "Name" });
+        if (result.IsSuccess && result.Data is not null)
+            _departmentNames = result.Data.Items.ToDictionary(d => d.Id, d => d.Name);
     }
 
     private async Task LoadAsync(PagedQuery query)

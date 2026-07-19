@@ -15,6 +15,7 @@ CANONICAL = {
     "Designations": ["View", "Create", "Update", "Delete"],
     "Employees": ["View", "Create", "Update", "Delete", "Activate"],
     "Roles": ["View", "Create", "Update", "Delete", "AssignPermissions"],
+    "Users": ["View", "Create", "Update", "ManageRoles", "ResetPassword"],
     "Permissions": ["View", "Create", "Update", "Delete"],
     "AssetCategories": ["View", "Create", "Update", "Delete"],
     "Assets": ["View", "Create", "Update", "Delete"],
@@ -42,8 +43,9 @@ VIEW_ALL = [c for c in ALL if c.endswith(".View") or c == "AssetAssignments.View
 ROLE_MAP = {
     # SuperAdmin gets everything explicitly too (enforcement also bypasses it).
     "SuperAdmin": ALL,
+    # Managing organizations is SuperAdmin-only: an OrganizationAdmin works inside one
+    # organization and must not create, rename, or even list the others.
     "OrganizationAdmin": [
-        *[f"Organizations.{a}" for a in CANONICAL["Organizations"]],
         *[f"Branches.{a}" for a in CANONICAL["Branches"]],
         *[f"Departments.{a}" for a in CANONICAL["Departments"]],
         *[f"Designations.{a}" for a in CANONICAL["Designations"]],
@@ -54,6 +56,7 @@ ROLE_MAP = {
         "Roles.View", "Permissions.View", "Reports.View", "Dashboard.View",
         "Notifications.View", "Notifications.MarkRead",
         "AuditLogs.View", "SystemSettings.View", "SystemSettings.Manage",
+        "Users.View", "Users.Create", "Users.Update", "Users.ManageRoles", "Users.ResetPassword",
     ],
     "HR Manager": [
         *[f"Employees.{a}" for a in CANONICAL["Employees"]],

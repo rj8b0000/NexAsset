@@ -63,7 +63,15 @@ public sealed class EffectivePermissionService : IEffectivePermissionService
 
         var isSuperAdmin = roles.Any(r => string.Equals(r.Name, SuperAdminRole, StringComparison.OrdinalIgnoreCase));
 
+        var account = await _context.Users
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.OrganizationId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // IgnoreQueryFilters: this runs while the organization boundary is still being decided,
+        // and the boundary is derived from this very lookup — filtering here would be circular.
         var employee = await _context.Employees
+            .IgnoreQueryFilters()
             .Where(e => e.IdentityUserId == userId && !e.IsDeleted)
             .Select(e => new { e.DesignationId, e.OrganizationId, OrganizationName = e.Organization.Name })
             .FirstOrDefaultAsync(cancellationToken);
@@ -91,11 +99,25 @@ public sealed class EffectivePermissionService : IEffectivePermissionService
                 .ToListAsync(cancellationToken);
         }
 
+        // An employee belongs to their record's organization; a standalone account (an
+        // organization administrator, say) carries its organization on the login itself.
+        var organizationId = employee?.OrganizationId ?? account?.OrganizationId;
+        var organizationName = employee?.OrganizationName;
+
+        if (organizationName is null && organizationId is { } id)
+        {
+            organizationName = await _context.Organizations
+                .IgnoreQueryFilters()
+                .Where(o => o.Id == id && !o.IsDeleted)
+                .Select(o => o.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         var effective = new EffectivePermissions(
             isSuperAdmin,
             codes.ToHashSet(StringComparer.OrdinalIgnoreCase),
-            employee?.OrganizationId,
-            employee?.OrganizationName);
+            organizationId,
+            organizationName);
 
         _cache.Set(cacheKey, effective, CacheTtl);
         return effective;

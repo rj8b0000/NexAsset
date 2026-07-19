@@ -54,6 +54,9 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddScoped<Authorization.IEffectivePermissionService, Authorization.EffectivePermissionService>();
 
+        // Organization boundary applied to every query by ApplicationDbContext.
+        services.AddScoped<ITenantContext, Authorization.TenantContext>();
+
 
         return services;
     }

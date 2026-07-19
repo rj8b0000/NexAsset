@@ -1,0 +1,161 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.HR
+@using NexAsset.Web.Infrastructure.Users
+@using NexAsset.Web.Models.Users
+@using NexAsset.Web.Shared.Models
+@inject IUserApiClient UserApiClient
+@inject IRoleApiClient RoleApiClient
+@inject NexAsset.Web.Infrastructure.Notifications.INotificationService Notify
+
+@*
+    Assigns identity roles to a login. Roles are how a non-employee account (an administrator)
+    gets its permissions; for an employee the designation governs instead, so this dialog says
+    so plainly rather than letting someone assign a role that would quietly do nothing.
+*@
+<Dialog IsOpen="IsOpen" Title="@($"Roles — {UserEmail}")" Size="md" OnClose="OnClose">
+    <ChildContent>
+        @if (_loading)
+        {
+            <LoadingState Message="Loading roles..." />
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert alert-danger py-2 px-3 border-0 text-caption rounded-3 mb-3" style="background-color: var(--danger-light); color: var(--danger);">@_error</div>
+            }
+
+            @if (IsEmployee)
+            {
+                <div class="p-3 rounded mb-3 text-caption" style="background-color: var(--warning-light, var(--bg-surface-hover)); color: var(--text-secondary);">
+                    <i class="lucide-alert-triangle me-1"></i>
+                    This login belongs to an employee, so its permissions come from the
+                    <strong>@(string.IsNullOrWhiteSpace(DesignationTitle) ? "(no designation)" : DesignationTitle)</strong>
+                    designation. Roles below are ignored for this account — except
+                    <strong>SuperAdmin</strong>, which always grants full access.
+                    To change what this person can do, edit their designation's permissions.
+                </div>
+            }
+            else
+            {
+                <div class="p-3 rounded mb-3 text-caption" style="background-color: var(--bg-surface-hover); color: var(--text-secondary);">
+                    <i class="lucide-info me-1"></i>
+                    This login has no employee record, so the roles below decide what it can do.
+                </div>
+            }
+
+            <div class="d-flex flex-column gap-1">
+                @foreach (var role in _roles)
+                {
+                    <div class="form-check py-1">
+                        <input class="form-check-input" type="checkbox" id="urole-@role"
+                               checked="@_checked.Contains(role)"
+                               @onchange="() => Toggle(role)" />
+                        <label class="form-check-label text-caption" for="urole-@role" style="color: var(--text-primary);">
+                            @role
+                            @if (string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="badge-custom badge-custom-warning ms-2">full access, bypasses all checks</span>
+                            }
+                        </label>
+                    </div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="OnClose" disabled="@_saving">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span>Saving...</span>
+            }
+            else
+            {
+                <i class="lucide-save"></i>
+                <span>Save Roles</span>
+            }
+        </button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Guid? UserId { get; set; }
+    [Parameter] public string UserEmail { get; set; } = "";
+    [Parameter] public List<string> CurrentRoles { get; set; } = new();
+    [Parameter] public bool IsEmployee { get; set; }
+    [Parameter] public string? DesignationTitle { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<string> _roles = new();
+    private HashSet<string> _checked = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _original = new(StringComparer.OrdinalIgnoreCase);
+    private bool _loading;
+    private bool _saving;
+    private string? _error;
+    private bool _open;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_open) { _open = true; await LoadAsync(); }
+        else if (!IsOpen && _open) { _open = false; }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        var result = await RoleApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 100, SortBy = "Name" });
+        if (result.IsSuccess && result.Data is not null)
+            _roles = result.Data.Items.Select(r => r.Name).ToList();
+        else
+            _error = result.Error?.Message ?? "Could not load roles.";
+
+        _original = new HashSet<string>(CurrentRoles, StringComparer.OrdinalIgnoreCase);
+        _checked = new HashSet<string>(_original, StringComparer.OrdinalIgnoreCase);
+        _loading = false;
+    }
+
+    private void Toggle(string role)
+    {
+        if (!_checked.Remove(role))
+            _checked.Add(role);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (UserId is null) return;
+        _error = null;
+        _saving = true;
+
+        var toAdd = _checked.Except(_original, StringComparer.OrdinalIgnoreCase).ToList();
+        var toRemove = _original.Except(_checked, StringComparer.OrdinalIgnoreCase).ToList();
+        var failures = new List<string>();
+
+        foreach (var role in toAdd)
+        {
+            var r = await UserApiClient.AssignRoleAsync(UserId.Value, role);
+            if (!r.IsSuccess) failures.Add(r.Error?.Message ?? $"Could not add {role}.");
+        }
+        foreach (var role in toRemove)
+        {
+            var r = await UserApiClient.RemoveRoleAsync(UserId.Value, role);
+            if (!r.IsSuccess) failures.Add(r.Error?.Message ?? $"Could not remove {role}.");
+        }
+
+        _saving = false;
+
+        if (failures.Count > 0)
+        {
+            _error = string.Join(" ", failures);
+            return;
+        }
+
+        Notify.ShowSuccess("Saved", $"Roles updated: {toAdd.Count} added, {toRemove.Count} removed.");
+        await OnSaved.InvokeAsync();
+    }
+}
