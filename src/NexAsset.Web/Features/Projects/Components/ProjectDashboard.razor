@@ -1,0 +1,108 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@inject IProjectWorkspaceApiClient ProjectApi
+
+@if (_kpis is null && _error is null)
+{
+    <LoadingState Message="Loading executive dashboard..." />
+}
+else if (_error is not null)
+{
+    <EmptyState Title="Dashboard Error" Description="@_error" IconClass="lucide-alert-circle" />
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="dashboard-card-custom p-3 border-start border-4 border-primary">
+                <div class="text-caption text-secondary text-uppercase fw-semibold mb-1">Health Status</div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="lucide-activity @(_kpis!.HealthStatus == "On Track" ? "text-success" : "text-danger") fs-4"></i>
+                    <h3 class="h4 mb-0 fw-bold">@_kpis.HealthStatus</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card-custom p-3 border-start border-4 border-info">
+                <div class="text-caption text-secondary text-uppercase fw-semibold mb-1">Budget Utilization</div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="lucide-pie-chart text-info fs-4"></i>
+                    <h3 class="h4 mb-0 fw-bold">@_kpis.BudgetUtilizationPercentage.ToString("F1")%</h3>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-info" style="width: @Math.Min(100, _kpis.BudgetUtilizationPercentage)%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card-custom p-3 border-start border-4 border-warning">
+                <div class="text-caption text-secondary text-uppercase fw-semibold mb-1">Open Risks</div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="lucide-alert-triangle text-warning fs-4"></i>
+                    <h3 class="h4 mb-0 fw-bold">@_kpis.OpenRisks</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card-custom p-3 text-center">
+                <i class="lucide-users text-secondary fs-4 mb-2"></i>
+                <h4 class="h3 fw-bold mb-1">@_kpis.EmployeesAssigned</h4>
+                <div class="text-caption text-secondary">Team Members</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card-custom p-3 text-center">
+                <i class="lucide-box text-secondary fs-4 mb-2"></i>
+                <h4 class="h3 fw-bold mb-1">@_kpis.AssetsAllocated</h4>
+                <div class="text-caption text-secondary">Active Assets</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card-custom p-3 text-center">
+                <i class="lucide-file-text text-secondary fs-4 mb-2"></i>
+                <h4 class="h3 fw-bold mb-1">@_kpis.DocumentsUploaded</h4>
+                <div class="text-caption text-secondary">Documents</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="dashboard-card-custom p-3 text-center">
+                <i class="lucide-wrench text-secondary fs-4 mb-2"></i>
+                <h4 class="h3 fw-bold mb-1">@_kpis.MaintenanceRequests</h4>
+                <div class="text-caption text-secondary">Maintenance</div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    private ProjectDashboardKpiItem? _kpis;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    public async Task RefreshAsync()
+    {
+        await LoadDataAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _error = null;
+        var result = await ProjectApi.GetDashboardKpisAsync(ProjectId);
+        if (result.IsSuccess && result.Data is not null)
+        {
+            _kpis = result.Data;
+        }
+        else
+        {
+            _error = result.Error?.Message ?? "Could not load dashboard KPIs.";
+        }
+    }
+}

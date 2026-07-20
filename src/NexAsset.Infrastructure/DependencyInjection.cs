@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IAssetTransferRepository, AssetTransferRepository>();
         services.AddScoped<IAssetReturnRepository, AssetReturnRepository>();
         services.AddScoped<IEnterpriseOperationsRepository, EnterpriseOperationsRepository>();
+        services.AddScoped<IProjectWorkspaceRepository, ProjectWorkspaceRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Permission enforcement: cached role+designation permission resolution.

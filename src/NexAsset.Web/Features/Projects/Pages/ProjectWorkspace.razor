@@ -1,0 +1,656 @@
+@page "/projects"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@inject IProjectWorkspaceApiClient ProjectApi
+@inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Foundation.IOrganizationApiClient OrganizationApi
+@inject NexAsset.Web.Infrastructure.Foundation.IBranchApiClient BranchApi
+@inject NexAsset.Web.Infrastructure.Foundation.IDepartmentApiClient DepartmentApi
+@inject NexAsset.Web.Infrastructure.HR.IEmployeeApiClient EmployeeApi
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Project Workspace</h1>
+            <span class="text-caption text-secondary">Plan projects, allocate teams and assets, capture parameters, documents and activity.</span>
+        </div>
+        @if (Perms.HasPermission("Projects.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="StartWizard">
+                <i class="lucide-plus"></i> New Project
+            </button>
+        }
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-7">
+            @if (_page is null && _loadError is null)
+            {
+                <LoadingState Message="Loading projects..." />
+            }
+            else if (_loadError is not null)
+            {
+                <EmptyState Title="Couldn't load projects" Description="@_loadError"
+                            IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                            OnActionClick="() => LoadAsync(_query)" />
+            }
+            else
+            {
+                <DataTable TItem="ProjectItem"
+                           Items="_page!.Items"
+                           Columns="_columns"
+                           Type="Project"
+                           ServerMode="true"
+                           ServerTotalCount="_page.TotalCount"
+                           ServerPageNumber="_page.PageNumber"
+                           ServerPageSize="_page.PageSize"
+                           IsLoading="_busy"
+                           OnQueryChanged="LoadAsync"
+                           IdSelector="p => p.Id.ToString()"
+                           OnViewDetails="SelectProject"
+                           OnEdit="OpenEdit"
+                           EditPermission="Projects.Update"
+                           OnDelete="DeleteProject"
+                           DeletePermission="Projects.Delete" />
+            }
+        </div>
+
+        <div class="col-xl-5">
+            @if (_selected is null)
+            {
+                <EmptyState Title="Select a project" Description="Open a workspace to see team, assets, parameters, documents and activity."
+                            IconClass="lucide-folder-kanban" />
+            }
+            else
+            {
+                <section class="dashboard-card-custom p-4">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div>
+                            <h2 class="h5 mb-1">@_selected.ProjectName</h2>
+                            <span class="badge-custom @ProjectStatus.BadgeClass(_selected.Status)">@ProjectStatus.Label(_selected.Status)</span>
+                        </div>
+                        <button class="btn-custom btn-custom-secondary" @onclick="ArchiveSelected" disabled="@_busy">
+                            <i class="lucide-archive"></i> Archive
+                        </button>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <span class="text-label">Priority</span>
+                            <div class="fw-semibold">@ProjectPriority.Label(_selected.Priority)</div>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-label">Start Date</span>
+                            <div class="fw-semibold">@_selected.StartDate</div>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-label">Expected</span>
+                            <div class="fw-semibold">@(_selected.ExpectedCompletion?.ToString() ?? "-")</div>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-label">Manager</span>
+                            <div class="fw-semibold">@_selected.ProjectManagerId</div>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs mb-3">
+                        @foreach (var tab in _tabs)
+                        {
+                            <li class="nav-item">
+                                <button type="button" class="nav-link @(tab == _activeTab ? "active" : "")" @onclick="() => _activeTab = tab">@tab</button>
+                            </li>
+                        }
+                    </ul>
+
+                    @if (_activeTab == "Dashboard")
+                    {
+                        <NexAsset.Web.Features.Projects.Components.ProjectDashboard ProjectId="@_selected.Id" />
+                    }
+                    else if (_activeTab == "Budget")
+                    {
+                        <NexAsset.Web.Features.Projects.Components.ProjectBudgetView ProjectId="@_selected.Id" />
+                    }
+                    else if (_activeTab == "Risks")
+                    {
+                        <NexAsset.Web.Features.Projects.Components.ProjectRiskRegister ProjectId="@_selected.Id" />
+                    }
+                    else if (_activeTab == "Settings")
+                    {
+                        <NexAsset.Web.Features.Projects.Components.ProjectSettingsView ProjectId="@_selected.Id" />
+                    }
+                    else if (_activeTab == "Team")
+                    {
+                        @RenderTeamContent()
+                    }
+                    else if (_activeTab == "Assets")
+                    {
+                        @RenderAssetContent()
+                    }
+                    else if (_activeTab == "Parameters")
+                    {
+                        @RenderParametersContent()
+                    }
+                    else if (_activeTab == "Documents")
+                    {
+                        @RenderDocumentsContent()
+                    }
+                    else
+                    {
+                        @RenderActivityContent()
+                    }
+                </section>
+            }
+        </div>
+    </div>
+</div>
+
+<Dialog IsOpen="_wizardOpen" Title="@(_editingId.HasValue ? "Edit Project" : "Project Creation Wizard")" Size="lg" OnClose="CloseWizard">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex gap-2 flex-wrap">
+            @for (var i = 1; i <= 7; i++)
+            {
+                var step = i;
+                <button type="button" class="btn-custom @(step == _wizardStep ? "btn-custom-primary" : "btn-custom-secondary")" @onclick="() => TrySetWizardStepAsync(step)" disabled="@(_editingId == null && step > 1)">
+                    @step
+                </button>
+            }
+        </div>
+        <span class="text-caption">@_saveState</span>
+    </div>
+
+    @if (_wizardStep == 1)
+    {
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label-custom">Project Name</label>
+                <input class="form-control-custom" @bind="_form.ProjectName" @bind:event="oninput" @bind:after="MarkDirty" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Organization Id</label>
+                <select class="form-control-custom" @bind="_form.OrganizationId" @bind:after="MarkDirty">
+                    <option value="">Select Organization</option>
+                    @foreach (var org in _organizations)
+                    {
+                        <option value="@org.Id">@org.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Category Id</label>
+                <select class="form-control-custom" @bind="_form.CategoryId" @bind:after="MarkDirty">
+                    <option value="">Select Category</option>
+                    @foreach (var cat in _categories)
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Project Manager Id</label>
+                <select class="form-control-custom" @bind="_form.ProjectManagerId" @bind:after="MarkDirty">
+                    <option value="">Select Manager</option>
+                    @foreach (var emp in _employees.Where(e => string.IsNullOrEmpty(_form.OrganizationId) || e.OrganizationId.ToString() == _form.OrganizationId))
+                    {
+                        <option value="@emp.Id">@emp.FirstName @emp.LastName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Branch Id</label>
+                <select class="form-control-custom" @bind="_form.BranchId" @bind:after="MarkDirty">
+                    <option value="">Select Branch</option>
+                    @foreach (var br in _branches.Where(b => string.IsNullOrEmpty(_form.OrganizationId) || b.OrganizationId.ToString() == _form.OrganizationId))
+                    {
+                        <option value="@br.Id">@br.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-custom">Department Id</label>
+                <select class="form-control-custom" @bind="_form.DepartmentId" @bind:after="MarkDirty">
+                    <option value="">Select Department</option>
+                    @foreach (var dept in _departments.Where(d => string.IsNullOrEmpty(_form.OrganizationId) || d.OrganizationId.ToString() == _form.OrganizationId))
+                    {
+                        <option value="@dept.Id">@dept.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label-custom">Priority</label>
+                <select class="form-control-custom" @bind="_form.Priority" @bind:after="MarkDirty">
+                    @foreach (var option in ProjectPriority.Options)
+                    {
+                        <option value="@option.Value">@option.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label-custom">Status</label>
+                <select class="form-control-custom" @bind="_form.Status" @bind:after="MarkDirty">
+                    @foreach (var option in ProjectStatus.Options)
+                    {
+                        <option value="@option.Value">@option.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label-custom">Start Date</label>
+                <input class="form-control-custom" placeholder="yyyy-MM-dd" @bind="_form.StartDate" @bind:event="oninput" @bind:after="MarkDirty" />
+            </div>
+            <div class="col-12">
+                <label class="form-label-custom">Description</label>
+                <textarea class="form-control-custom" rows="3" @bind="_form.Description" @bind:event="oninput" @bind:after="MarkDirty"></textarea>
+            </div>
+        </div>
+    }
+    else if (_wizardStep == 2)
+    {
+        @if (_editingId.HasValue)
+        {
+            @RenderTeamContent()
+        }
+        else { <EmptyState Title="Team" Description="Save project first to add members." IconClass="lucide-users" /> }
+    }
+    else if (_wizardStep == 3)
+    {
+        @if (_editingId.HasValue)
+        {
+            @RenderAssetContent()
+        }
+        else { <EmptyState Title="Asset Allocation" Description="Save project first to allocate assets." IconClass="lucide-box" /> }
+    }
+    else if (_wizardStep == 4)
+    {
+        @if (_editingId.HasValue)
+        {
+            @RenderParametersContent()
+        }
+        else { <EmptyState Title="Parameters" Description="Save project first to configure parameters." IconClass="lucide-sliders" /> }
+    }
+    else if (_wizardStep == 5)
+    {
+        @if (_editingId.HasValue)
+        {
+            @RenderDocumentsContent()
+        }
+        else { <EmptyState Title="Documents" Description="Save project first to upload documents." IconClass="lucide-file-text" /> }
+    }
+    else if (_wizardStep == 6)
+    {
+        @if (_editingId.HasValue)
+        {
+            <NexAsset.Web.Features.Projects.Components.ProjectBudgetView ProjectId="@_editingId.Value" />
+        }
+        else { <EmptyState Title="Budget" Description="Save project first to manage budget." IconClass="lucide-pie-chart" /> }
+    }
+    else if (_wizardStep == 7)
+    {
+        @if (_editingId.HasValue)
+        {
+            <NexAsset.Web.Features.Projects.Components.ProjectRiskRegister ProjectId="@_editingId.Value" />
+        }
+        else { <EmptyState Title="Risks" Description="Save project first to log risks." IconClass="lucide-shield-alert" /> }
+    }
+    
+    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+        <button class="btn-custom btn-custom-secondary me-2" @onclick="PrevStep" disabled="@(_wizardStep == 1)">Previous</button>
+        <div class="d-flex gap-2">
+            @if (_wizardStep == 7)
+            {
+                <button class="btn-custom btn-custom-primary" @onclick="SaveProjectAsync" disabled="@_busy">Finish Wizard</button>
+            }
+            else
+            {
+                <button class="btn-custom btn-custom-primary" @onclick="NextStepAsync" disabled="@_busy">Next</button>
+            }
+        </div>
+    </div>
+
+</Dialog>
+
+@code {
+    private PagedResult<ProjectItem>? _page;
+    private PagedQuery _query = new() { SortBy = "ProjectName" };
+    private string? _loadError;
+    private bool _busy;
+    private ProjectItem? _selected;
+    private ProjectFormModel _form = new();
+    private Guid? _editingId;
+    private bool _wizardOpen;
+    private int _wizardStep = 1;
+    private string _saveState = "Saved";
+    private System.Timers.Timer? _autosaveTimer;
+    private readonly string[] _tabs = ["Dashboard", "Budget", "Risks", "Team", "Assets", "Parameters", "Documents", "Activity", "Settings"];
+    private string _activeTab = "Dashboard";
+    private IReadOnlyList<ProjectMemberItem> _members = Array.Empty<ProjectMemberItem>();
+    private IReadOnlyList<ProjectAssetAllocationItem> _allocations = Array.Empty<ProjectAssetAllocationItem>();
+    private IReadOnlyList<ProjectParameterItem> _parameters = Array.Empty<ProjectParameterItem>();
+    private IReadOnlyList<ProjectDocumentItem> _documents = Array.Empty<ProjectDocumentItem>();
+    private IReadOnlyList<ProjectActivityItem> _activities = Array.Empty<ProjectActivityItem>();
+    private ProjectMemberFormModel _memberForm = new();
+    private ProjectAssetAllocationFormModel _assetForm = new();
+    private ProjectParameterGroupFormModel _groupForm = new();
+    private ProjectParameterFormModel _parameterForm = new();
+    private ProjectDocumentFormModel _documentForm = new();
+
+    private readonly List<ColumnDefinition<ProjectItem>> _columns = new()
+    {
+        new() { Header = "Project", PropertySelector = p => p.ProjectName, SortColumn = "ProjectName" },
+        new() { Header = "Priority", SortColumn = "Priority", Template = p => @<span>@ProjectPriority.Label(p.Priority)</span> },
+        new() { Header = "Status", SortColumn = "Status", Template = p => @<span class="badge-custom @ProjectStatus.BadgeClass(p.Status)">@ProjectStatus.Label(p.Status)</span> },
+        new() { Header = "Start", PropertySelector = p => p.StartDate.ToString(), SortColumn = "StartDate" },
+        new() { Header = "Expected", SortColumn = "ExpectedCompletion", Template = p => @<span>@(p.ExpectedCompletion?.ToString() ?? "-")</span> }
+    };
+
+    private IReadOnlyList<NexAsset.Web.Models.Foundation.OrganizationListItem> _organizations = Array.Empty<NexAsset.Web.Models.Foundation.OrganizationListItem>();
+    private IReadOnlyList<ProjectCategoryItem> _categories = Array.Empty<ProjectCategoryItem>();
+    private IReadOnlyList<NexAsset.Web.Models.Foundation.BranchListItem> _branches = Array.Empty<NexAsset.Web.Models.Foundation.BranchListItem>();
+    private IReadOnlyList<NexAsset.Web.Models.Foundation.DepartmentListItem> _departments = Array.Empty<NexAsset.Web.Models.Foundation.DepartmentListItem>();
+    private IReadOnlyList<NexAsset.Web.Models.HR.EmployeeListItem> _employees = Array.Empty<NexAsset.Web.Models.HR.EmployeeListItem>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var fetchQuery = new PagedQuery { PageSize = 500 };
+        var orgsTask = OrganizationApi.GetPagedAsync(fetchQuery);
+        var catsTask = ProjectApi.GetCategoriesAsync(fetchQuery);
+        var branchesTask = BranchApi.GetPagedAsync(fetchQuery);
+        var deptsTask = DepartmentApi.GetPagedAsync(fetchQuery);
+        var empsTask = EmployeeApi.GetPagedAsync(fetchQuery);
+
+        await Task.WhenAll(orgsTask, catsTask, branchesTask, deptsTask, empsTask);
+
+        if (orgsTask.Result.IsSuccess && orgsTask.Result.Data != null) _organizations = orgsTask.Result.Data.Items;
+        if (catsTask.Result.IsSuccess && catsTask.Result.Data != null) _categories = catsTask.Result.Data.Items;
+        if (branchesTask.Result.IsSuccess && branchesTask.Result.Data != null) _branches = branchesTask.Result.Data.Items;
+        if (deptsTask.Result.IsSuccess && deptsTask.Result.Data != null) _departments = deptsTask.Result.Data.Items;
+        if (empsTask.Result.IsSuccess && empsTask.Result.Data != null) _employees = empsTask.Result.Data.Items;
+
+        await LoadAsync(_query);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _query = query;
+        _loadError = null;
+        _busy = true;
+        var result = await ProjectApi.GetProjectsAsync(query);
+        _busy = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _loadError = result.Error?.Message ?? "Something went wrong while loading projects.";
+    }
+
+    private async Task SelectProject(ProjectItem item)
+    {
+        _selected = item;
+        var members = await ProjectApi.GetMembersAsync(item.Id);
+        var assets = await ProjectApi.GetAssetAllocationsAsync(item.Id);
+        var parameters = await ProjectApi.GetParametersAsync(item.Id);
+        var documents = await ProjectApi.GetDocumentsAsync(item.Id);
+        var activities = await ProjectApi.GetActivitiesAsync(item.Id);
+        _members = members.Data ?? Array.Empty<ProjectMemberItem>();
+        _allocations = assets.Data ?? Array.Empty<ProjectAssetAllocationItem>();
+        _parameters = parameters.Data ?? Array.Empty<ProjectParameterItem>();
+        _documents = documents.Data ?? Array.Empty<ProjectDocumentItem>();
+        _activities = activities.Data ?? Array.Empty<ProjectActivityItem>();
+        _memberForm = new ProjectMemberFormModel { ProjectId = item.Id };
+        _assetForm = new ProjectAssetAllocationFormModel { ProjectId = item.Id };
+        _groupForm = new ProjectParameterGroupFormModel { ProjectId = item.Id, DisplayOrder = _groupsNextOrder };
+        _parameterForm = new ProjectParameterFormModel { ProjectId = item.Id, DisplayOrder = _parameters.Count + 1 };
+        _documentForm = new ProjectDocumentFormModel { ProjectId = item.Id };
+    }
+
+    private void StartWizard()
+    {
+        _editingId = null;
+        _form = new();
+        _wizardStep = 1;
+        _saveState = "Unsaved Changes";
+        _wizardOpen = true;
+    }
+
+    private void OpenEdit(ProjectItem item)
+    {
+        _editingId = item.Id;
+        _form = ProjectFormModel.FromItem(item);
+        _wizardStep = 1;
+        _saveState = "Saved";
+        _wizardOpen = true;
+    }
+
+    private void CloseWizard()
+    {
+        _wizardOpen = false;
+        _autosaveTimer?.Dispose();
+        _autosaveTimer = null;
+    }
+
+    private async Task TrySetWizardStepAsync(int step)
+    {
+        if (step > 1 && _editingId == null)
+        {
+            if (_wizardStep == 1) await NextStepAsync();
+            return;
+        }
+        SetWizardStep(step);
+    }
+
+    private void SetWizardStep(int step)
+    {
+        _wizardStep = step;
+        MarkDirty();
+    }
+
+    private async Task NextStepAsync()
+    {
+        if (_wizardStep == 1 && _editingId == null)
+        {
+            _busy = true;
+            var result = await ProjectApi.CreateProjectAsync(_form);
+            _busy = false;
+            
+            if (result.IsSuccess && result.Data is not null)
+            {
+                _editingId = result.Data.Id;
+                _selected = result.Data;
+                Notifications.ShowSuccess("Project Created", "The project was saved. You can now configure related items.");
+                await SelectProject(_selected);
+                SetWizardStep(2);
+            }
+            else
+            {
+                Notifications.ShowError("Error", result.Error?.Message ?? "Could not create project.");
+            }
+        }
+        else
+        {
+            SetWizardStep(Math.Min(7, _wizardStep + 1));
+        }
+    }
+
+    private void PrevStep() => SetWizardStep(Math.Max(1, _wizardStep - 1));
+
+    private void MarkDirty()
+    {
+        _saveState = "Unsaved Changes";
+    }
+
+    private async Task SaveDraftAsync()
+    {
+        if (!_wizardOpen || string.IsNullOrWhiteSpace(_form.OrganizationId) || string.IsNullOrWhiteSpace(_form.ProjectManagerId) || string.IsNullOrWhiteSpace(_form.ProjectName))
+            return;
+
+        _saveState = "Saving...";
+        var draft = new ProjectDraftFormModel
+        {
+            OrganizationId = _form.OrganizationId,
+            ProjectId = _editingId,
+            OwnerEmployeeId = _form.ProjectManagerId,
+            CurrentStep = _wizardStep,
+            DraftName = _form.ProjectName,
+            DraftState = $"{_form.ProjectName}|{_form.Status}|{_form.Priority}"
+        };
+
+        var result = await ProjectApi.SaveDraftAsync(draft);
+        _saveState = result.IsSuccess ? "Saved" : "Unsaved Changes";
+        StateHasChanged();
+    }
+
+    private async Task SaveProjectAsync()
+    {
+        _busy = true;
+        var result = _editingId.HasValue
+            ? await ProjectApi.UpdateProjectAsync(_editingId.Value, _form)
+            : await ProjectApi.CreateProjectAsync(_form);
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Saved", "Project workspace saved successfully.");
+            CloseWizard();
+            await LoadAsync(_query);
+            if (result.Data is not null) await SelectProject(result.Data);
+        }
+        else
+        {
+            Notifications.ShowError("Save failed", result.Error?.Message ?? "Could not save the project.");
+        }
+    }
+
+    private async Task ArchiveSelected()
+    {
+        if (_selected is null) return;
+        var result = await ProjectApi.ArchiveProjectAsync(_selected.Id);
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Archived", "Project was archived.");
+            _selected = null;
+            await LoadAsync(_query);
+        }
+        else Notifications.ShowError("Archive failed", result.Error?.Message ?? "Could not archive this project.");
+    }
+
+    private async Task DeleteProject(ProjectItem item)
+    {
+        var result = await ProjectApi.DeleteProjectAsync(item.Id);
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Deleted", "Project was deleted.");
+            await LoadAsync(_query);
+        }
+        else Notifications.ShowError("Delete failed", result.Error?.Message ?? "Could not delete this project.");
+    }
+
+    private int _groupsNextOrder => 1;
+
+    private async Task AddMemberAsync()
+    {
+        if (_selected is null) return;
+        _memberForm.ProjectId = _selected.Id;
+        var result = await ProjectApi.AddMemberAsync(_selected.Id, _memberForm);
+        await HandleWorkspaceMutation(result.IsSuccess, result.Error?.Message, _selected);
+    }
+
+    private async Task AllocateAssetAsync()
+    {
+        if (_selected is null) return;
+        _assetForm.ProjectId = _selected.Id;
+        var result = await ProjectApi.AllocateAssetAsync(_selected.Id, _assetForm);
+        await HandleWorkspaceMutation(result.IsSuccess, result.Error?.Message, _selected);
+    }
+
+    private async Task CreateGroupAsync()
+    {
+        if (_selected is null) return;
+        _groupForm.ProjectId = _selected.Id;
+        var result = await ProjectApi.CreateParameterGroupAsync(_selected.Id, _groupForm);
+        if (result.IsSuccess && result.Data is not null)
+            _parameterForm.GroupId = result.Data.Id;
+        await HandleWorkspaceMutation(result.IsSuccess, result.Error?.Message, _selected);
+    }
+
+    private async Task CreateParameterAsync()
+    {
+        if (_selected is null) return;
+        _parameterForm.ProjectId = _selected.Id;
+        var result = await ProjectApi.CreateParameterAsync(_selected.Id, _parameterForm);
+        await HandleWorkspaceMutation(result.IsSuccess, result.Error?.Message, _selected);
+    }
+
+    private async Task AddDocumentAsync()
+    {
+        if (_selected is null) return;
+        _documentForm.ProjectId = _selected.Id;
+        var result = await ProjectApi.AddDocumentAsync(_selected.Id, _documentForm);
+        await HandleWorkspaceMutation(result.IsSuccess, result.Error?.Message, _selected);
+    }
+
+    private async Task HandleWorkspaceMutation(bool success, string? error, ProjectItem project)
+    {
+        if (success)
+        {
+            Notifications.ShowSuccess("Saved", "Workspace updated.");
+            await SelectProject(project);
+        }
+        else
+        {
+            Notifications.ShowError("Save failed", error ?? "Could not update the workspace.");
+        }
+    }
+    private RenderFragment RenderTeamContent() => __builder =>
+    {
+        <WorkspaceList Items='@(_members.Select(m => $"{m.RoleInProject} - {m.AllocationPercentage}%"))' EmptyText="No team members yet." />
+        <div class="row g-2 mt-3">
+            <div class="col-12"><input class="form-control-custom" placeholder="Employee Id" @bind="_memberForm.EmployeeId" /></div>
+            <div class="col-7"><input class="form-control-custom" placeholder="Role in project" @bind="_memberForm.RoleInProject" /></div>
+            <div class="col-5"><input type="number" class="form-control-custom" placeholder="Allocation %" @bind="_memberForm.AllocationPercentage" /></div>
+            <div class="col-12"><button class="btn-custom btn-custom-primary w-100" @onclick="AddMemberAsync">Add Member</button></div>
+        </div>
+    };
+
+    private RenderFragment RenderAssetContent() => __builder =>
+    {
+        <WorkspaceList Items='@(_allocations.Select(a => $"Asset {a.AssetId} - {a.AllocatedQuantity - a.ReturnedQuantity}/{a.AllocatedQuantity} active"))' EmptyText="No asset allocations yet." />
+        <div class="row g-2 mt-3">
+            <div class="col-12"><input class="form-control-custom" placeholder="Asset Id" @bind="_assetForm.AssetId" /></div>
+            <div class="col-6"><input type="number" class="form-control-custom" placeholder="Quantity" @bind="_assetForm.AllocatedQuantity" /></div>
+            <div class="col-6"><input class="form-control-custom" placeholder="yyyy-MM-dd" @bind="_assetForm.AllocatedOn" /></div>
+            <div class="col-12"><button class="btn-custom btn-custom-primary w-100" @onclick="AllocateAssetAsync">Allocate Asset</button></div>
+        </div>
+    };
+
+    private RenderFragment RenderParametersContent() => __builder =>
+    {
+        <WorkspaceList Items='@(_parameters.Select(p => $"{p.ParameterName}: {p.Value ?? "-"} {p.Unit ?? ""}"))' EmptyText="No dynamic parameters yet." />
+        <div class="row g-2 mt-3">
+            <div class="col-8"><input class="form-control-custom" placeholder="Group name" @bind="_groupForm.GroupName" /></div>
+            <div class="col-4"><button class="btn-custom btn-custom-secondary w-100" @onclick="CreateGroupAsync">Add Group</button></div>
+            <div class="col-12"><input class="form-control-custom" placeholder="Group Id" @bind="_parameterForm.GroupId" /></div>
+            <div class="col-6"><input class="form-control-custom" placeholder="Parameter name" @bind="_parameterForm.ParameterName" /></div>
+            <div class="col-3"><input class="form-control-custom" placeholder="Value" @bind="_parameterForm.Value" /></div>
+            <div class="col-3"><input class="form-control-custom" placeholder="Unit" @bind="_parameterForm.Unit" /></div>
+            <div class="col-12"><button class="btn-custom btn-custom-primary w-100" @onclick="CreateParameterAsync">Add Parameter</button></div>
+        </div>
+    };
+
+    private RenderFragment RenderDocumentsContent() => __builder =>
+    {
+        <WorkspaceList Items='@(_documents.Select(d => $"v{d.Version} - {d.Category} - {d.DocumentName}"))' EmptyText="No documents uploaded yet." />
+        <div class="row g-2 mt-3">
+            <div class="col-6"><input class="form-control-custom" placeholder="Category" @bind="_documentForm.Category" /></div>
+            <div class="col-6"><input class="form-control-custom" placeholder="Uploaded By Employee Id" @bind="_documentForm.UploadedBy" /></div>
+            <div class="col-12"><input class="form-control-custom" placeholder="Document name" @bind="_documentForm.DocumentName" /></div>
+            <div class="col-12"><input class="form-control-custom" placeholder="File path" @bind="_documentForm.FilePath" /></div>
+            <div class="col-12"><button class="btn-custom btn-custom-primary w-100" @onclick="AddDocumentAsync">Add Document</button></div>
+        </div>
+    };
+
+    private RenderFragment RenderActivityContent() => __builder =>
+    {
+        <WorkspaceList Items='@(_activities.Select(a => $"{a.OccurredAtUtc:g} - {a.Message}"))' EmptyText="No activities yet." />
+    };
+}

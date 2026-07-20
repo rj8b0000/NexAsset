@@ -4355,6 +4355,1889 @@
       ]
     },
     {
+      "name": "Project Workspace",
+      "description": "Flagship project workspace endpoints for categories, projects, wizard drafts, team, asset allocations, parameters, documents and activity history.",
+      "item": [
+        {
+          "name": "Create Project Category",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/categories",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "categories"
+              ]
+            },
+            "description": "Creates an organization-specific project category.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{OrganizationId}}\",\n  \"name\": \"Solar EPC\",\n  \"description\": \"Solar execution projects\",\n  \"isSystemSuggested\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project Categories",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/categories?pageNumber=1&pageSize=10&search=solar&sortBy=name&descending=false",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "solar"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name"
+                },
+                {
+                  "key": "descending",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Returns searchable project categories."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project Category By Id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/categories/{{ProjectCategoryId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "categories",
+                "{{ProjectCategoryId}}"
+              ]
+            },
+            "description": "Returns one project category."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Project Category",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/categories/{{ProjectCategoryId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "categories",
+                "{{ProjectCategoryId}}"
+              ]
+            },
+            "description": "Updates a project category.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{ProjectCategoryId}}\",\n  \"organizationId\": \"{{OrganizationId}}\",\n  \"name\": \"Solar EPC\",\n  \"description\": \"Solar execution projects\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Project Category",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/categories/{{ProjectCategoryId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "categories",
+                "{{ProjectCategoryId}}"
+              ]
+            },
+            "description": "Soft deletes a project category."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects"
+              ]
+            },
+            "description": "Creates a project workspace.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{OrganizationId}}\",\n  \"categoryId\": \"{{ProjectCategoryId}}\",\n  \"clientId\": \"{{CustomerId}}\",\n  \"branchId\": \"{{BranchId}}\",\n  \"departmentId\": \"{{DepartmentId}}\",\n  \"projectManagerId\": \"{{EmployeeId}}\",\n  \"projectName\": \"25 MW Solar EPC\",\n  \"description\": \"Demo project workspace\",\n  \"priority\": 2,\n  \"status\": 1,\n  \"startDate\": \"2026-07-20\",\n  \"endDate\": null,\n  \"expectedCompletion\": \"2026-12-31\",\n  \"notes\": \"Created from Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Projects",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects?pageNumber=1&pageSize=10&search=solar&sortBy=projectName&descending=false",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "solar"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "projectName"
+                },
+                {
+                  "key": "descending",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Returns paged projects."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project By Id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}"
+              ]
+            },
+            "description": "Returns one project."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}"
+              ]
+            },
+            "description": "Updates a project.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{ProjectId}}\",\n  \"organizationId\": \"{{OrganizationId}}\",\n  \"categoryId\": \"{{ProjectCategoryId}}\",\n  \"clientId\": \"{{CustomerId}}\",\n  \"branchId\": \"{{BranchId}}\",\n  \"departmentId\": \"{{DepartmentId}}\",\n  \"projectManagerId\": \"{{EmployeeId}}\",\n  \"projectName\": \"25 MW Solar EPC\",\n  \"description\": \"Updated project workspace\",\n  \"priority\": 3,\n  \"status\": 3,\n  \"startDate\": \"2026-07-20\",\n  \"endDate\": null,\n  \"expectedCompletion\": \"2026-12-31\",\n  \"notes\": \"Updated from Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Archive Project",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/archive",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "archive"
+              ]
+            },
+            "description": "Archives a project instead of hard-deleting it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Duplicate Project",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/duplicate",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "duplicate"
+              ]
+            },
+            "description": "Duplicates a project shell.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{ProjectId}}\",\n  \"projectName\": \"25 MW Solar EPC Copy\",\n  \"startDate\": \"2026-08-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}"
+              ]
+            },
+            "description": "Soft deletes a project."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Autosave Draft",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/drafts",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "drafts"
+              ]
+            },
+            "description": "Saves a temporary wizard draft state.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": null,\n  \"organizationId\": \"{{OrganizationId}}\",\n  \"projectId\": \"{{ProjectId}}\",\n  \"ownerEmployeeId\": \"{{EmployeeId}}\",\n  \"currentStep\": 3,\n  \"draftName\": \"25 MW Solar EPC Draft\",\n  \"draftState\": \"{\\\"step\\\":3}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Drafts",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/drafts?pageNumber=1&pageSize=10&search=solar&descending=true",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "drafts"
+              ],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "solar"
+                },
+                {
+                  "key": "descending",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Returns saved project drafts."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Draft By Id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/drafts/{{ProjectDraftId}}",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "drafts",
+                "{{ProjectDraftId}}"
+              ]
+            },
+            "description": "Returns one project draft."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add Project Member",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/members",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "members"
+              ]
+            },
+            "description": "Adds an employee to the project team.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{ProjectId}}\",\n  \"employeeId\": \"{{EmployeeId}}\",\n  \"roleInProject\": \"Project Engineer\",\n  \"allocationPercentage\": 75,\n  \"joinedOn\": \"2026-07-20\",\n  \"remarks\": \"Allocated for execution\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project Members",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/members",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "members"
+              ]
+            },
+            "description": "Returns project team members."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Allocate Project Asset",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/asset-allocations",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "asset-allocations"
+              ]
+            },
+            "description": "Allocates an asset to the project and creates project asset history.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{ProjectId}}\",\n  \"assetId\": \"{{AssetId}}\",\n  \"allocatedQuantity\": 1,\n  \"allocatedOn\": \"2026-07-20\",\n  \"remarks\": \"Site allocation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project Asset Allocations",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/asset-allocations",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "asset-allocations"
+              ]
+            },
+            "description": "Returns project asset allocations."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Return Project Asset",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/asset-allocations/{{ProjectAssetAllocationId}}/return",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "asset-allocations",
+                "{{ProjectAssetAllocationId}}",
+                "return"
+              ]
+            },
+            "description": "Records asset return quantity.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{ProjectAssetAllocationId}}\",\n  \"returnedQuantity\": 1,\n  \"returnedOn\": \"2026-08-20\",\n  \"remarks\": \"Returned from site\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Asset Project History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/assets/{{AssetId}}/history",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "assets",
+                "{{AssetId}}",
+                "history"
+              ]
+            },
+            "description": "Returns permanent project allocation history for an asset."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Parameter Group",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/parameter-groups",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "parameter-groups"
+              ]
+            },
+            "description": "Creates a dynamic parameter group.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{ProjectId}}\",\n  \"groupName\": \"Technical\",\n  \"displayOrder\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Parameter Groups",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/parameter-groups",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "parameter-groups"
+              ]
+            },
+            "description": "Returns parameter groups."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Parameter",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/parameters",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "parameters"
+              ]
+            },
+            "description": "Creates a normalized dynamic parameter.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{ProjectId}}\",\n  \"groupId\": \"{{ProjectParameterGroupId}}\",\n  \"parameterName\": \"Power\",\n  \"inputType\": 3,\n  \"value\": \"25\",\n  \"unit\": \"MW\",\n  \"required\": true,\n  \"displayOrder\": 1,\n  \"isVisible\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Parameters",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/parameters",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "parameters"
+              ]
+            },
+            "description": "Returns dynamic parameters."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add Document",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/documents",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "documents"
+              ]
+            },
+            "description": "Adds project document metadata.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{ProjectId}}\",\n  \"category\": \"Government Approval\",\n  \"documentName\": \"Connectivity Approval\",\n  \"filePath\": \"/documents/projects/connectivity-approval.pdf\",\n  \"uploadedBy\": \"{{EmployeeId}}\",\n  \"expiryDate\": \"2027-07-20\",\n  \"remarks\": \"Demo metadata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Documents",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/documents",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "documents"
+              ]
+            },
+            "description": "Returns project documents."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Activities",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{AccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BaseUrl}}/api/project-workspace/projects/{{ProjectId}}/activities",
+              "host": [
+                "{{BaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "project-workspace",
+                "projects",
+                "{{ProjectId}}",
+                "activities"
+              ]
+            },
+            "description": "Returns chronological project activity feed."
+          },
+          "response": [
+            {
+              "name": "Example Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"message\": \"Operation completed successfully.\"\n}"
+            },
+            {
+              "name": "Example Error",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Validation or business rule failure.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Enterprise Operations",
       "description": "Vendor, procurement, inventory, maintenance, customer, service ticket, notification, audit, setting and dashboard endpoints.",
       "item": [

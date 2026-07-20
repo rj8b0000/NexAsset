@@ -331,6 +331,10 @@
             new NavItem { Name = "Employees", Module = "Employees", Icon = "lucide-users", Permission = "Employees.View" },
             new NavItem { Name = "Users", Module = "Users", Icon = "lucide-user-cog", Permission = "Users.View" },
         }),
+        new NavSection("Project Workspace", new()
+        {
+            new NavItem { Name = "Projects", Module = "Projects", Icon = "lucide-folder-kanban", Permission = "Projects.View" },
+        }),
         new NavSection("Asset Management", new()
         {
             new NavItem { Name = "Asset Categories", Module = "asset-categories", Icon = "lucide-tags", Permission = "AssetCategories.View" },

@@ -51,6 +51,18 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<ProjectCategory> ProjectCategories => Set<ProjectCategory>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
+    public DbSet<ProjectAssetAllocation> ProjectAssetAllocations => Set<ProjectAssetAllocation>();
+    public DbSet<ProjectParameterGroup> ProjectParameterGroups => Set<ProjectParameterGroup>();
+    public DbSet<ProjectParameter> ProjectParameters => Set<ProjectParameter>();
+    public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
+    public DbSet<ProjectActivity> ProjectActivities => Set<ProjectActivity>();
+    public DbSet<ProjectDraft> ProjectDrafts => Set<ProjectDraft>();
+    public DbSet<ProjectBudget> ProjectBudgets => Set<ProjectBudget>();
+    public DbSet<ProjectRisk> ProjectRisks => Set<ProjectRisk>();
+    public DbSet<ProjectSetting> ProjectSettings => Set<ProjectSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -98,6 +110,12 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
             .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
         modelBuilder.Entity<ServiceTicket>()
             .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectCategory>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<Project>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectDraft>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
 
         // System settings are either organization-specific or global (null = visible to everyone).
         modelBuilder.Entity<SystemSetting>()
@@ -116,5 +134,23 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
             .HasQueryFilter(x => TenantOrganizationId == null || x.InventoryItem.OrganizationId == TenantOrganizationId);
         modelBuilder.Entity<StockMovement>()
             .HasQueryFilter(x => TenantOrganizationId == null || x.InventoryItem.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectMember>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectAssetAllocation>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectParameterGroup>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectParameter>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectDocument>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectActivity>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectBudget>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectRisk>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectSetting>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
     }
 }

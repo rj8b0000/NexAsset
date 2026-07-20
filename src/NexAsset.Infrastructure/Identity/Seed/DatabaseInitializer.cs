@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NexAsset.Infrastructure.Identity;
 using NexAsset.Infrastructure.Identity.Seed;
@@ -15,11 +16,13 @@ public static class DatabaseInitializer
         var context =
             scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        await context.Database.EnsureCreatedAsync();
+        await context.Database.MigrateAsync();
 
         await OrganizationSeeder.SeedAsync(context);
 
         await PermissionSeeder.SeedAsync(context);
+
+        await ProjectCategorySeeder.SeedAsync(context);
 
         var roleManager =
             scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();

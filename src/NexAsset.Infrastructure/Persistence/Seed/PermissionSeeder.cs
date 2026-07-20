@@ -36,6 +36,8 @@ public static class PermissionSeeder
         ("Notifications", new[] { "View", "Create", "MarkRead" }),
         ("AuditLogs", new[] { "View", "Create" }),
         ("SystemSettings", new[] { "View", "Manage" }),
+        ("Projects", new[] { "View", "Create", "Update", "Delete", "Archive", "Duplicate", "ManageTeam", "ManageAssets", "ManageParameters", "ManageDocuments" }),
+        ("ProjectCategories", new[] { "View", "Create", "Update", "Delete" }),
         ("Dashboard", new[] { "View" }),
         ("Reports", new[] { "View" }),
         ("Finance", new[] { "View" }),

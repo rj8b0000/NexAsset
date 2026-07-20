@@ -1,0 +1,147 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Shared.Components
+@inject IProjectWorkspaceApiClient ProjectApi
+@inject INotificationService Notifications
+
+<div class="dashboard-card-custom p-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="h5 mb-1">Project Settings</h2>
+            <div class="text-caption text-secondary">Configure project-specific preferences and integrations.</div>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="() => OpenEditor(null)">
+            <i class="lucide-plus"></i> Add Setting
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingState Message="Loading settings..." />
+    }
+    else if (!_settings.Any())
+    {
+        <EmptyState Title="No Settings Configured" Description="Add custom configurations and keys for this project workspace." IconClass="lucide-settings" />
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var setting in _settings)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@setting.Key</td>
+                            <td><span class="text-truncate d-inline-block" style="max-width: 250px;">@setting.Value</span></td>
+                            <td class="text-secondary">@setting.Description</td>
+                            <td>
+                                <button class="btn-icon text-primary" @onclick="() => OpenEditor(setting)" title="Edit">
+                                    <i class="lucide-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<Dialog IsOpen="_isEditorOpen" Title="Project Setting" OnClose="CloseEditor">
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label-custom">Key</label>
+            <input class="form-control-custom" @bind="_form.Key" placeholder="e.g. ERP_Integration_ID" />
+        </div>
+        <div class="col-12">
+            <label class="form-label-custom">Value</label>
+            <input class="form-control-custom" @bind="_form.Value" />
+        </div>
+        <div class="col-12">
+            <label class="form-label-custom">Description</label>
+            <textarea class="form-control-custom" rows="2" @bind="_form.Description"></textarea>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-end mt-4">
+        <button class="btn-custom btn-custom-secondary me-2" @onclick="CloseEditor">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveSettingAsync" disabled="@_busy">Save</button>
+    </div>
+</Dialog>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    
+    private IReadOnlyList<ProjectSettingItem> _settings = Array.Empty<ProjectSettingItem>();
+    private bool _loading = true;
+    private bool _busy;
+    private bool _isEditorOpen;
+    private ProjectSettingFormModel _form = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettingsAsync();
+    }
+    
+    private async Task LoadSettingsAsync()
+    {
+        _loading = true;
+        var result = await ProjectApi.GetSettingsAsync(ProjectId);
+        if (result.IsSuccess && result.Data is not null)
+        {
+            _settings = result.Data;
+        }
+        _loading = false;
+    }
+    
+    private void OpenEditor(ProjectSettingItem? setting)
+    {
+        if (setting is not null)
+        {
+            _form = new ProjectSettingFormModel
+            {
+                ProjectId = setting.ProjectId,
+                Key = setting.Key,
+                Value = setting.Value,
+                Description = setting.Description
+            };
+        }
+        else
+        {
+            _form = new ProjectSettingFormModel { ProjectId = ProjectId };
+        }
+        _isEditorOpen = true;
+    }
+    
+    private void CloseEditor()
+    {
+        _isEditorOpen = false;
+    }
+    
+    private async Task SaveSettingAsync()
+    {
+        _busy = true;
+        var result = await ProjectApi.UpsertSettingAsync(ProjectId, _form);
+        _busy = false;
+        
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Saved", "Setting was saved.");
+            CloseEditor();
+            await LoadSettingsAsync();
+        }
+        else
+        {
+            Notifications.ShowError("Error", result.Error?.Message ?? "Could not save setting.");
+        }
+    }
+}

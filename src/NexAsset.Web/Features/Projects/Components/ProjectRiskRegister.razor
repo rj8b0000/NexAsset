@@ -1,0 +1,253 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Shared.Components
+@inject IProjectWorkspaceApiClient ProjectApi
+@inject INotificationService Notifications
+
+<div class="dashboard-card-custom p-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="h5 mb-1">Risk Register</h2>
+            <div class="text-caption text-secondary">Log and track project risks, impacts, and mitigation plans.</div>
+        </div>
+        <button class="btn-custom btn-custom-primary" @onclick="() => OpenEditor(null)">
+            <i class="lucide-plus"></i> Log Risk
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingState Message="Loading risks..." />
+    }
+    else if (!_risks.Any())
+    {
+        <EmptyState Title="No Risks Logged" Description="Start tracking potential issues to ensure project success." IconClass="lucide-shield-alert" />
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Probability</th>
+                        <th>Impact</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var risk in _risks)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@risk.Title</td>
+                            <td><span class="badge bg-secondary">@risk.Probability</span></td>
+                            <td><span class="badge bg-secondary">@risk.Impact</span></td>
+                            <td>
+                                <span class="badge @(risk.Severity == "High" || risk.Severity == "Critical" ? "bg-danger" : risk.Severity == "Medium" ? "bg-warning" : "bg-info")">
+                                    @risk.Severity
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @(risk.Status == "Open" ? "bg-danger" : "bg-success")">@risk.Status</span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <button class="btn-icon text-primary" @onclick="() => OpenEditor(risk)" title="Edit">
+                                        <i class="lucide-edit"></i>
+                                    </button>
+                                    @if (risk.Status == "Open")
+                                    {
+                                        <button class="btn-icon text-success" @onclick="() => CloseRiskAsync(risk)" title="Close Risk">
+                                            <i class="lucide-check-circle"></i>
+                                        </button>
+                                    }
+                                    <button class="btn-icon text-danger" @onclick="() => DeleteRiskAsync(risk.Id)" title="Delete">
+                                        <i class="lucide-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<Dialog IsOpen="_isEditorOpen" Title="@(_editingId.HasValue ? "Edit Risk" : "Log New Risk")" OnClose="CloseEditor">
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label-custom">Title</label>
+            <input class="form-control-custom" @bind="_form.Title" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label-custom">Probability</label>
+            <select class="form-control-custom" @bind="_form.Probability" @bind:after="CalculateSeverity">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label-custom">Impact</label>
+            <select class="form-control-custom" @bind="_form.Impact" @bind:after="CalculateSeverity">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label-custom">Severity</label>
+            <input class="form-control-custom" @bind="_form.Severity" readonly />
+        </div>
+        <div class="col-12">
+            <label class="form-label-custom">Description</label>
+            <textarea class="form-control-custom" rows="2" @bind="_form.Description"></textarea>
+        </div>
+        <div class="col-12">
+            <label class="form-label-custom">Mitigation Plan</label>
+            <textarea class="form-control-custom" rows="3" @bind="_form.MitigationPlan"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label-custom">Status</label>
+            <select class="form-control-custom" @bind="_form.Status">
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label-custom">Owner Employee Id</label>
+            <input class="form-control-custom" @bind="_form.OwnerEmployeeId" />
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-end mt-4">
+        <button class="btn-custom btn-custom-secondary me-2" @onclick="CloseEditor">Cancel</button>
+        <button class="btn-custom btn-custom-primary" @onclick="SaveRiskAsync" disabled="@_busy">Save Risk</button>
+    </div>
+</Dialog>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+    
+    private IReadOnlyList<ProjectRiskItem> _risks = Array.Empty<ProjectRiskItem>();
+    private bool _loading = true;
+    private bool _busy;
+    private bool _isEditorOpen;
+    private Guid? _editingId;
+    private ProjectRiskFormModel _form = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRisksAsync();
+    }
+    
+    private async Task LoadRisksAsync()
+    {
+        _loading = true;
+        var result = await ProjectApi.GetRisksAsync(ProjectId);
+        if (result.IsSuccess && result.Data is not null)
+        {
+            _risks = result.Data;
+        }
+        _loading = false;
+    }
+    
+    private void OpenEditor(ProjectRiskItem? risk)
+    {
+        _editingId = risk?.Id;
+        if (risk is not null)
+        {
+            _form = new ProjectRiskFormModel
+            {
+                Id = risk.Id,
+                ProjectId = risk.ProjectId,
+                Title = risk.Title,
+                Description = risk.Description,
+                Probability = risk.Probability,
+                Impact = risk.Impact,
+                Severity = risk.Severity,
+                MitigationPlan = risk.MitigationPlan,
+                OwnerEmployeeId = risk.OwnerEmployeeId,
+                Status = risk.Status
+            };
+        }
+        else
+        {
+            _form = new ProjectRiskFormModel { ProjectId = ProjectId };
+        }
+        _isEditorOpen = true;
+    }
+    
+    private void CloseEditor()
+    {
+        _isEditorOpen = false;
+    }
+    
+    private void CalculateSeverity()
+    {
+        if (_form.Probability == "High" && _form.Impact == "High") _form.Severity = "Critical";
+        else if (_form.Probability == "High" || _form.Impact == "High") _form.Severity = "High";
+        else if (_form.Probability == "Medium" && _form.Impact == "Medium") _form.Severity = "Medium";
+        else if (_form.Probability == "Medium" || _form.Impact == "Medium") _form.Severity = "Medium";
+        else _form.Severity = "Low";
+    }
+    
+    private async Task SaveRiskAsync()
+    {
+        _busy = true;
+        var result = _editingId.HasValue 
+            ? await ProjectApi.UpdateRiskAsync(_editingId.Value, _form)
+            : await ProjectApi.CreateRiskAsync(ProjectId, _form);
+        _busy = false;
+        
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Saved", "Risk was saved.");
+            CloseEditor();
+            await LoadRisksAsync();
+        }
+        else
+        {
+            Notifications.ShowError("Error", result.Error?.Message ?? "Could not save risk.");
+        }
+    }
+    
+    private async Task CloseRiskAsync(ProjectRiskItem risk)
+    {
+        var form = new ProjectRiskFormModel
+        {
+            Id = risk.Id,
+            ProjectId = risk.ProjectId,
+            Title = risk.Title,
+            Description = risk.Description,
+            Probability = risk.Probability,
+            Impact = risk.Impact,
+            Severity = risk.Severity,
+            MitigationPlan = risk.MitigationPlan,
+            OwnerEmployeeId = risk.OwnerEmployeeId,
+            Status = "Closed"
+        };
+        var result = await ProjectApi.UpdateRiskAsync(risk.Id, form);
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Risk Closed", "The risk has been marked as closed.");
+            await LoadRisksAsync();
+        }
+        else Notifications.ShowError("Error", result.Error?.Message ?? "Could not close risk.");
+    }
+    
+    private async Task DeleteRiskAsync(Guid id)
+    {
+        var result = await ProjectApi.DeleteRiskAsync(id);
+        if (result.IsSuccess)
+        {
+            Notifications.ShowSuccess("Deleted", "Risk was deleted.");
+            await LoadRisksAsync();
+        }
+        else Notifications.ShowError("Error", result.Error?.Message ?? "Could not delete risk.");
+    }
+}

@@ -2,18 +2,21 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NexAsset.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace NexAsset.Infrastructure.Persistence
+namespace NexAsset.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260720074812_ProjectWorkspacePending")]
+    partial class ProjectWorkspacePending
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1349,59 +1352,6 @@ namespace NexAsset.Infrastructure.Persistence
                     b.ToTable("ProjectAssetAllocations", (string)null);
                 });
 
-            modelBuilder.Entity("NexAsset.Domain.Entities.ProjectBudget", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("ActualCost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("EstimatedBudget")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal>("LabourCost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("MaintenanceCost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("MiscellaneousCost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("ProcurementCost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId")
-                        .IsUnique();
-
-                    b.ToTable("ProjectBudgets", (string)null);
-                });
-
             modelBuilder.Entity("NexAsset.Domain.Entities.ProjectCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1710,121 +1660,6 @@ namespace NexAsset.Infrastructure.Persistence
                     b.HasIndex("ProjectId", "DisplayOrder");
 
                     b.ToTable("ProjectParameterGroups", (string)null);
-                });
-
-            modelBuilder.Entity("NexAsset.Domain.Entities.ProjectRisk", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ClosedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Impact")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MitigationPlan")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid?>("OwnerEmployeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Probability")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Severity")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerEmployeeId");
-
-                    b.HasIndex("ProjectId");
-
-                    b.ToTable("ProjectRisks", (string)null);
-                });
-
-            modelBuilder.Entity("NexAsset.Domain.Entities.ProjectSetting", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId", "Key")
-                        .IsUnique();
-
-                    b.ToTable("ProjectSettings", (string)null);
                 });
 
             modelBuilder.Entity("NexAsset.Domain.Entities.PurchaseOrder", b =>
@@ -2677,17 +2512,6 @@ namespace NexAsset.Infrastructure.Persistence
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("NexAsset.Domain.Entities.ProjectBudget", b =>
-                {
-                    b.HasOne("NexAsset.Domain.Entities.Project", "Project")
-                        .WithOne()
-                        .HasForeignKey("NexAsset.Domain.Entities.ProjectBudget", "ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-                });
-
             modelBuilder.Entity("NexAsset.Domain.Entities.ProjectCategory", b =>
                 {
                     b.HasOne("NexAsset.Domain.Entities.Organization", "Organization")
@@ -2783,35 +2607,6 @@ namespace NexAsset.Infrastructure.Persistence
                 });
 
             modelBuilder.Entity("NexAsset.Domain.Entities.ProjectParameterGroup", b =>
-                {
-                    b.HasOne("NexAsset.Domain.Entities.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("NexAsset.Domain.Entities.ProjectRisk", b =>
-                {
-                    b.HasOne("NexAsset.Domain.Entities.Employee", "OwnerEmployee")
-                        .WithMany()
-                        .HasForeignKey("OwnerEmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("NexAsset.Domain.Entities.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("OwnerEmployee");
-
-                    b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("NexAsset.Domain.Entities.ProjectSetting", b =>
                 {
                     b.HasOne("NexAsset.Domain.Entities.Project", "Project")
                         .WithMany()

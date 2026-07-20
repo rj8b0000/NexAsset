@@ -1,0 +1,24 @@
+@using System
+@using System.Collections.Generic
+
+@if (!Items.Any())
+{
+    <div class="text-caption text-secondary py-3">@EmptyText</div>
+}
+else
+{
+    <div class="d-flex flex-column gap-2">
+        @foreach (var item in Items)
+        {
+            <div class="d-flex align-items-center gap-2 p-2 rounded" style="background: var(--bg-surface-hover);">
+                <i class="lucide-dot"></i>
+                <span class="text-caption">@item</span>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IEnumerable<string> Items { get; set; } = Array.Empty<string>();
+    [Parameter] public string EmptyText { get; set; } = "No records.";
+}

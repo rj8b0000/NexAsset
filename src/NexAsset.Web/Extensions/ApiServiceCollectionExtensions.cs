@@ -13,6 +13,7 @@ using NexAsset.Web.Infrastructure.Foundation;
 using NexAsset.Web.Infrastructure.HR;
 using NexAsset.Web.Infrastructure.Inventory;
 using NexAsset.Web.Infrastructure.Procurement;
+using NexAsset.Web.Infrastructure.Projects;
 
 namespace NexAsset.Web.Extensions
 {
@@ -79,6 +80,9 @@ namespace NexAsset.Web.Extensions
 
             // Dashboard summary client (real HTTP, /api/enterprise-operations/dashboard).
             services.AddNexAssetApiClient<IDashboardApiClient, DashboardApiClient>(settings);
+
+            // Project Workspace flagship module.
+            services.AddNexAssetApiClient<IProjectWorkspaceApiClient, ProjectWorkspaceApiClient>(settings);
 
             // Administration clients: notifications, audit trail, system settings.
             services.AddNexAssetApiClient<INotificationApiClient, NotificationApiClient>(settings);
