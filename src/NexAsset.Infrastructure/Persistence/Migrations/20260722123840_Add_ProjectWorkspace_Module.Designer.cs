@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NexAsset.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260722122430_Add_ProjectWorkspace_Module")]
+    [Migration("20260722123840_Add_ProjectWorkspace_Module")]
     partial class Add_ProjectWorkspace_Module
     {
         /// <inheritdoc />
@@ -1003,6 +1003,9 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                     b.Property<int>("MaintenanceType")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Remarks")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -1027,6 +1030,8 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AssetId");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("MaintenanceRecords", (string)null);
                 });
@@ -1931,6 +1936,9 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("PurchaseRequestId")
                         .HasColumnType("uuid");
 
@@ -1952,6 +1960,8 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("PurchaseRequestId");
 
@@ -1999,6 +2009,9 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateOnly>("RequestDate")
                         .HasColumnType("date");
 
@@ -2022,6 +2035,8 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("RequestedByEmployeeId");
 
@@ -2714,7 +2729,14 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("NexAsset.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Asset");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("NexAsset.Domain.Entities.Project", b =>
@@ -2925,6 +2947,11 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("NexAsset.Domain.Entities.PurchaseOrder", b =>
                 {
+                    b.HasOne("NexAsset.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NexAsset.Domain.Entities.PurchaseRequest", "PurchaseRequest")
                         .WithMany()
                         .HasForeignKey("PurchaseRequestId")
@@ -2936,6 +2963,8 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Project");
+
                     b.Navigation("PurchaseRequest");
 
                     b.Navigation("Vendor");
@@ -2943,11 +2972,18 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("NexAsset.Domain.Entities.PurchaseRequest", b =>
                 {
+                    b.HasOne("NexAsset.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NexAsset.Domain.Entities.Employee", "RequestedByEmployee")
                         .WithMany()
                         .HasForeignKey("RequestedByEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Project");
 
                     b.Navigation("RequestedByEmployee");
                 });

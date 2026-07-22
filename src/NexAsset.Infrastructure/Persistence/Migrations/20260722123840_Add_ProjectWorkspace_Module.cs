@@ -13,6 +13,24 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
         {
             migrationBuilder.AddColumn<Guid>(
                 name: "ProjectId",
+                table: "PurchaseRequests",
+                type: "uuid",
+                nullable: true);
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "ProjectId",
+                table: "PurchaseOrders",
+                type: "uuid",
+                nullable: true);
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "ProjectId",
+                table: "MaintenanceRecords",
+                type: "uuid",
+                nullable: true);
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "ProjectId",
                 table: "Assets",
                 type: "uuid",
                 nullable: true);
@@ -478,6 +496,21 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseRequests_ProjectId",
+                table: "PurchaseRequests",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_ProjectId",
+                table: "PurchaseOrders",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceRecords_ProjectId",
+                table: "MaintenanceRecords",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Assets_ProjectId",
                 table: "Assets",
                 column: "ProjectId");
@@ -631,6 +664,30 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                 principalTable: "Projects",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_MaintenanceRecords_Projects_ProjectId",
+                table: "MaintenanceRecords",
+                column: "ProjectId",
+                principalTable: "Projects",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_PurchaseOrders_Projects_ProjectId",
+                table: "PurchaseOrders",
+                column: "ProjectId",
+                principalTable: "Projects",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_PurchaseRequests_Projects_ProjectId",
+                table: "PurchaseRequests",
+                column: "ProjectId",
+                principalTable: "Projects",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
@@ -639,6 +696,18 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Assets_Projects_ProjectId",
                 table: "Assets");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_MaintenanceRecords_Projects_ProjectId",
+                table: "MaintenanceRecords");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_PurchaseOrders_Projects_ProjectId",
+                table: "PurchaseOrders");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_PurchaseRequests_Projects_ProjectId",
+                table: "PurchaseRequests");
 
             migrationBuilder.DropTable(
                 name: "DraftSessions");
@@ -683,8 +752,32 @@ namespace NexAsset.Infrastructure.Persistence.Migrations
                 name: "ProjectCategories");
 
             migrationBuilder.DropIndex(
+                name: "IX_PurchaseRequests_ProjectId",
+                table: "PurchaseRequests");
+
+            migrationBuilder.DropIndex(
+                name: "IX_PurchaseOrders_ProjectId",
+                table: "PurchaseOrders");
+
+            migrationBuilder.DropIndex(
+                name: "IX_MaintenanceRecords_ProjectId",
+                table: "MaintenanceRecords");
+
+            migrationBuilder.DropIndex(
                 name: "IX_Assets_ProjectId",
                 table: "Assets");
+
+            migrationBuilder.DropColumn(
+                name: "ProjectId",
+                table: "PurchaseRequests");
+
+            migrationBuilder.DropColumn(
+                name: "ProjectId",
+                table: "PurchaseOrders");
+
+            migrationBuilder.DropColumn(
+                name: "ProjectId",
+                table: "MaintenanceRecords");
 
             migrationBuilder.DropColumn(
                 name: "ProjectId",
