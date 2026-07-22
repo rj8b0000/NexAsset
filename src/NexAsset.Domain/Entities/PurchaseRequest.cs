@@ -6,6 +6,8 @@ namespace NexAsset.Domain.Entities;
 public class PurchaseRequest : BaseEntity
 {
     public Guid OrganizationId { get; set; }
+    public Guid? ProjectId { get; set; }
+    public Project? Project { get; set; }
     public string RequestNumber { get; set; } = default!;
     public string Title { get; set; } = default!;
     public string? Description { get; set; }

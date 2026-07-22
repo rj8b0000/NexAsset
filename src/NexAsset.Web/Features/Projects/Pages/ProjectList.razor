@@ -1,0 +1,92 @@
+@page "/projects"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@inject IProjectApiClient ProjectApiClient
+@inject NavigationManager Navigation
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4 gap-3 flex-wrap">
+        <div>
+            <h1 class="h1-title mb-1">Projects</h1>
+            <span class="text-caption text-secondary">Operational workspaces, team assignments, assets, documents, and risks.</span>
+        </div>
+        <a href="/projects/new" class="btn-custom btn-custom-primary text-decoration-none"><i class="lucide-plus"></i> New Project</a>
+    </div>
+
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+        <input class="form-control-custom" style="max-width: 360px;" placeholder="Search code or project name" @bind="_search" @bind:event="oninput" @onkeyup="SearchKey" />
+        <button class="btn-custom btn-custom-secondary" @onclick="Reload"><i class="lucide-search"></i></button>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingState Message="Loading projects..." />
+    }
+    else if (_error is not null)
+    {
+        <EmptyState Title="Couldn't load projects" Description="@_error" IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw" OnActionClick="Reload" />
+    }
+    else if (_page is null || _page.Items.Count == 0)
+    {
+        <EmptyState Title="No projects yet" Description="Create a project workspace to begin planning work." IconClass="lucide-folder-kanban" ActionLabel="New Project" ActionIconClass="lucide-plus" OnActionClick="OpenWizard" />
+    }
+    else
+    {
+        <div class="table-responsive border rounded-2" style="border-color: var(--border-color) !important;">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>Code</th><th>Project</th><th>Status</th><th>Priority</th><th>Manager</th><th>Timeline</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var project in _page.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@project.ProjectCode</td>
+                        <td><a class="text-decoration-none" href="@($"/projects/{project.Id}")">@project.ProjectName</a><div class="text-muted-custom small">@project.CategoryName</div></td>
+                        <td><span class="badge-custom badge-custom-info">@StatusName(project.Status)</span></td>
+                        <td>@PriorityName(project.Priority)</td>
+                        <td>@(project.ProjectManagerName ?? "Unassigned")</td>
+                        <td class="text-caption">@project.StartDate?.ToString("dd MMM yyyy") - @project.EndDate?.ToString("dd MMM yyyy")</td>
+                        <td class="text-end"><a class="btn-custom btn-custom-secondary p-1" title="Open project" href="@($"/projects/{project.Id}")"><i class="lucide-arrow-up-right"></i></a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <span class="text-caption text-muted-custom">@_page.TotalCount project(s)</span>
+            <div class="d-flex gap-2"><button class="btn-custom btn-custom-secondary" disabled="@(_query.PageNumber <= 1)" @onclick="Previous"><i class="lucide-chevron-left"></i></button><button class="btn-custom btn-custom-secondary" disabled="@(_query.PageNumber >= _page.TotalPages)" @onclick="Next"><i class="lucide-chevron-right"></i></button></div>
+        </div>
+    }
+</div>
+
+@code {
+    private PagedResult<ProjectListItem>? _page;
+    private PagedQuery _query = new() { PageSize = 20, SortBy = "ProjectName" };
+    private string _search = string.Empty;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        var result = await ProjectApiClient.GetPagedAsync(_query with { Search = _search });
+        _loading = false;
+        if (result.IsSuccess && result.Data is not null) _page = result.Data;
+        else _error = result.Error?.Message ?? "The projects service did not return a response.";
+    }
+
+    private Task Reload() => LoadAsync();
+    private async Task Previous() { _query = _query with { PageNumber = Math.Max(1, _query.PageNumber - 1) }; await LoadAsync(); }
+    private async Task Next() { _query = _query with { PageNumber = _query.PageNumber + 1 }; await LoadAsync(); }
+    private async Task SearchKey(KeyboardEventArgs args) { if (args.Key == "Enter") { _query = _query with { PageNumber = 1 }; await LoadAsync(); } }
+    private void OpenWizard() => Navigation.NavigateTo("/projects/new");
+    private static string StatusName(int value) => Enum.GetName(typeof(ProjectStatusView), value) ?? "Unknown";
+    private static string PriorityName(int value) => Enum.GetName(typeof(ProjectPriorityView), value) ?? "Normal";
+    private enum ProjectStatusView { Draft = 1, Planning, AwaitingApproval, Approved, InProgress, OnHold, Completed, Archived, Cancelled }
+    private enum ProjectPriorityView { Low = 1, Medium, High, Critical }
+}

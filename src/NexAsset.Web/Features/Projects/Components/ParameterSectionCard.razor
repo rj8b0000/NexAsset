@@ -1,0 +1,25 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@inject IProjectApiClient ProjectApiClient
+@if (_loading)
+{
+    <LoadingState Message="Loading parameters..." />
+}
+else if (_sections.Count == 0)
+{
+    <EmptyState Title="No project parameters" Description="Define the fields needed for this project's operation." IconClass="lucide-sliders-horizontal" />
+}
+else
+{
+    @foreach (var item in _sections.OrderBy(x => x.DisplayOrder))
+    {
+        <div class="border rounded-2 p-3 mb-3" style="border-color: var(--border-color) !important;">
+            <div class="d-flex justify-content-between"><h3 class="h2-title">@item.Name</h3><span class="text-caption text-muted-custom">@item.Parameters?.Count parameter(s)</span></div>
+            @foreach (var parameter in item.Parameters ?? [])
+            {
+                <ParameterValueInput Parameter="parameter" />
+            }
+        </div>
+    }
+}
+@code { [Parameter] public Guid ProjectId { get; set; } private IReadOnlyCollection<ParameterSection> _sections = []; private bool _loading = true; protected override async Task OnParametersSetAsync() { _loading = true; var result = await ProjectApiClient.GetParametersAsync(ProjectId); if (result.IsSuccess && result.Data is not null) _sections = result.Data; _loading = false; } }

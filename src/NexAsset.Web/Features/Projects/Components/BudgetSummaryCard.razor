@@ -1,0 +1,3 @@
+@using NexAsset.Web.Models.Projects
+<div class="border rounded-2 p-3 h-100" style="border-color: var(--border-color) !important;"><div class="text-label text-muted-custom">Budget</div>@if (Budget is null) { <div class="text-caption text-secondary mt-2">No budget recorded</div> } else { <div class="fs-4 mt-2">@Budget.ActualCost.ToString("N2")</div><div class="text-caption text-secondary">Actual of @Budget.ApprovedBudget.ToString("N2") approved</div><div class="progress mt-3" style="height: 6px;"><div class="progress-bar" style="width: @($"{Math.Min(100, Budget.BudgetPercentageUsed)}%")"></div></div> }</div>
+@code { [Parameter] public BudgetSnapshot? Budget { get; set; } }

@@ -1,0 +1,15 @@
+@using NexAsset.Web.Models.Projects
+
+@if (Dashboard is null)
+{
+    <LoadingState Message="Loading dashboard..." />
+}
+else
+{
+    <QuickActionsToolbar ProjectId="Dashboard.GeneralInfo.Id" />
+    @if (Dashboard.HasUpcomingDeadline) { <div class="alert alert-warning border-0 text-caption mb-3"><i class="lucide-calendar-clock me-2"></i>Expected completion is in @Dashboard.DaysUntilDeadline day(s).</div> }
+    <div class="row g-3 mb-3"><div class="col-lg-4 col-md-6"><OverviewCard Project="Dashboard.GeneralInfo" /></div><div class="col-lg-4 col-md-6"><TeamSummaryCard Count="Dashboard.ActiveTeamMembers" /></div><div class="col-lg-4 col-md-6"><AssetSummaryCard Count="Dashboard.ActiveAssets" /></div><div class="col-lg-4 col-md-6"><DocumentSummaryCard Count="Dashboard.DocumentCount" /></div><div class="col-lg-4 col-md-6"><RiskSummaryCard Count="Dashboard.OpenRisks" /></div><div class="col-lg-4 col-md-6"><BudgetSummaryCard Budget="Dashboard.Budget" /></div></div>
+    <div class="row g-3"><div class="col-lg-7"><RecentActivitiesWidget Items="Dashboard.RecentActivities" /></div><div class="col-lg-5"><RiskMatrixChart OpenRiskCount="Dashboard.OpenRisks" /><BudgetProgressChart Budget="Dashboard.Budget" /></div></div>
+}
+
+@code { [Parameter] public NexAsset.Web.Models.Projects.ProjectDashboard? Dashboard { get; set; } }

@@ -1,0 +1,3 @@
+@using NexAsset.Web.Models.Projects
+<div class="border rounded-2 p-3" style="border-color: var(--border-color) !important;"><div class="d-flex justify-content-between mb-2"><span class="text-label text-muted-custom">Recent Activity</span><i class="lucide-history"></i></div>@if (Items.Count == 0) { <div class="text-caption text-secondary py-3">No activity recorded yet.</div> } else { @foreach (var item in Items) { <div class="d-flex gap-2 py-2 border-bottom"><i class="lucide-activity mt-1"></i><div class="flex-grow-1"><div class="text-caption">@item.Action</div><div class="small text-muted-custom">@item.Timestamp.ToLocalTime().ToString("dd MMM, HH:mm")</div></div></div> } }</div>
+@code { [Parameter] public IReadOnlyCollection<ActivityRecord> Items { get; set; } = []; }

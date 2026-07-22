@@ -33,7 +33,9 @@ public sealed class PurchaseRequestConfiguration : IEntityTypeConfiguration<Purc
         builder.Property(x => x.ApprovalRemarks).HasMaxLength(1000);
         builder.Property(x => x.EstimatedAmount).HasPrecision(18, 2);
         builder.HasIndex(x => new { x.OrganizationId, x.RequestNumber }).IsUnique();
+        builder.HasIndex(x => x.ProjectId);
         builder.HasOne(x => x.RequestedByEmployee).WithMany().HasForeignKey(x => x.RequestedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Project).WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -47,8 +49,10 @@ public sealed class PurchaseOrderConfiguration : IEntityTypeConfiguration<Purcha
         builder.Property(x => x.TotalAmount).HasPrecision(18, 2);
         builder.Property(x => x.Remarks).HasMaxLength(1000);
         builder.HasIndex(x => new { x.OrganizationId, x.OrderNumber }).IsUnique();
+        builder.HasIndex(x => x.ProjectId);
         builder.HasOne(x => x.PurchaseRequest).WithMany().HasForeignKey(x => x.PurchaseRequestId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Vendor).WithMany().HasForeignKey(x => x.VendorId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Project).WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -105,7 +109,9 @@ public sealed class MaintenanceRecordConfiguration : IEntityTypeConfiguration<Ma
         builder.Property(x => x.Description).HasMaxLength(1000);
         builder.Property(x => x.Remarks).HasMaxLength(1000);
         builder.Property(x => x.Cost).HasPrecision(18, 2);
+        builder.HasIndex(x => x.ProjectId);
         builder.HasOne(x => x.Asset).WithMany().HasForeignKey(x => x.AssetId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Project).WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

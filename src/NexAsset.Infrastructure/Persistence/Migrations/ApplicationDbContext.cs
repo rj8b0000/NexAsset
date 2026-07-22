@@ -51,6 +51,20 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<ProjectCategory> ProjectCategories => Set<ProjectCategory>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<DraftSession> DraftSessions => Set<DraftSession>();
+    public DbSet<ProjectParameterSection> ProjectParameterSections => Set<ProjectParameterSection>();
+    public DbSet<ProjectParameter> ProjectParameters => Set<ProjectParameter>();
+    public DbSet<ProjectParameterValue> ProjectParameterValues => Set<ProjectParameterValue>();
+    public DbSet<ProjectTeamMember> ProjectTeamMembers => Set<ProjectTeamMember>();
+    public DbSet<ProjectAssetAllocation> ProjectAssetAllocations => Set<ProjectAssetAllocation>();
+    public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
+    public DbSet<ProjectBudget> ProjectBudgets => Set<ProjectBudget>();
+    public DbSet<ProjectRisk> ProjectRisks => Set<ProjectRisk>();
+    public DbSet<ProjectTimelineEvent> ProjectTimelineEvents => Set<ProjectTimelineEvent>();
+    public DbSet<ProjectActivityRecord> ProjectActivityRecords => Set<ProjectActivityRecord>();
+    public DbSet<SavedFilter> SavedFilters => Set<SavedFilter>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -104,6 +118,49 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
             .HasQueryFilter(x => TenantOrganizationId == null
                                  || x.OrganizationId == null
                                  || x.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectCategory>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<Project>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+
+        // Project child entities carry no direct OrganizationId; they inherit via Project.
+        modelBuilder.Entity<DraftSession>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<SavedFilter>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectParameterSection>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectParameter>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Section.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectParameterValue>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectTeamMember>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectAssetAllocation>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectDocument>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectBudget>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectRisk>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectTimelineEvent>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+
+        modelBuilder.Entity<ProjectActivityRecord>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
 
         // These carry no OrganizationId of their own; they inherit their parent's boundary.
         modelBuilder.Entity<MaintenanceRecord>()

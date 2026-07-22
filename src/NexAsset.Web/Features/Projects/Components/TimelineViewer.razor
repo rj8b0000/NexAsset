@@ -1,0 +1,4 @@
+@using NexAsset.Web.Models.Projects
+<div class="border rounded-2 p-3" style="border-color: var(--border-color) !important;"><div class="text-label text-muted-custom mb-3">Timeline</div>@if (Items.Count == 0) { <div class="text-caption text-secondary">Timeline events appear here as project work progresses.</div> } else { @foreach (var item in Items) { <div class="d-flex gap-2 py-2 border-bottom"><i class="lucide-clock-3 mt-1"></i><div><div class="text-caption">@item.Description</div><div class="small text-muted-custom">@item.Timestamp.ToLocalTime().ToString("dd MMM, HH:mm")</div></div></div> } }</div>
+@code { [Parameter] public IReadOnlyCollection<TimelineItem> Items { get; set; } = []; }
+@code { public sealed record TimelineItem(Guid Id, string Description, DateTime Timestamp); }

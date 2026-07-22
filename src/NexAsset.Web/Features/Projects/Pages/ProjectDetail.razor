@@ -1,0 +1,91 @@
+@page "/projects/{Id:guid}"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Features.Projects.Components
+@inject IProjectApiClient ProjectApiClient
+
+@if (_loading)
+{
+    <LoadingState Message="Loading project workspace..." />
+}
+else if (_project is null)
+{
+    <EmptyState Title="Project not found" Description="@(_error ?? "This project is unavailable.")" IconClass="lucide-folder-x" ActionLabel="Back to Projects" ActionIconClass="lucide-arrow-left" OnActionClick="BackToList" />
+}
+else
+{
+    <div class="animate-fade-in">
+        <div class="d-flex align-items-start justify-content-between mb-3 gap-3 flex-wrap">
+            <div><div class="text-caption text-muted-custom mb-1">Projects / @_project.ProjectCode</div><h1 class="h1-title mb-1">@_project.ProjectName</h1><span class="text-caption text-secondary">@_project.CategoryName</span></div>
+            <a class="btn-custom btn-custom-secondary text-decoration-none" href="/projects"><i class="lucide-arrow-left"></i> Projects</a>
+        </div>
+        <div class="d-flex gap-1 border-bottom mb-4 overflow-auto" style="border-color: var(--border-color) !important;">
+            @foreach (var tab in _tabs)
+            {
+                <button class="btn-custom border-0 rounded-0 @(tab == _activeTab ? "btn-custom-primary" : "btn-custom-secondary")" @onclick="() => SelectTab(tab)">@tab</button>
+            }
+        </div>
+        @if (_activeTab == "Overview")
+        {
+            <ProjectDashboard Dashboard="_dashboard" />
+        }
+        else if (_activeTab == "Team")
+        {
+            <TeamMembersTable ProjectId="Id" />
+        }
+        else if (_activeTab == "Assets")
+        {
+            <AssetAllocationsTable ProjectId="Id" />
+        }
+        else if (_activeTab == "Documents")
+        {
+            <DocumentGrid ProjectId="Id" />
+        }
+        else if (_activeTab == "Risks")
+        {
+            <RisksTable ProjectId="Id" />
+        }
+        else if (_activeTab == "Parameters")
+        {
+            <ParameterSectionCard ProjectId="Id" />
+        }
+        else if (_activeTab == "Budget")
+        {
+            <BudgetForm ProjectId="Id" />
+        }
+        else if (_activeTab == "Timeline" || _activeTab == "Activity")
+        {
+            <ActivityFeedList ProjectId="Id" />
+        }
+        else
+        {
+            <ReportPreview ProjectId="Id" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    private NexAsset.Web.Models.Projects.ProjectDetail? _project;
+    private NexAsset.Web.Models.Projects.ProjectDashboard? _dashboard;
+    private string? _error;
+    private bool _loading = true;
+    private string _activeTab = "Overview";
+    private readonly string[] _tabs = ["Overview", "Team", "Assets", "Parameters", "Documents", "Timeline", "Activity", "Budget", "Risks", "Reports"];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        var project = await ProjectApiClient.GetByIdAsync(Id);
+        if (project.IsSuccess) _project = project.Data;
+        else _error = project.Error?.Message;
+        var dashboard = await ProjectApiClient.GetDashboardAsync(Id);
+        if (dashboard.IsSuccess) _dashboard = dashboard.Data;
+        _loading = false;
+    }
+
+    private void SelectTab(string tab) => _activeTab = tab;
+    private void BackToList() => Navigation.NavigateTo("/projects");
+}

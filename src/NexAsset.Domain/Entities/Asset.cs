@@ -35,4 +35,7 @@ public class Asset : BaseEntity
 
     public Guid? CurrentEmployeeId { get; set; }
     public Employee? CurrentEmployee { get; set; }
+
+    public Guid? ProjectId { get; set; }
+    public Project? Project { get; set; }
 }

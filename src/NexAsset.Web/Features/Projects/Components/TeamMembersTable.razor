@@ -1,0 +1,7 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@inject IProjectApiClient ProjectApiClient
+@if (_loading) { <LoadingState Message="Loading team..." /> } else if (_page is null || _page.Items.Count == 0) { <EmptyState Title="No team members" Description="Add employees to this project as work is assigned." IconClass="lucide-users" /> } else { <div class="table-responsive border rounded-2" style="border-color: var(--border-color) !important;"><table class="table table-hover align-middle mb-0"><thead><tr><th>Member</th><th>Role</th><th>Allocation</th><th>Status</th></tr></thead><tbody>@foreach (var member in _page.Items) { <tr><td>@member.EmployeeName</td><td>@member.ProjectRole</td><td>@member.AllocationPercentage%</td><td>@(member.Status == 1 ? "Active" : "Released")</td></tr> }</tbody></table></div> }
+@code { [Parameter] public Guid ProjectId { get; set; } private PagedResult<TeamMember>? _page; private bool _loading = true; protected override async Task OnParametersSetAsync() { _loading = true; var result = await ProjectApiClient.GetTeamAsync(ProjectId, new PagedQuery { PageNumber = 1, PageSize = 100 }); if (result.IsSuccess) _page = result.Data; _loading = false; } }

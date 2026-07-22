@@ -34,6 +34,8 @@ public static class PermissionRouteConvention
         ["audit-logs"] = "AuditLogs",
         ["system-settings"] = "SystemSettings",
         ["dashboard"] = "Dashboard",
+        ["projects"] = "Projects",
+        ["project-categories"] = "ProjectCategories",
     };
 
     public static string? Resolve(HttpContext http)
@@ -112,6 +114,8 @@ public static class PermissionRouteConvention
                 return method == "GET" ? "SystemSettings.View" : "SystemSettings.Manage";
             case "dashboard":
                 return "Dashboard.View";
+            case "projects":
+                return ResolveProjectPermission(method, tail);
         }
 
         return method switch
@@ -121,6 +125,42 @@ public static class PermissionRouteConvention
             "PUT" or "PATCH" => $"{module}.Update",
             "DELETE" => $"{module}.Delete",
             _ => null,
+        };
+    }
+
+    private static string ResolveProjectPermission(string method, string[] tail)
+    {
+        if (tail.Length == 0)
+            return method switch
+            {
+                "GET" => "Projects.View",
+                "POST" => "Projects.Create",
+                _ => "Projects.View"
+            };
+
+        if (tail[0] is "drafts") return "Projects.Create";
+        if (tail[0] is "search" or "saved-filters") return "Projects.View";
+
+        var last = tail[^1];
+        if (last == "team" || tail.Contains("team")) return method == "GET" ? "Projects.View" : "Projects.ManageTeam";
+        if (last == "assets" || tail.Contains("assets")) return method == "GET" ? "Projects.View" : "Projects.ManageAssets";
+        if (last == "documents" || tail.Contains("documents")) return method == "GET" ? "Projects.View" : "Projects.ManageDocuments";
+        if (last == "parameters" || tail.Contains("parameters")) return method == "GET" ? "Projects.View" : "Projects.ManageParameters";
+        if (last == "budget" || tail.Contains("budget")) return method == "GET" ? "Projects.ViewBudget" : "Projects.ManageBudget";
+        if (last == "risks" || tail.Contains("risks")) return method == "GET" ? "Projects.ViewRisks" : "Projects.ManageRisks";
+        if (last == "timeline") return "Projects.ViewTimeline";
+        if (last == "activities") return "Projects.ViewActivities";
+        if (tail.Contains("reports")) return method == "GET" ? "Projects.ViewReports" : "Projects.ExportReports";
+        if (last == "duplicate") return "Projects.Duplicate";
+        if (last == "status") return "Projects.Approve";
+
+        return method switch
+        {
+            "GET" => "Projects.View",
+            "POST" => "Projects.Create",
+            "PUT" or "PATCH" => "Projects.Update",
+            "DELETE" => "Projects.Delete",
+            _ => "Projects.View"
         };
     }
 }

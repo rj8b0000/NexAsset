@@ -1,0 +1,27 @@
+@page "/project-categories"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.State
+@inject IProjectCategoryApiClient CategoryApiClient
+@inject NavigationState NavigationState
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4"><div><h1 class="h1-title mb-1">Project Categories</h1><span class="text-caption text-secondary">Classify projects within an organization.</span></div></div>
+    <div class="border rounded-2 p-3 mb-4" style="border-color: var(--border-color) !important;"><div class="row g-2"><div class="col-md-4"><input class="form-control-custom" placeholder="Category name" @bind="_input.Name" /></div><div class="col-md-5"><input class="form-control-custom" placeholder="Description" @bind="_input.Description" /></div><div class="col-md-3"><button class="btn-custom btn-custom-primary w-100" @onclick="SaveAsync">Add Category</button></div></div>@if (_error is not null) { <div class="text-caption mt-2" style="color: var(--danger);">@_error</div> }</div>
+    @if (_loading) { <LoadingState Message="Loading categories..." /> }
+    else if (_items.Count == 0) { <EmptyState Title="No project categories" Description="Create a category before creating a project." IconClass="lucide-tags" /> }
+    else { <div class="table-responsive border rounded-2" style="border-color: var(--border-color) !important;"><table class="table table-hover align-middle mb-0"><thead><tr><th>Name</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody>@foreach (var item in _items) { <tr><td>@item.Name</td><td>@item.Description</td><td>@(item.IsActive ? "Active" : "Inactive")</td><td class="text-end"><button class="btn-custom btn-custom-secondary p-1" title="Delete" @onclick="() => DeleteAsync(item.Id)"><i class="lucide-trash-2"></i></button></td></tr> }</tbody></table></div> }
+</div>
+
+@code {
+    private readonly ProjectCategoryInput _input = new();
+    private List<ProjectCategoryItem> _items = new();
+    private bool _loading = true;
+    private string? _error;
+    protected override async Task OnInitializedAsync() { _input.OrganizationId = NavigationState.ActiveOrganizationId ?? Guid.Empty; await LoadAsync(); }
+    private async Task LoadAsync() { _loading = true; var result = await CategoryApiClient.GetPagedAsync(new PagedQuery { PageNumber = 1, PageSize = 200, SortBy = "Name" }); _loading = false; if (result.IsSuccess && result.Data is not null) _items = result.Data.Items.Where(x => _input.OrganizationId == Guid.Empty || x.OrganizationId == _input.OrganizationId).ToList(); else _error = result.Error?.Message; }
+    private async Task SaveAsync() { _error = _input.OrganizationId == Guid.Empty ? "Choose an organization from the sidebar first." : string.IsNullOrWhiteSpace(_input.Name) ? "Category name is required." : null; if (_error is not null) return; var result = await CategoryApiClient.CreateAsync(_input); if (result.IsSuccess) { _input.Name = string.Empty; _input.Description = null; await LoadAsync(); } else _error = result.Error?.Message; }
+    private async Task DeleteAsync(Guid id) { var result = await CategoryApiClient.DeleteAsync(id); if (result.IsSuccess) await LoadAsync(); else _error = result.Error?.Message; }
+}

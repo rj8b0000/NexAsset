@@ -1,0 +1,2 @@
+<AddRiskModal IsOpen="IsOpen" Title="@Title" Category="@Category" Description="@Description" OnClose="OnClose" OnSave="OnSave" />
+@code { [Parameter] public bool IsOpen { get; set; } [Parameter] public string? Title { get; set; } [Parameter] public string? Category { get; set; } [Parameter] public string? Description { get; set; } [Parameter] public EventCallback OnClose { get; set; } [Parameter] public EventCallback OnSave { get; set; } }

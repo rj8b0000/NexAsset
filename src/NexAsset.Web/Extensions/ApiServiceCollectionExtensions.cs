@@ -13,6 +13,7 @@ using NexAsset.Web.Infrastructure.Foundation;
 using NexAsset.Web.Infrastructure.HR;
 using NexAsset.Web.Infrastructure.Inventory;
 using NexAsset.Web.Infrastructure.Procurement;
+using NexAsset.Web.Infrastructure.Projects;
 
 namespace NexAsset.Web.Extensions
 {
@@ -84,6 +85,8 @@ namespace NexAsset.Web.Extensions
             services.AddNexAssetApiClient<INotificationApiClient, NotificationApiClient>(settings);
             services.AddNexAssetApiClient<IAuditTrailApiClient, AuditTrailApiClient>(settings);
             services.AddNexAssetApiClient<ISystemSettingApiClient, SystemSettingApiClient>(settings);
+            services.AddNexAssetApiClient<IProjectApiClient, ProjectApiClient>(settings);
+            services.AddNexAssetApiClient<IProjectCategoryApiClient, ProjectCategoryApiClient>(settings);
 
             return services;
         }

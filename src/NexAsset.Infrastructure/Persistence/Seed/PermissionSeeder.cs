@@ -39,6 +39,8 @@ public static class PermissionSeeder
         ("Dashboard", new[] { "View" }),
         ("Reports", new[] { "View" }),
         ("Finance", new[] { "View" }),
+        ("Projects", new[] { "View", "Create", "Update", "Delete", "Archive", "Restore", "Duplicate", "Approve", "ManageTeam", "ManageAssets", "ManageParameters", "ManageDocuments", "ViewBudget", "ManageBudget", "ViewRisks", "ManageRisks", "ViewReports", "ExportReports", "ViewTimeline", "ViewActivities", "ManageSettings" }),
+        ("ProjectCategories", new[] { "View", "Create", "Update", "Delete" }),
     };
 
     public static async Task SeedAsync(ApplicationDbContext context)

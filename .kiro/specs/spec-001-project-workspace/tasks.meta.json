@@ -1,0 +1,1723 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create ProjectEnums.cs with all enumeration types": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621564898
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621593213
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621746967
+      }
+    ],
+    "1.2 Create ProjectCategory entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565012
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621753181
+      },
+      {
+        "executionId": "7944c150-f824-428a-ad20-9560e5509ad4",
+        "chatSessionId": "sess_fadc4639-a88e-49e5-b84f-982fb064e51b",
+        "timestamp": 1784622938697
+      },
+      {
+        "executionId": "7944c150-f824-428a-ad20-9560e5509ad4",
+        "chatSessionId": "sess_fadc4639-a88e-49e5-b84f-982fb064e51b",
+        "timestamp": 1784623044609
+      }
+    ],
+    "1.3 Create Project entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565098
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621754043
+      },
+      {
+        "executionId": "7aff16bf-5229-45b6-8803-457287548ed7",
+        "chatSessionId": "sess_3132de58-5a79-4cb5-ad2d-75640b7336d5",
+        "timestamp": 1784626172503
+      },
+      {
+        "executionId": "7aff16bf-5229-45b6-8803-457287548ed7",
+        "chatSessionId": "sess_3132de58-5a79-4cb5-ad2d-75640b7336d5",
+        "timestamp": 1784626401842
+      }
+    ],
+    "1.4 Create DraftSession entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565154
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621754645
+      },
+      {
+        "executionId": "f0e39cf3-76f3-446e-9cb5-036877d6196b",
+        "chatSessionId": "sess_599caa9f-9065-49b0-9102-2d863a74377e",
+        "timestamp": 1784626431359
+      },
+      {
+        "executionId": "f0e39cf3-76f3-446e-9cb5-036877d6196b",
+        "chatSessionId": "sess_599caa9f-9065-49b0-9102-2d863a74377e",
+        "timestamp": 1784626565697
+      }
+    ],
+    "1.5 Create ProjectParameterSection entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565207
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621755491
+      },
+      {
+        "executionId": "9ca9cf26-a28b-4672-80cc-0963cb7a263d",
+        "chatSessionId": "sess_f87d58fb-e54f-4b5e-8195-5a2609b54479",
+        "timestamp": 1784626579064
+      },
+      {
+        "executionId": "9ca9cf26-a28b-4672-80cc-0963cb7a263d",
+        "chatSessionId": "sess_f87d58fb-e54f-4b5e-8195-5a2609b54479",
+        "timestamp": 1784626794524
+      }
+    ],
+    "1.6 Create ProjectParameter entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565261
+      },
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621756190
+      },
+      {
+        "executionId": "dde71314-08da-4a87-8936-72c4e2f73072",
+        "chatSessionId": "sess_ceb3ba6f-0809-4ed8-bbbd-79ab1cf91987",
+        "timestamp": 1784626808354
+      },
+      {
+        "executionId": "dde71314-08da-4a87-8936-72c4e2f73072",
+        "chatSessionId": "sess_ceb3ba6f-0809-4ed8-bbbd-79ab1cf91987",
+        "timestamp": 1784626964644
+      }
+    ],
+    "1.7 Create ProjectParameterValue entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565319
+      },
+      {
+        "executionId": "2419ea41-272c-4e96-b98c-f34b8577adc5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622092860
+      },
+      {
+        "executionId": "b44e1a35-3134-4e26-850a-6b92277f28f5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622732752
+      }
+    ],
+    "1.8 Create ProjectTeamMember entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565399
+      },
+      {
+        "executionId": "2419ea41-272c-4e96-b98c-f34b8577adc5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622093769
+      },
+      {
+        "executionId": "b44e1a35-3134-4e26-850a-6b92277f28f5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622745299
+      }
+    ],
+    "1.9 Create ProjectAssetAllocation entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565474
+      },
+      {
+        "executionId": "2419ea41-272c-4e96-b98c-f34b8577adc5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622094453
+      },
+      {
+        "executionId": "b44e1a35-3134-4e26-850a-6b92277f28f5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622746183
+      },
+      {
+        "executionId": "48157117-b1cb-488d-b2d5-fce71ed1534f",
+        "chatSessionId": "sess_a0e76d5e-e976-4a48-ae3c-88ed01e98e0b",
+        "timestamp": 1784627768800
+      }
+    ],
+    "1.10 Create ProjectDocument entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565532
+      },
+      {
+        "executionId": "2419ea41-272c-4e96-b98c-f34b8577adc5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622095284
+      },
+      {
+        "executionId": "c51580f8-a9fd-4295-9960-fe6e981243ca",
+        "chatSessionId": "sess_b9b26bf1-b768-4b1f-988c-4bd1336b4259",
+        "timestamp": 1784646886649
+      },
+      {
+        "executionId": "c51580f8-a9fd-4295-9960-fe6e981243ca",
+        "chatSessionId": "sess_b9b26bf1-b768-4b1f-988c-4bd1336b4259",
+        "timestamp": 1784646963324
+      }
+    ],
+    "1.11 Create ProjectBudget entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565589
+      },
+      {
+        "executionId": "2419ea41-272c-4e96-b98c-f34b8577adc5",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784622095826
+      },
+      {
+        "executionId": "72925d75-5a7d-4828-b428-660b6e84fe8a",
+        "chatSessionId": "sess_c48d3898-d6a4-4fba-861b-219e109fe5bb",
+        "timestamp": 1784646974497
+      },
+      {
+        "executionId": "72925d75-5a7d-4828-b428-660b6e84fe8a",
+        "chatSessionId": "sess_c48d3898-d6a4-4fba-861b-219e109fe5bb",
+        "timestamp": 1784647030869
+      }
+    ],
+    "1.12 Create ProjectRisk entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565640
+      },
+      {
+        "executionId": "906efdcb-db6b-49e9-b8ec-05f255542a25",
+        "chatSessionId": "sess_46324ec2-6cab-4520-853b-65b5d526054e",
+        "timestamp": 1784647040031
+      },
+      {
+        "executionId": "906efdcb-db6b-49e9-b8ec-05f255542a25",
+        "chatSessionId": "sess_46324ec2-6cab-4520-853b-65b5d526054e",
+        "timestamp": 1784647226370
+      }
+    ],
+    "1.13 Create ProjectTimelineEvent entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565694
+      },
+      {
+        "executionId": "0acf4cd4-cd2b-4a3b-a730-7648bc475074",
+        "chatSessionId": "sess_1648a746-8266-4f47-b9b0-31691b88bcfa",
+        "timestamp": 1784647237783
+      },
+      {
+        "executionId": "0acf4cd4-cd2b-4a3b-a730-7648bc475074",
+        "chatSessionId": "sess_1648a746-8266-4f47-b9b0-31691b88bcfa",
+        "timestamp": 1784647297844
+      }
+    ],
+    "1.14 Create ProjectActivityRecord entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565748
+      },
+      {
+        "executionId": "8f5c0def-9b94-437c-bf2d-a29d13fa74e4",
+        "chatSessionId": "sess_231a4b5e-8808-4e48-8c1e-4228c4f584aa",
+        "timestamp": 1784647307746
+      },
+      {
+        "executionId": "8f5c0def-9b94-437c-bf2d-a29d13fa74e4",
+        "chatSessionId": "sess_231a4b5e-8808-4e48-8c1e-4228c4f584aa",
+        "timestamp": 1784647358276
+      }
+    ],
+    "1.15 Create SavedFilter entity": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565813
+      },
+      {
+        "executionId": "cbad9ab3-e2dd-4339-9991-e653c48e09ba",
+        "chatSessionId": "sess_55a6cc30-5452-4a3b-af06-5fcf41b186b9",
+        "timestamp": 1784647367206
+      },
+      {
+        "executionId": "cbad9ab3-e2dd-4339-9991-e653c48e09ba",
+        "chatSessionId": "sess_55a6cc30-5452-4a3b-af06-5fcf41b186b9",
+        "timestamp": 1784647430360
+      }
+    ],
+    "1.16 Add ProjectId to Asset entity (existing entity modification)": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565876
+      },
+      {
+        "executionId": "681796d5-c036-4677-b966-61f931ba2357",
+        "chatSessionId": "sess_f11562bf-1ca7-4669-8515-89e946d34da1",
+        "timestamp": 1784647440546
+      }
+    ],
+    "1.17 Create RiskSeverityHelper static class": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565931
+      },
+      {
+        "executionId": "7bafffa1-6db5-4526-be8c-51bdbd6f166a",
+        "chatSessionId": "sess_7011c66e-1d53-44f6-8bf0-7f0641fe2fe6",
+        "timestamp": 1784647952894
+      },
+      {
+        "executionId": "7bafffa1-6db5-4526-be8c-51bdbd6f166a",
+        "chatSessionId": "sess_7011c66e-1d53-44f6-8bf0-7f0641fe2fe6",
+        "timestamp": 1784648043856
+      }
+    ],
+    "1.18 Create ProjectStatusTransition static class": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621565990
+      },
+      {
+        "executionId": "b80c2b88-6824-4578-976c-ece2dd7f7200",
+        "chatSessionId": "sess_e86a0897-0c74-4d05-986d-905f398306a1",
+        "timestamp": 1784647505400
+      },
+      {
+        "executionId": "b80c2b88-6824-4578-976c-ece2dd7f7200",
+        "chatSessionId": "sess_e86a0897-0c74-4d05-986d-905f398306a1",
+        "timestamp": 1784647595438
+      }
+    ],
+    "2.1 Create EF Core configuration for ProjectCategory": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566047
+      },
+      {
+        "executionId": "b49755b3-a723-4d19-be60-c1299f6b3d4d",
+        "chatSessionId": "sess_43ac25e4-2650-4498-bacb-bb59599e5f0d",
+        "timestamp": 1784652614323
+      },
+      {
+        "executionId": "a2bee33d-5c54-4217-b8ea-68b65c8ced44",
+        "chatSessionId": "sess_43ac25e4-2650-4498-bacb-bb59599e5f0d",
+        "timestamp": 1784654975560
+      }
+    ],
+    "2.2 Create EF Core configuration for Project": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566110
+      },
+      {
+        "executionId": "3d03588b-fe27-4189-9eca-fc37c6810fbd",
+        "chatSessionId": "sess_c56090f3-da9f-406f-97e9-15248249fb2f",
+        "timestamp": 1784654986065
+      },
+      {
+        "executionId": "3d03588b-fe27-4189-9eca-fc37c6810fbd",
+        "chatSessionId": "sess_c56090f3-da9f-406f-97e9-15248249fb2f",
+        "timestamp": 1784655132814
+      }
+    ],
+    "2.3 Create EF Core configuration for DraftSession": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566164
+      },
+      {
+        "executionId": "3491b49c-7f45-4d51-8d90-321c8757a1e9",
+        "chatSessionId": "sess_a599eeb0-15de-4fbe-9d82-d44a612c190d",
+        "timestamp": 1784655193249
+      }
+    ],
+    "2.4 Create EF Core configuration for ProjectParameterSection": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566220
+      },
+      {
+        "executionId": "f0f20a88-2231-49ba-8552-34db1986a89f",
+        "chatSessionId": "sess_0bf8dd94-a671-4bf7-8bb4-38604613cfa8",
+        "timestamp": 1784655828082
+      },
+      {
+        "executionId": "f0f20a88-2231-49ba-8552-34db1986a89f",
+        "chatSessionId": "sess_0bf8dd94-a671-4bf7-8bb4-38604613cfa8",
+        "timestamp": 1784655940769
+      }
+    ],
+    "2.5 Create EF Core configuration for ProjectParameter": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566274
+      },
+      {
+        "executionId": "d95acd50-ac76-4673-9b50-1746eae05c35",
+        "chatSessionId": "sess_a2acfc21-57b0-40ec-8744-8167d6ca51ed",
+        "timestamp": 1784656016611
+      }
+    ],
+    "2.6 Create EF Core configuration for ProjectParameterValue": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566329
+      }
+    ],
+    "2.7 Create EF Core configuration for ProjectTeamMember": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566391
+      }
+    ],
+    "2.8 Create EF Core configuration for ProjectAssetAllocation": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566446
+      }
+    ],
+    "2.9 Create EF Core configuration for ProjectDocument": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566509
+      }
+    ],
+    "2.10 Create EF Core configuration for ProjectBudget": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566565
+      }
+    ],
+    "2.11 Create EF Core configuration for ProjectRisk": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566624
+      }
+    ],
+    "2.12 Create EF Core configuration for ProjectTimelineEvent": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566687
+      }
+    ],
+    "2.13 Create EF Core configuration for ProjectActivityRecord": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566740
+      }
+    ],
+    "2.14 Create EF Core configuration for SavedFilter": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566794
+      }
+    ],
+    "2.15 Update AssetConfiguration to add ProjectId FK": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566847
+      }
+    ],
+    "2.16 Register all new DbSets in ApplicationDbContext": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566908
+      }
+    ],
+    "2.17 Create IProjectCategoryRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621566972
+      }
+    ],
+    "2.18 Create IProjectRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567022
+      }
+    ],
+    "2.19 Create IDraftSessionRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567079
+      }
+    ],
+    "2.20 Create IProjectTeamRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567168
+      }
+    ],
+    "2.21 Create IProjectAssetRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567223
+      }
+    ],
+    "2.22 Create IProjectDocumentRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567279
+      }
+    ],
+    "2.23 Create IProjectParameterRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567339
+      }
+    ],
+    "2.24 Create IProjectBudgetRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567393
+      }
+    ],
+    "2.25 Create IProjectRiskRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567448
+      }
+    ],
+    "2.26 Create IProjectTimelineRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567510
+      }
+    ],
+    "2.27 Create IProjectActivityRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567560
+      }
+    ],
+    "2.28 Create ISavedFilterRepository interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567615
+      }
+    ],
+    "2.29 Implement ProjectCategoryRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567674
+      }
+    ],
+    "2.30 Implement ProjectRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567732
+      }
+    ],
+    "2.31 Implement DraftSessionRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567790
+      }
+    ],
+    "2.32 Implement ProjectTeamRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567845
+      }
+    ],
+    "2.33 Implement ProjectAssetRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567908
+      }
+    ],
+    "2.34 Implement ProjectDocumentRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621567966
+      }
+    ],
+    "2.35 Implement ProjectParameterRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568023
+      }
+    ],
+    "2.36 Implement ProjectBudgetRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568077
+      }
+    ],
+    "2.37 Implement ProjectRiskRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568140
+      }
+    ],
+    "2.38 Implement ProjectTimelineRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568198
+      }
+    ],
+    "2.39 Implement ProjectActivityRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568258
+      }
+    ],
+    "2.40 Implement SavedFilterRepository": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568313
+      }
+    ],
+    "2.41 Register all repository implementations in DI container": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568386
+      }
+    ],
+    "2.42 Create EF Core migration for Project Workspace": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568458
+      }
+    ],
+    "2.43 Create IFileStorageService interface": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568511
+      }
+    ],
+    "2.44 Implement LocalFileStorageService": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568574
+      }
+    ],
+    "2.45 Register LocalFileStorageService in DI container": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568629
+      }
+    ],
+    "3.1 Create CreateProjectCategoryCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568692
+      }
+    ],
+    "3.2 Create CreateProjectCategoryCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568743
+      }
+    ],
+    "3.3 Create UpdateProjectCategoryCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568797
+      }
+    ],
+    "3.4 Create UpdateProjectCategoryCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568864
+      }
+    ],
+    "3.5 Create DeleteProjectCategoryCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568925
+      }
+    ],
+    "3.6 Create GetProjectCategoryQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621568982
+      }
+    ],
+    "3.7 Create ProjectCategoryResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569043
+      }
+    ],
+    "3.8 Create GetProjectCategoriesQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569099
+      }
+    ],
+    "4.1 Create CreateProjectCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569160
+      }
+    ],
+    "4.2 Create CreateProjectCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569223
+      }
+    ],
+    "4.3 Create ProjectResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569278
+      }
+    ],
+    "4.4 Create UpdateProjectCommand, handler, and validator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569340
+      }
+    ],
+    "4.5 Create DeleteProjectCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569398
+      }
+    ],
+    "4.6 Create TransitionProjectStatusCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569457
+      }
+    ],
+    "4.7 Create TransitionProjectStatusCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569519
+      }
+    ],
+    "4.8 Create DuplicateProjectCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569576
+      }
+    ],
+    "4.9 Create GetProjectQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569649
+      }
+    ],
+    "4.10 Create GetProjectsQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569706
+      }
+    ],
+    "4.11 Create ProjectListItemResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569760
+      }
+    ],
+    "5.1 Create UpsertDraftSessionCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569823
+      }
+    ],
+    "5.2 Create GetDraftSessionQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569881
+      }
+    ],
+    "5.3 Create DeleteDraftSessionCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569941
+      }
+    ],
+    "6.1 Create AddTeamMemberCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621569993
+      }
+    ],
+    "6.2 Create AddTeamMemberCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570052
+      }
+    ],
+    "6.3 Create TeamMemberResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570112
+      }
+    ],
+    "6.4 Create UpdateTeamMemberCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570172
+      }
+    ],
+    "6.5 Create ReleaseTeamMemberCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570230
+      }
+    ],
+    "6.6 Create RemoveTeamMemberCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570292
+      }
+    ],
+    "6.7 Create GetTeamMembersQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570346
+      }
+    ],
+    "7.1 Create AllocateAssetCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570405
+      }
+    ],
+    "7.2 Create AllocateAssetCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570462
+      }
+    ],
+    "7.3 Create AssetAllocationResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570528
+      }
+    ],
+    "7.4 Create ReturnAssetCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570592
+      }
+    ],
+    "7.5 Create GetAssetAllocationsQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570657
+      }
+    ],
+    "8.1 Create UploadDocumentCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570713
+      }
+    ],
+    "8.2 Create UploadDocumentCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570774
+      }
+    ],
+    "8.3 Create DocumentResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570855
+      }
+    ],
+    "8.4 Create ReplaceDocumentCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570911
+      }
+    ],
+    "8.5 Create DeleteDocumentCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621570973
+      }
+    ],
+    "8.6 Create GetDocumentsQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571031
+      }
+    ],
+    "8.7 Create GetDocumentVersionHistoryQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571092
+      }
+    ],
+    "9.1 Create CreateParameterSectionCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571148
+      }
+    ],
+    "9.2 Create UpdateParameterSectionCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571208
+      }
+    ],
+    "9.3 Create DeleteParameterSectionCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571263
+      }
+    ],
+    "9.4 Create AddParameterCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571325
+      }
+    ],
+    "9.5 Create AddParameterCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571379
+      }
+    ],
+    "9.6 Create UpdateParameterCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571440
+      }
+    ],
+    "9.7 Create DeleteParameterCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571498
+      }
+    ],
+    "9.8 Create SaveParameterValuesCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571606
+      }
+    ],
+    "9.9 Create GetParameterSectionsQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571666
+      }
+    ],
+    "10.1 Create UpdateBudgetCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571731
+      }
+    ],
+    "10.2 Create UpdateBudgetCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571796
+      }
+    ],
+    "10.3 Create BudgetResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571861
+      }
+    ],
+    "10.4 Create GetCurrentBudgetQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571927
+      }
+    ],
+    "10.5 Create GetBudgetHistoryQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621571992
+      }
+    ],
+    "11.1 Create CreateRiskCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572058
+      }
+    ],
+    "11.2 Create CreateRiskCommandValidator": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572136
+      }
+    ],
+    "11.3 Create UpdateRiskCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572192
+      }
+    ],
+    "11.4 Create CloseRiskCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572256
+      }
+    ],
+    "11.5 Create DeleteRiskCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572310
+      }
+    ],
+    "11.6 Create GetRisksQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572366
+      }
+    ],
+    "11.7 Create GetRiskQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572424
+      }
+    ],
+    "11.8 Create RiskResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572479
+      }
+    ],
+    "12.1 Create GetTimelineQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572541
+      }
+    ],
+    "12.2 Create TimelineEventResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572610
+      }
+    ],
+    "12.3 Create GetActivitiesQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572665
+      }
+    ],
+    "12.4 Create ActivityRecordResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572724
+      }
+    ],
+    "13.1 Create GetProjectDashboardQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572781
+      }
+    ],
+    "13.2 Create ProjectDashboardResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572843
+      }
+    ],
+    "14.1 Create GetProjectSummaryReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572907
+      }
+    ],
+    "14.2 Create GetTeamAllocationReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621572975
+      }
+    ],
+    "14.3 Create GetAssetAllocationReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573033
+      }
+    ],
+    "14.4 Create GetBudgetReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573095
+      }
+    ],
+    "14.5 Create GetRiskReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573156
+      }
+    ],
+    "14.6 Create GetDocumentRegisterReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573236
+      }
+    ],
+    "14.7 Create GetActivityReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573294
+      }
+    ],
+    "14.8 Create GetTimelineReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573358
+      }
+    ],
+    "14.9 Create GetParameterReportQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573415
+      }
+    ],
+    "14.10 Create ExportReportPdfCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573478
+      }
+    ],
+    "14.11 Create ExportReportExcelCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573540
+      }
+    ],
+    "15.1 Create GlobalSearchQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573595
+      }
+    ],
+    "15.2 Create SaveFilterCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573658
+      }
+    ],
+    "15.3 Create GetSavedFiltersQuery and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573723
+      }
+    ],
+    "15.4 Create DeleteSavedFilterCommand and handler": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573781
+      }
+    ],
+    "15.5 Create GlobalSearchResponse DTO": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573840
+      }
+    ],
+    "16.1 Create ProjectCategoryEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573895
+      }
+    ],
+    "16.2 Create ProjectEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621573961
+      }
+    ],
+    "16.3 Create ProjectTeamEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574025
+      }
+    ],
+    "16.4 Create ProjectAssetEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574082
+      }
+    ],
+    "16.5 Create ProjectDocumentEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574140
+      }
+    ],
+    "16.6 Create ProjectParameterEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574198
+      }
+    ],
+    "16.7 Create ProjectBudgetEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574265
+      }
+    ],
+    "16.8 Create ProjectRiskEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574337
+      }
+    ],
+    "16.9 Create ProjectTimelineEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574399
+      }
+    ],
+    "16.10 Create ProjectActivityEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574458
+      }
+    ],
+    "16.11 Create ProjectDashboardEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574516
+      }
+    ],
+    "16.12 Create ProjectReportEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574618
+      }
+    ],
+    "16.13 Create DraftSessionEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574676
+      }
+    ],
+    "16.14 Create GlobalSearchEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574755
+      }
+    ],
+    "16.15 Create SavedFilterEndpoints": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574826
+      }
+    ],
+    "17.1 Create ProjectListPage.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574891
+      }
+    ],
+    "17.2 Create ProjectDetailPage.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621574954
+      }
+    ],
+    "17.3 Create ProjectWizardPage.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575011
+      }
+    ],
+    "17.4 Create ProjectCategoryListPage.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575073
+      }
+    ],
+    "17.5 Create ProjectDashboard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575143
+      }
+    ],
+    "17.6 Create OverviewCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575204
+      }
+    ],
+    "17.7 Create TeamSummaryCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575270
+      }
+    ],
+    "17.8 Create AssetSummaryCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575340
+      }
+    ],
+    "17.9 Create DocumentSummaryCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575396
+      }
+    ],
+    "17.10 Create RiskSummaryCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575453
+      }
+    ],
+    "17.11 Create BudgetSummaryCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575506
+      }
+    ],
+    "17.12 Create RecentActivitiesWidget.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575559
+      }
+    ],
+    "17.13 Create QuickActionsToolbar.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575624
+      }
+    ],
+    "17.14 Create RiskMatrixChart.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575688
+      }
+    ],
+    "17.15 Create BudgetProgressChart.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575744
+      }
+    ],
+    "17.16 Create TimelineViewer.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575808
+      }
+    ],
+    "17.17 Create ActivityFeedList.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575870
+      }
+    ],
+    "17.18 Create TeamMembersTable.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575930
+      }
+    ],
+    "17.19 Create AddTeamMemberModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621575994
+      }
+    ],
+    "17.20 Create EditTeamMemberModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576051
+      }
+    ],
+    "17.21 Create AssetAllocationsTable.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576107
+      }
+    ],
+    "17.22 Create AllocateAssetModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576184
+      }
+    ],
+    "17.23 Create ReturnAssetModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576250
+      }
+    ],
+    "17.24 Create ParameterSectionCard.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576310
+      }
+    ],
+    "17.25 Create AddSectionModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576371
+      }
+    ],
+    "17.26 Create AddParameterModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576428
+      }
+    ],
+    "17.27 Create ParameterValueInput.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576490
+      }
+    ],
+    "17.28 Create DocumentGrid.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576555
+      }
+    ],
+    "17.29 Create UploadDocumentModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576612
+      }
+    ],
+    "17.30 Create DocumentPreviewModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576672
+      }
+    ],
+    "17.31 Create VersionHistoryModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576736
+      }
+    ],
+    "17.32 Create BudgetForm.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576794
+      }
+    ],
+    "17.33 Create BudgetHistoryTable.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576860
+      }
+    ],
+    "17.34 Create RisksTable.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576929
+      }
+    ],
+    "17.35 Create AddRiskModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621576999
+      }
+    ],
+    "17.36 Create EditRiskModal.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577058
+      }
+    ],
+    "17.37 Create ReportSelector.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577125
+      }
+    ],
+    "17.38 Create ReportPreview.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577190
+      }
+    ],
+    "17.39 Create GlobalSearchBar.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577253
+      }
+    ],
+    "17.40 Create SearchResultsGrouped.razor": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577320
+      }
+    ],
+    "18.1 Add 24 new permissions to PermissionSeeder.Matrix": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577387
+      }
+    ],
+    "19.1 Write unit tests for domain helpers": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577447
+      }
+    ],
+    "19.2 Write unit tests for FluentValidation validators": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577507
+      }
+    ],
+    "19.3 Write integration tests for CQRS handlers": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577564
+      }
+    ],
+    "19.4 Write API integration tests (Postman or automated)": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577624
+      }
+    ],
+    "20.1 Update API documentation and generate Swagger docs": [
+      {
+        "executionId": "fb1780cc-f593-4a66-b335-900eb9a5d478",
+        "chatSessionId": "sess_718509b9-37ca-4b97-b29d-469a78b9670a",
+        "timestamp": 1784621577687
+      }
+    ]
+  }
+}

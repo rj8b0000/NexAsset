@@ -7,6 +7,7 @@ using NexAsset.Infrastructure.Identity;
 using NexAsset.Infrastructure.Identity.Services;
 using NexAsset.Infrastructure.Persistence;
 using NexAsset.Infrastructure.Persistence.Repositories;
+using NexAsset.Infrastructure.Services;
 
 namespace NexAsset.Infrastructure;
 
@@ -48,6 +49,19 @@ public static class DependencyInjection
         services.AddScoped<IAssetTransferRepository, AssetTransferRepository>();
         services.AddScoped<IAssetReturnRepository, AssetReturnRepository>();
         services.AddScoped<IEnterpriseOperationsRepository, EnterpriseOperationsRepository>();
+        services.AddScoped<IProjectCategoryRepository, ProjectCategoryRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IDraftSessionRepository, DraftSessionRepository>();
+        services.AddScoped<IProjectTeamRepository, ProjectTeamRepository>();
+        services.AddScoped<IProjectAssetRepository, ProjectAssetRepository>();
+        services.AddScoped<IProjectDocumentRepository, ProjectDocumentRepository>();
+        services.AddScoped<IProjectParameterRepository, ProjectParameterRepository>();
+        services.AddScoped<IProjectBudgetRepository, ProjectBudgetRepository>();
+        services.AddScoped<IProjectRiskRepository, ProjectRiskRepository>();
+        services.AddScoped<IProjectTimelineRepository, ProjectTimelineRepository>();
+        services.AddScoped<IProjectActivityRepository, ProjectActivityRepository>();
+        services.AddScoped<ISavedFilterRepository, SavedFilterRepository>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Permission enforcement: cached role+designation permission resolution.

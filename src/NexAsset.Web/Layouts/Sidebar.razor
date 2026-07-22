@@ -346,6 +346,8 @@
         }),
         new NavSection("Operations", new()
         {
+            new NavItem { Name = "Projects", Module = "Projects", Icon = "lucide-folder-kanban", Permission = "Projects.View" },
+            new NavItem { Name = "Project Categories", Module = "project-categories", Icon = "lucide-tags", Permission = "ProjectCategories.View" },
             new NavItem { Name = "Maintenance", Module = "Maintenance", Icon = "lucide-wrench", Permission = "Maintenance.View" },
             new NavItem { Name = "Customers", Module = "Customers", Icon = "lucide-contact", Permission = "Customers.View" },
             new NavItem { Name = "Service Tickets", Module = "service-tickets", Icon = "lucide-headphones", Permission = "ServiceTickets.View" },

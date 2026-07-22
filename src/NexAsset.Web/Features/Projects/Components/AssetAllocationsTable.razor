@@ -1,0 +1,7 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@inject IProjectApiClient ProjectApiClient
+@if (_loading) { <LoadingState Message="Loading asset allocations..." /> } else if (_page is null || _page.Items.Count == 0) { <EmptyState Title="No allocated assets" Description="Allocate assets to track their project use." IconClass="lucide-box" /> } else { <div class="table-responsive border rounded-2" style="border-color: var(--border-color) !important;"><table class="table table-hover align-middle mb-0"><thead><tr><th>Asset</th><th>Allocated</th><th>Quantity</th><th>Status</th></tr></thead><tbody>@foreach (var item in _page.Items) { <tr><td>@item.AssetCode - @item.AssetName</td><td>@item.AllocationDate.ToString("dd MMM yyyy")</td><td>@item.ReturnedQuantity / @item.AllocatedQuantity</td><td>@item.Status</td></tr> }</tbody></table></div> }
+@code { [Parameter] public Guid ProjectId { get; set; } private PagedResult<AssetAllocation>? _page; private bool _loading = true; protected override async Task OnParametersSetAsync() { _loading = true; var result = await ProjectApiClient.GetAssetsAsync(ProjectId, new PagedQuery { PageNumber = 1, PageSize = 100 }); if (result.IsSuccess) _page = result.Data; _loading = false; } }

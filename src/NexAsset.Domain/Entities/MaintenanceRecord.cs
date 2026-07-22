@@ -7,6 +7,8 @@ public class MaintenanceRecord : BaseEntity
 {
     public Guid AssetId { get; set; }
     public Asset Asset { get; set; } = default!;
+    public Guid? ProjectId { get; set; }
+    public Project? Project { get; set; }
     public MaintenanceType MaintenanceType { get; set; }
     public MaintenanceStatus Status { get; set; } = MaintenanceStatus.Requested;
     public DateOnly RequestedDate { get; set; }

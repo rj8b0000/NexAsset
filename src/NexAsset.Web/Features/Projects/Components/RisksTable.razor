@@ -1,0 +1,7 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@inject IProjectApiClient ProjectApiClient
+@if (_loading) { <LoadingState Message="Loading risks..." /> } else if (_page is null || _page.Items.Count == 0) { <EmptyState Title="No risks recorded" Description="Use the risk register to track potential delivery issues." IconClass="lucide-shield-check" /> } else { <div class="table-responsive border rounded-2" style="border-color: var(--border-color) !important;"><table class="table table-hover align-middle mb-0"><thead><tr><th>Risk</th><th>Severity</th><th>Owner</th><th>Status</th></tr></thead><tbody>@foreach (var risk in _page.Items) { <tr><td><strong>@risk.Title</strong><div class="text-muted-custom small">@risk.Category</div></td><td>@risk.Severity</td><td>@(risk.OwnerName ?? "Unassigned")</td><td>@risk.Status</td></tr> }</tbody></table></div> }
+@code { [Parameter] public Guid ProjectId { get; set; } private PagedResult<ProjectRisk>? _page; private bool _loading = true; protected override async Task OnParametersSetAsync() { _loading = true; var result = await ProjectApiClient.GetRisksAsync(ProjectId, new PagedQuery { PageNumber = 1, PageSize = 100 }); if (result.IsSuccess) _page = result.Data; _loading = false; } }

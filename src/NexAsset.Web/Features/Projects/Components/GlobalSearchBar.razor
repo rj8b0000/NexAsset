@@ -1,0 +1,2 @@
+<div class="position-relative"><i class="lucide-search position-absolute" style="left: 10px; top: 10px;"></i><input class="form-control-custom" style="padding-left: 32px;" placeholder="Search projects, documents, assets, risks..." @bind="Query" @bind:event="oninput" @onkeyup="Search" /></div>
+@code { [Parameter] public string Query { get; set; } = string.Empty; [Parameter] public EventCallback<string> OnSearch { get; set; } private async Task Search(KeyboardEventArgs args) { if (args.Key == "Enter") await OnSearch.InvokeAsync(Query); } }

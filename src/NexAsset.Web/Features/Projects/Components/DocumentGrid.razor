@@ -1,0 +1,7 @@
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Models
+@inject IProjectApiClient ProjectApiClient
+@if (_loading) { <LoadingState Message="Loading documents..." /> } else if (_page is null || _page.Items.Count == 0) { <EmptyState Title="No documents" Description="Upload documents needed by the project team." IconClass="lucide-files" /> } else { <div class="row g-3">@foreach (var document in _page.Items) { <div class="col-lg-4 col-md-6"><div class="border rounded-2 p-3 h-100" style="border-color: var(--border-color) !important;"><div class="d-flex justify-content-between"><i class="lucide-file-text fs-4"></i><span class="badge-custom badge-custom-secondary">v@document.Version</span></div><div class="fw-semibold mt-3">@document.DocumentName</div><div class="text-caption text-secondary">@document.UploadedAtUtc.ToLocalTime().ToString("dd MMM yyyy")</div></div></div> }</div> }
+@code { [Parameter] public Guid ProjectId { get; set; } private PagedResult<ProjectDocument>? _page; private bool _loading = true; protected override async Task OnParametersSetAsync() { _loading = true; var result = await ProjectApiClient.GetDocumentsAsync(ProjectId, new PagedQuery { PageNumber = 1, PageSize = 100 }); if (result.IsSuccess) _page = result.Data; _loading = false; } }
