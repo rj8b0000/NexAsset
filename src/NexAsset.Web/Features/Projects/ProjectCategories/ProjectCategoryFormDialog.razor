@@ -1,14 +1,19 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
 @using NexAsset.Web.Infrastructure.Projects
 @using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Foundation
 @using NexAsset.Web.Models.Projects
 @using NexAsset.Web.Shared.Components
+@using NexAsset.Web.Shared.Models
 @inject IProjectCategoryApiClient CategoryApiClient
+@inject IOrganizationApiClient OrganizationApiClient
 @inject INotificationService Notifications
 
 <Dialog IsOpen="IsOpen" Title="@(EditId.HasValue ? "Edit Project Category" : "New Project Category")" OnClose="OnClose">
     <ChildContent>
         <div class="mb-3">
-            <TextField Label="Category Name" @bind-Value="_model.Name" Required="true" Placeholder="e.g. Solar EPC, Electrical Testing" />
+            <TextField Label="Category Name" Value="@_model.Name" ValueChanged="v => _model.Name = v" Required="true" Placeholder="e.g. Solar EPC, Electrical Testing" ColumnClass="col-12" />
 
             <!-- Suggested Categories Quick Selection -->
             <div class="mt-3">
@@ -25,7 +30,7 @@
             </div>
 
             <div class="mt-3">
-                <TextField Label="Description" @bind-Value="_model.Description" Multiline="true" Rows="2" Placeholder="Optional category description" />
+                <TextField Label="Description" Value="@_model.Description" ValueChanged="v => _model.Description = v" Multiline="true" Rows="2" Placeholder="Optional category description" ColumnClass="col-12" />
             </div>
 
             <div class="d-flex align-items-center justify-content-between mt-3">
@@ -68,26 +73,52 @@
 
     private bool IsCurrentCategorySuggested => SuggestedCategories.Contains(_model.Name, StringComparer.OrdinalIgnoreCase);
 
+    private bool _wasOpen;
+    private Guid? _initializedId;
+
     protected override async Task OnParametersSetAsync()
     {
-        if (IsOpen && EditId.HasValue)
+        if (IsOpen && (!_wasOpen || _initializedId != EditId))
         {
-            var res = await CategoryApiClient.GetByIdAsync(EditId.Value);
-            if (res.IsSuccess && res.Data != null)
+            _wasOpen = true;
+            _initializedId = EditId;
+
+            if (EditId.HasValue)
             {
-                _model = new ProjectCategoryFormModel
+                var res = await CategoryApiClient.GetByIdAsync(EditId.Value);
+                if (res.IsSuccess && res.Data != null)
                 {
-                    OrganizationId = res.Data.OrganizationId,
-                    Name = res.Data.Name,
-                    Description = res.Data.Description,
-                    IsActive = res.Data.IsActive,
-                    IsSuggested = res.Data.IsSuggested
-                };
+                    _model = new ProjectCategoryFormModel
+                    {
+                        OrganizationId = res.Data.OrganizationId,
+                        Name = res.Data.Name,
+                        Description = res.Data.Description,
+                        IsActive = res.Data.IsActive,
+                        IsSuggested = res.Data.IsSuggested
+                    };
+                }
+            }
+            else
+            {
+                _model = new ProjectCategoryFormModel { IsActive = true };
+                try
+                {
+                    var orgsRes = await OrganizationApiClient.GetPagedAsync(new PagedQuery { PageSize = 50 });
+                    if (orgsRes.IsSuccess && orgsRes.Data != null && orgsRes.Data.Items.Count > 0)
+                    {
+                        _model.OrganizationId = orgsRes.Data.Items[0].Id;
+                    }
+                }
+                catch
+                {
+                    // Ignored - backend will auto-resolve if OrganizationId is empty
+                }
             }
         }
-        else if (IsOpen)
+        else if (!IsOpen)
         {
-            _model = new ProjectCategoryFormModel { IsActive = true };
+            _wasOpen = false;
+            _initializedId = null;
         }
     }
 

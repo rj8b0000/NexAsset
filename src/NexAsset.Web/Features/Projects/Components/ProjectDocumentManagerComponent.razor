@@ -4,6 +4,7 @@
 @using NexAsset.Web.Models.Projects
 @using NexAsset.Web.Shared.Components
 @using NexAsset.Web.Shared.Models
+@using Microsoft.AspNetCore.Components.Forms
 @inject IProjectDocumentApiClient DocumentApiClient
 @inject INotificationService Notifications
 
@@ -40,24 +41,44 @@
 </div>
 
 <!-- Upload Dialog -->
-<Dialog IsOpen="_uploadDialogOpen" Title="Upload Project Document" OnClose="() => _uploadDialogOpen = false">
+<Dialog IsOpen="_uploadDialogOpen" Title="Upload Project Document" OnClose="ResetAndCloseUploadDialog">
     <ChildContent>
-        <div class="mb-3">
-            <TextField Label="Document Name" @bind-Value="_docName" Required="true" Placeholder="e.g. Site Survey Report.pdf" />
-            <div class="mb-3">
-                <label class="form-label text-body-custom">Category <span class="text-danger">*</span></label>
-                <select class="form-select-custom" @bind="_category">
-                    @foreach (DocumentCategory cat in Enum.GetValues(typeof(DocumentCategory)))
+        <div class="row g-3">
+            <!-- File Upload Dropzone -->
+            <div class="col-12">
+                <label class="form-label-custom mb-2">Select File to Upload <span class="text-danger">*</span></label>
+                <InputFile OnChange="HandleFileSelected" class="d-none" id="docFileInput" />
+                <label for="docFileInput" class="w-100 p-4 text-center cursor-pointer rounded-3"
+                       style="border: 2px dashed var(--border-color); background-color: var(--bg-surface-hover); cursor: pointer; display: block; transition: all 0.2s;">
+                    <div class="mb-2">
+                        <i class="lucide-upload-cloud" style="font-size: 32px; color: var(--primary);"></i>
+                    </div>
+                    @if (string.IsNullOrEmpty(_selectedFileName))
                     {
-                        <option value="@cat">@cat.ToString()</option>
+                        <div class="fw-bold text-body-custom mb-1">Click to browse or drop file here</div>
+                        <div class="text-caption text-secondary">Supports PDF, DWG, DOCX, XLSX, PNG, JPG (Max 50MB)</div>
                     }
-                </select>
+                    else
+                    {
+                        <div class="text-success fw-bold mb-1"><i class="lucide-check-circle me-1"></i> File Selected</div>
+                        <div class="badge bg-success-custom text-success py-1 px-3" style="font-size: 13px;">
+                            <i class="lucide-file-text me-1"></i> @_selectedFileName (@_selectedFileSize)
+                        </div>
+                        <div class="text-caption text-secondary mt-1">Click to change selected file</div>
+                    }
+                </label>
             </div>
-            <TextField Label="Description" @bind-Value="_description" Multiline="true" Rows="2" Placeholder="Optional notes or revision details..." />
+
+            <TextField Label="Document Name" Value="@_docName" ValueChanged="v => _docName = v" Required="true" Placeholder="e.g. Site Survey Report.pdf" ColumnClass="col-12" />
+            
+            <SelectField Label="Category" Required="true" Options="_categoryOptions" Placeholder="Select Category"
+                         Value="@_category.ToString()" ValueChanged="OnCategoryChanged" ColumnClass="col-12" />
+
+            <TextField Label="Description" Value="@_description" ValueChanged="v => _description = v" Multiline="true" Rows="3" Placeholder="Optional notes or revision details..." ColumnClass="col-12" />
         </div>
     </ChildContent>
     <FooterContent>
-        <button class="btn-custom btn-custom-secondary" @onclick="() => _uploadDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-secondary" @onclick="ResetAndCloseUploadDialog">Cancel</button>
         <button class="btn-custom btn-custom-primary ms-2" @onclick="ConfirmUploadAsync">Confirm Upload</button>
     </FooterContent>
 </Dialog>
@@ -74,9 +95,16 @@
     private string _docName = string.Empty;
     private DocumentCategory _category = DocumentCategory.TechnicalDrawing;
     private string? _description;
+    private string? _selectedFileName;
+    private string? _selectedFileSize;
 
     private bool _deleteOpen;
     private Guid? _deleteId;
+
+    private readonly List<SelectField.Option> _categoryOptions = Enum.GetValues(typeof(DocumentCategory))
+        .Cast<DocumentCategory>()
+        .Select(c => new SelectField.Option(c.ToString(), c.ToString()))
+        .ToList();
 
     private readonly List<ColumnDefinition<ProjectDocumentItem>> _columns = new()
     {
@@ -120,6 +148,37 @@
         }
     }
 
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            _selectedFileName = file.Name;
+            _selectedFileSize = $"{file.Size / 1024.0 / 1024.0:F2} MB";
+            if (string.IsNullOrWhiteSpace(_docName))
+            {
+                _docName = file.Name;
+            }
+        }
+    }
+
+    private void OnCategoryChanged(string val)
+    {
+        if (Enum.TryParse<DocumentCategory>(val, out var cat))
+        {
+            _category = cat;
+        }
+    }
+
+    private void ResetAndCloseUploadDialog()
+    {
+        _uploadDialogOpen = false;
+        _docName = string.Empty;
+        _description = string.Empty;
+        _selectedFileName = null;
+        _selectedFileSize = null;
+    }
+
     private async Task LoadAsync()
     {
         _loading = true;
@@ -136,7 +195,7 @@
     {
         if (string.IsNullOrWhiteSpace(_docName))
         {
-            Notifications.ShowError("Validation Error", "Document Name is required.");
+            Notifications.ShowError("Validation Error", "Please select a file or enter a document name.");
             return;
         }
 
@@ -150,15 +209,13 @@
                 Version = 1,
                 UploadedAtUtc = DateTime.UtcNow
             });
-            Notifications.ShowSuccess("Success", $"Document '{_docName}' uploaded to draft.");
-            _uploadDialogOpen = false;
-            _docName = string.Empty;
+            Notifications.ShowSuccess("Success", $"Document '{_docName}' uploaded to project draft.");
+            ResetAndCloseUploadDialog();
             return;
         }
 
         Notifications.ShowSuccess("Success", $"Document '{_docName}' uploaded successfully.");
-        _uploadDialogOpen = false;
-        _docName = string.Empty;
+        ResetAndCloseUploadDialog();
         await LoadAsync();
     }
 

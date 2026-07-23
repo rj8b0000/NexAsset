@@ -11,8 +11,22 @@ public sealed class DraftSessionRepository : IDraftSessionRepository
 
     public DraftSessionRepository(ApplicationDbContext context) => _context = context;
 
-    public Task<DraftSession?> GetByUserAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken) =>
-        _context.DraftSessions.FirstOrDefaultAsync(x => x.UserId == userId && x.OrganizationId == organizationId && !x.IsDeleted, cancellationToken);
+    public Task<DraftSession?> GetByUserAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken)
+    {
+        IQueryable<DraftSession> query = _context.DraftSessions.AsNoTracking().Where(x => !x.IsDeleted);
+
+        if (userId != Guid.Empty)
+        {
+            query = query.Where(x => x.UserId == userId);
+        }
+
+        if (organizationId != Guid.Empty)
+        {
+            query = query.Where(x => x.OrganizationId == organizationId);
+        }
+
+        return query.OrderByDescending(x => x.LastSavedAtUtc).FirstOrDefaultAsync(cancellationToken);
+    }
 
     public async Task AddAsync(DraftSession draftSession, CancellationToken cancellationToken) =>
         await _context.DraftSessions.AddAsync(draftSession, cancellationToken);

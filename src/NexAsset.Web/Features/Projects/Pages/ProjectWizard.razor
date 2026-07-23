@@ -27,7 +27,7 @@
 @inject INotificationService Notifications
 @inject NavigationManager Navigation
 
-<div class="animate-fade-in pb-5">
+<div class="animate-fade-in pb-4">
     <!-- Top Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
@@ -42,16 +42,53 @@
         </div>
     </div>
 
-    <!-- Wizard Steps Header - Clickable Tabs -->
-    <div class="card-custom p-3 mb-4">
-        <div class="d-flex justify-content-between flex-wrap gap-2">
+    <!-- Wizard Steps Header - Connected Stepper Bar (Green ONLY when saved) -->
+    <div class="card-custom p-3 p-md-4 mb-4">
+        <div class="d-flex align-items-center justify-content-between">
             @for (int i = 1; i <= 7; i++)
             {
                 var stepNum = i;
-                <div class="d-flex align-items-center @(stepNum == _currentStep ? "text-primary fw-bold" : "text-muted")"
+                var isCompleted = _savedSteps.Contains(stepNum);
+                var isCurrent = stepNum == _currentStep;
+
+                <div class="d-flex align-items-center @(stepNum < 7 ? "flex-grow-1" : "")"
                      style="cursor: pointer;" @onclick="() => GoToStep(stepNum)">
-                    <span class="badge @(stepNum == _currentStep ? "bg-primary" : "bg-light text-dark") me-2" style="font-size: 13px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;">@stepNum</span>
-                    <span class="d-none d-md-inline" style="font-size: 13px;">@_stepTitles[stepNum - 1]</span>
+
+                    <!-- Step Item Pill -->
+                    <div class="d-flex align-items-center gap-2 px-2 py-1.5 rounded-3 transition-all"
+                         style="@(isCurrent ? "background-color: var(--primary-light);" : "")">
+                        
+                        <!-- Badge Circle -->
+                        <span class="d-inline-flex align-items-center justify-content-center fw-bold rounded-circle flex-shrink-0"
+                              style="width: 32px; height: 32px; font-size: 13px; transition: all 0.2s ease-in-out;
+                                     background-color: @(isCurrent ? "var(--primary)" : isCompleted ? "var(--success)" : "var(--bg-surface-hover)");
+                                     color: @(isCurrent || isCompleted ? "#ffffff" : "var(--text-secondary)");
+                                     border: 2px solid @(isCurrent ? "var(--primary)" : isCompleted ? "var(--success)" : "var(--border-color)");">
+                            @if (isCompleted && !isCurrent)
+                            {
+                                <i class="lucide-check" style="font-size: 16px; stroke-width: 3;"></i>
+                            }
+                            else
+                            {
+                                <span>@stepNum</span>
+                            }
+                        </span>
+
+                        <!-- Step Title -->
+                        <span class="d-none d-lg-inline text-nowrap"
+                              style="font-size: 13.5px; font-weight: @(isCurrent ? "700" : isCompleted ? "600" : "500");
+                                     color: @(isCurrent ? "var(--primary)" : isCompleted ? "var(--success)" : "var(--text-secondary)");">
+                            @_stepTitles[stepNum - 1]
+                        </span>
+                    </div>
+
+                    <!-- Connector Line (between steps) -->
+                    @if (stepNum < 7)
+                    {
+                        <div class="flex-grow-1 mx-2 d-none d-md-block"
+                             style="height: 2px; background-color: @(isCompleted ? "var(--success)" : "var(--border-color)"); transition: background-color 0.3s ease;">
+                        </div>
+                    }
                 </div>
             }
         </div>
@@ -168,10 +205,14 @@
                                 {
                                     <tr>
                                         <td class="fw-bold">@member.EmployeeName</td>
-                                        <td><span class="badge bg-light text-dark">@member.EmployeeCode</span></td>
+                                        <td><span class="badge bg-light text-dark border">@member.EmployeeCode</span></td>
                                         <td>@member.DepartmentName</td>
                                         <td>@member.DesignationName</td>
-                                        <td><span class="badge bg-primary-custom">@member.ProjectRole</span></td>
+                                        <td>
+                                            <span class="badge py-1 px-2 rounded-2" style="background-color: var(--primary-light); color: var(--primary); font-weight: 600;">
+                                                @member.ProjectRole
+                                            </span>
+                                        </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
@@ -219,6 +260,20 @@
                             <i class="lucide-plus me-1"></i> Allocate Asset
                         </button>
                     </div>
+
+                    @if (SelectedAssetInfo != null)
+                    {
+                        var totalStock = 10;
+                        var alreadyAllocated = _model.AssetAllocations.Where(x => x.AssetId == SelectedAssetInfo.Id).Sum(x => x.AllocatedQuantity);
+                        var availableStock = Math.Max(0, totalStock - alreadyAllocated);
+
+                        <div class="col-12 mt-1">
+                            <div class="alert alert-info py-2 px-3 rounded-3 d-flex align-items-center gap-2 mb-0" style="background-color: var(--info-light); color: var(--info); border: 1px solid var(--info-border);">
+                                <i class="lucide-info"></i>
+                                <span>Inventory Stock: <strong>@availableStock Available</strong> (Total Database Quantity: @totalStock | Already Allocated: @alreadyAllocated)</span>
+                            </div>
+                        </div>
+                    }
                 </div>
 
                 <h4 class="h4-title mb-3">Allocated Assets Ledger</h4>
@@ -235,9 +290,10 @@
                                 <tr>
                                     <th>Asset Code</th>
                                     <th>Asset Name</th>
-                                    <th>Category</th>
-                                    <th>Allocated Qty</th>
-                                    <th>Unit</th>
+                                    <th>Project Allocation</th>
+                                    <th>Total Quantity</th>
+                                    <th>Allocated Quantity</th>
+                                    <th>Available Quantity</th>
                                     <th>Allocated Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -247,11 +303,12 @@
                                 @foreach (var alloc in _model.AssetAllocations)
                                 {
                                     <tr>
-                                        <td><span class="badge bg-light text-dark">@alloc.AssetCode</span></td>
+                                        <td><span class="badge bg-light text-dark border">@alloc.AssetCode</span></td>
                                         <td class="fw-bold">@alloc.AssetName</td>
-                                        <td>@alloc.CategoryName</td>
-                                        <td><span class="badge bg-primary-custom">@alloc.AllocatedQuantity</span></td>
-                                        <td>@alloc.Unit</td>
+                                        <td><span class="badge bg-primary-light text-primary">@alloc.ProjectName</span></td>
+                                        <td>@alloc.TotalQuantity</td>
+                                        <td><span class="badge bg-success-custom text-success">@alloc.AllocatedQuantity</span></td>
+                                        <td>@alloc.AvailableQuantity</td>
                                         <td>@alloc.AllocatedDateUtc.ToString("yyyy-MM-dd HH:mm")</td>
                                         <td><span class="badge bg-success-custom text-success">@alloc.Status</span></td>
                                         <td>
@@ -272,7 +329,7 @@
         else if (_currentStep == 4)
         {
             <div class="card-custom p-4">
-                <ProjectParametersBuilderComponent ProjectId="Guid.Empty" />
+                <ProjectParametersBuilderComponent ProjectId="Guid.Empty" @bind-ParameterSections="_model.ParameterSections" />
             </div>
         }
 
@@ -376,7 +433,7 @@
 
                 <div class="d-flex justify-content-center gap-3">
                     <button class="btn-custom btn-custom-secondary" @onclick="PerformManualSaveDraft">
-                        <i class="lucide-save me-1"></i> Save Draft
+                        <i class="lucide-save me-1"></i> Save Section
                     </button>
                     <button class="btn-custom btn-custom-primary py-2 px-4" @onclick="SaveProjectAsync" disabled="@_saving">
                         @if (_saving) { <span>Creating Workspace...</span> } else { <span><i class="lucide-rocket me-1"></i> Create Project Workspace</span> }
@@ -387,30 +444,29 @@
     }
 
     <!-- Sticky Bottom Wizard Footer -->
-    <div class="position-fixed bottom-0 start-0 end-0 bg-surface border-top p-3 shadow-lg" style="z-index: 1040; background: var(--bg-surface);">
-        <div class="container-fluid d-flex align-items-center justify-content-between">
-            <button class="btn-custom btn-custom-secondary" disabled="@(_currentStep == 1)" @onclick="PreviousStep">
-                <i class="lucide-arrow-left me-1"></i> Previous
+    <div class="card-custom p-3 mt-4 position-sticky bottom-0 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2"
+         style="z-index: 100; background-color: var(--bg-surface); border: 1px solid var(--border-color);">
+        <button class="btn-custom btn-custom-secondary py-2 px-3" disabled="@(_currentStep == 1)" @onclick="PreviousStep">
+            <i class="lucide-arrow-left me-1"></i> Previous
+        </button>
+
+        <div class="d-flex gap-2">
+            <button class="btn-custom btn-custom-secondary py-2 px-3" @onclick="PerformManualSaveDraft">
+                <i class="lucide-save me-1"></i> Save Section
             </button>
 
-            <div class="d-flex gap-2">
-                <button class="btn-custom btn-custom-secondary" @onclick="PerformManualSaveDraft">
-                    <i class="lucide-save me-1"></i> Save Draft
+            @if (_currentStep < 7)
+            {
+                <button class="btn-custom btn-custom-primary py-2 px-4" @onclick="NextStep">
+                    Next Step <i class="lucide-arrow-right ms-1"></i>
                 </button>
-
-                @if (_currentStep < 7)
-                {
-                    <button class="btn-custom btn-custom-primary" @onclick="NextStep">
-                        Next Step <i class="lucide-arrow-right ms-1"></i>
-                    </button>
-                }
-                else
-                {
-                    <button class="btn-custom btn-custom-primary" @onclick="SaveProjectAsync" disabled="@_saving">
-                        @if (_saving) { <span>Saving Project...</span> } else { <span>Create & Open Workspace</span> }
-                    </button>
-                }
-            </div>
+            }
+            else
+            {
+                <button class="btn-custom btn-custom-primary py-2 px-4" @onclick="SaveProjectAsync" disabled="@_saving">
+                    @if (_saving) { <span>Saving Project...</span> } else { <span>Create & Open Workspace</span> }
+                </button>
+            }
         </div>
     </div>
 </div>
@@ -446,6 +502,7 @@
     private string _autosaveStatus = "Draft Session Active";
     private System.Threading.Timer? _autosaveTimer;
     private List<string> _validationErrors = new();
+    private HashSet<int> _savedSteps = new();
 
     // Raw Entity Lists from API
     private List<ProjectCategoryListItem> _categories = new();
@@ -500,6 +557,11 @@
         "General Info", "Project Team", "Asset Allocation", "Parameters", "Documents", "Review", "Save"
     };
 
+    private AssetListItem? SelectedAssetInfo =>
+        !string.IsNullOrEmpty(_selectedAssetId) && Guid.TryParse(_selectedAssetId, out var id)
+            ? _assets.FirstOrDefault(a => a.Id == id)
+            : null;
+
     protected override async Task OnInitializedAsync()
     {
         _loadingData = true;
@@ -510,7 +572,11 @@
             {
                 _categories = catRes.Data.Items.Where(x => x.IsActive).ToList();
                 _categoryOptions = _categories.Select(c => new SelectField.Option(c.Id.ToString(), c.Name)).ToList();
-                if (_categories.Count > 0) _model.CategoryId = _categories[0].Id;
+                if (_categories.Count > 0)
+                {
+                    _model.CategoryId = _categories[0].Id;
+                    _model.OrganizationId = _categories[0].OrganizationId;
+                }
             }
 
             var empRes = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
@@ -531,8 +597,7 @@
             if (branchRes.IsSuccess && branchRes.Data != null)
             {
                 _branches = branchRes.Data.Items.ToList();
-                _branchOptions = _branches.Select(b => new SelectField.Option(b.Id.ToString(), b.Name)).ToList();
-                if (_branches.Count > 0) _model.BranchId = _branches[0].Id;
+                RefreshFilteredBranches();
             }
 
             var deptRes = await DepartmentApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
@@ -587,14 +652,61 @@
             });
         }
 
+        try
+        {
+            var draftRes = await ProjectApiClient.GetDraftSessionAsync(Guid.Empty, Guid.Empty);
+            if (draftRes.IsSuccess && draftRes.Data != null && !string.IsNullOrEmpty(draftRes.Data.WizardStateJson))
+            {
+                var restoredModel = JsonSerializer.Deserialize<ProjectFormModel>(draftRes.Data.WizardStateJson);
+                if (restoredModel != null && !string.IsNullOrWhiteSpace(restoredModel.ProjectName))
+                {
+                    _model = restoredModel;
+                    _currentStep = Math.Clamp(draftRes.Data.CurrentStep, 1, 7);
+                    for (int step = 1; step <= _currentStep; step++) _savedSteps.Add(step);
+                    _autosaveStatus = $"Restored {draftRes.Data.LastSavedAtUtc.ToLocalTime():HH:mm:ss}";
+                    Notifications.ShowSuccess("Draft Restored", $"Loaded saved project draft from Step {_currentStep}.");
+                }
+            }
+        }
+        catch
+        {
+            // Ignored
+        }
+
         _autosaveTimer = new System.Threading.Timer(_ => InvokeAsync(PerformAutosaveAsync), null, 5000, 5000);
+    }
+
+    private void RefreshFilteredBranches()
+    {
+        var filtered = _model.OrganizationId != Guid.Empty
+            ? _branches.Where(b => b.OrganizationId == _model.OrganizationId && b.IsActive).ToList()
+            : _branches.Where(b => b.IsActive).ToList();
+
+        _branchOptions = filtered.Select(b => new SelectField.Option(b.Id.ToString(), b.Name)).ToList();
+        if (filtered.Count > 0 && (_model.BranchId == null || !filtered.Any(b => b.Id == _model.BranchId)))
+        {
+            _model.BranchId = filtered[0].Id;
+        }
     }
 
     private static string GuidStr(Guid? g) => g.HasValue && g.Value != Guid.Empty ? g.Value.ToString() : "";
 
     private void OnNameChanged(string val) { _model.ProjectName = val; OnInputTriggerAutosave(); }
     private void OnCodeChanged(string val) { _model.ProjectCode = val; OnInputTriggerAutosave(); }
-    private void OnCategoryChanged(string val) { if (Guid.TryParse(val, out var g)) _model.CategoryId = g; OnInputTriggerAutosave(); }
+    private void OnCategoryChanged(string val)
+    {
+        if (Guid.TryParse(val, out var g))
+        {
+            _model.CategoryId = g;
+            var cat = _categories.FirstOrDefault(c => c.Id == g);
+            if (cat != null)
+            {
+                _model.OrganizationId = cat.OrganizationId;
+                RefreshFilteredBranches();
+            }
+        }
+        OnInputTriggerAutosave();
+    }
     private void OnBranchChanged(string val) { if (Guid.TryParse(val, out var g)) _model.BranchId = g; OnInputTriggerAutosave(); }
     private void OnDepartmentChanged(string val) { if (Guid.TryParse(val, out var g)) _model.DepartmentId = g; OnInputTriggerAutosave(); }
     private void OnManagerChanged(string val) { if (Guid.TryParse(val, out var g)) _model.ProjectManagerEmployeeId = g; OnInputTriggerAutosave(); }
@@ -637,6 +749,7 @@
             var res = await ProjectApiClient.SaveDraftSessionAsync(draftModel);
             if (res.IsSuccess)
             {
+                _savedSteps.Add(_currentStep);
                 _autosaveStatus = $"Saved {DateTime.Now:HH:mm:ss}";
             }
             else
@@ -647,10 +760,32 @@
         }
     }
 
-    private void PerformManualSaveDraft()
+    private async Task PerformManualSaveDraft()
     {
-        _autosaveStatus = $"Saved {DateTime.Now:HH:mm:ss}";
-        Notifications.ShowSuccess("Draft Saved", "Project wizard state saved silently.");
+        if (ValidateCurrentStep())
+        {
+            var json = JsonSerializer.Serialize(_model);
+            var draftModel = new DraftSessionModel
+            {
+                UserId = Guid.Empty,
+                OrganizationId = _model.OrganizationId,
+                WizardStateJson = json,
+                CurrentStep = _currentStep,
+                LastSavedAtUtc = DateTime.UtcNow
+            };
+
+            var res = await ProjectApiClient.SaveDraftSessionAsync(draftModel);
+            if (res.IsSuccess)
+            {
+                _savedSteps.Add(_currentStep);
+                _autosaveStatus = $"Saved {DateTime.Now:HH:mm:ss}";
+                Notifications.ShowSuccess("Section Saved", $"Step {_currentStep} ({_stepTitles[_currentStep - 1]}) saved successfully to database.");
+            }
+            else
+            {
+                Notifications.ShowError("Save Error", res.Error?.Message ?? "Failed to save section.");
+            }
+        }
     }
 
     private bool ValidateCurrentStep()
@@ -666,11 +801,15 @@
         return _validationErrors.Count == 0;
     }
 
-    private void NextStep()
+    private async Task NextStep()
     {
-        if (ValidateCurrentStep() && _currentStep < 7)
+        if (ValidateCurrentStep())
         {
-            _currentStep++;
+            await PerformManualSaveDraft();
+            if (_currentStep < 7)
+            {
+                _currentStep++;
+            }
         }
     }
 
@@ -748,19 +887,41 @@
         var name = asset?.AssetName ?? "Selected Asset";
         var code = asset?.AssetCode ?? "AST";
 
+        int totalQty = 10;
+        int alreadyAllocated = _model.AssetAllocations.Where(x => x.AssetId == assetId).Sum(x => x.AllocatedQuantity);
+        int availableQty = Math.Max(0, totalQty - alreadyAllocated);
+
+        if (_allocateQty <= 0)
+        {
+            Notifications.ShowError("Validation Error", "Allocation quantity must be greater than 0.");
+            return;
+        }
+
+        if (_allocateQty > availableQty)
+        {
+            Notifications.ShowError("Allocation Error", $"Cannot allocate {_allocateQty} units. Only {availableQty} unit(s) available in inventory database.");
+            return;
+        }
+
+        var projName = !string.IsNullOrWhiteSpace(_model.ProjectName) ? _model.ProjectName : "This Project";
+
         _model.AssetAllocations.Add(new ProjectAssetAllocationModel
         {
             AssetId = assetId,
             AssetCode = code,
             AssetName = name,
             CategoryName = "General Equipment",
+            ProjectName = projName,
+            TotalQuantity = totalQty,
             AllocatedQuantity = _allocateQty,
+            AvailableQuantity = availableQty - _allocateQty,
             Unit = "Units",
             Status = "Allocated",
             AllocatedDateUtc = DateTime.UtcNow
         });
 
         _selectedAssetId = "";
+        _allocateQty = 1;
         Notifications.ShowSuccess("Success", $"Allocated {_allocateQty} unit(s) of {name}.");
         OnInputTriggerAutosave();
     }
@@ -791,6 +952,7 @@
             var res = await ProjectApiClient.CreateAsync(_model);
             if (res.IsSuccess && res.Data != null)
             {
+                await ProjectApiClient.DeleteDraftSessionAsync(Guid.Empty, Guid.Empty);
                 Notifications.ShowSuccess("Success", "Project Workspace created successfully!");
                 Navigation.NavigateTo($"/projects/{res.Data.Id}");
             }

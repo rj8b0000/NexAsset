@@ -137,6 +137,8 @@
 
 @code {
     [Parameter] public Guid ProjectId { get; set; }
+    [Parameter] public List<ParameterSectionModel>? ParameterSections { get; set; }
+    [Parameter] public EventCallback<List<ParameterSectionModel>> ParameterSectionsChanged { get; set; }
 
     private List<ParameterSectionModel> _sections = new();
     private bool _loading = true;
@@ -157,9 +159,14 @@
         }
         else
         {
-            if (_sections.Count == 0)
+            if (ParameterSections != null && ParameterSections.Count > 0)
+            {
+                _sections = ParameterSections;
+            }
+            else if (_sections.Count == 0)
             {
                 InitializeDefaultSectionsInMemory();
+                await ParameterSectionsChanged.InvokeAsync(_sections);
             }
             _loading = false;
         }
@@ -243,6 +250,7 @@
                 Parameters = new List<ParameterFieldModel>()
             });
             _sectionDialogOpen = false;
+            await ParameterSectionsChanged.InvokeAsync(_sections);
             Notifications.ShowSuccess("Success", "Section created in draft.");
             return;
         }
@@ -266,6 +274,7 @@
         if (ProjectId == Guid.Empty)
         {
             _sections.RemoveAll(x => x.Id == sectionId);
+            await ParameterSectionsChanged.InvokeAsync(_sections);
             Notifications.ShowSuccess("Success", "Section removed.");
             return;
         }
@@ -297,6 +306,7 @@
                 _newField.Id = Guid.NewGuid();
                 _newField.SectionId = _activeSectionId;
                 sec.Parameters.Add(_newField);
+                await ParameterSectionsChanged.InvokeAsync(_sections);
                 Notifications.ShowSuccess("Success", "Parameter field added to draft.");
             }
             _fieldDialogOpen = false;
@@ -320,6 +330,7 @@
     {
         if (ProjectId == Guid.Empty)
         {
+            await ParameterSectionsChanged.InvokeAsync(_sections);
             Notifications.ShowSuccess("Success", "Parameter values saved to draft session.");
             return;
         }

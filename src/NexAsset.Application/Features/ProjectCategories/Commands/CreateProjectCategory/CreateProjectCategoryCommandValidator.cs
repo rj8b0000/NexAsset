@@ -6,9 +6,6 @@ public sealed class CreateProjectCategoryCommandValidator : AbstractValidator<Cr
 {
     public CreateProjectCategoryCommandValidator()
     {
-        RuleFor(x => x.OrganizationId)
-            .NotEmpty().WithMessage("OrganizationId is required.");
-
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Category Name is required.")
             .MaximumLength(100).WithMessage("Category Name must not exceed 100 characters.");

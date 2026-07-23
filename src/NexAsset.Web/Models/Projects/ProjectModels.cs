@@ -71,7 +71,9 @@ public class ProjectAssetAllocationModel
     public string AssetName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public string BranchName { get; set; } = string.Empty;
-    public int AvailableQuantity { get; set; } = 1;
+    public string ProjectName { get; set; } = string.Empty;
+    public int TotalQuantity { get; set; } = 10;
+    public int AvailableQuantity { get; set; } = 10;
     public int AllocatedQuantity { get; set; } = 1;
     public string Unit { get; set; } = "Units";
     public string Status { get; set; } = "Allocated";
@@ -106,6 +108,7 @@ public class ProjectFormModel
 
     public List<ProjectTeamMemberModel> TeamMembers { get; set; } = new();
     public List<ProjectAssetAllocationModel> AssetAllocations { get; set; } = new();
+    public List<ParameterSectionModel> ParameterSections { get; set; } = new();
 }
 
 public class TransitionStatusModel

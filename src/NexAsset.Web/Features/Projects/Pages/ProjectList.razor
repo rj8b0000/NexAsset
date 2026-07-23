@@ -25,6 +25,31 @@
         }
     </div>
 
+    @if (_draftSession != null)
+    {
+        <div class="card-custom p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background-color: var(--primary-light); border: 1px solid var(--primary-border);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-2 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="lucide-edit-3 fs-5"></i>
+                </div>
+                <div>
+                    <h4 class="h4-title text-primary mb-1">Unsaved Draft Project Session Found</h4>
+                    <span class="text-caption text-secondary">
+                        Saved section step @_draftSession.CurrentStep (@_draftSession.LastSavedAtUtc.ToLocalTime().ToString("MMM dd, yyyy HH:mm:ss"))
+                    </span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn-custom btn-custom-secondary" @onclick="DiscardDraftAsync">
+                    <i class="lucide-trash-2 text-danger me-1"></i> Discard Draft
+                </button>
+                <button class="btn-custom btn-custom-primary" @onclick='() => Navigation.NavigateTo("/projects/wizard?resume=true")'>
+                    <i class="lucide-play me-1"></i> Resume Draft Project
+                </button>
+            </div>
+        </div>
+    }
+
     @if (_page is null && _loadError is null)
     {
         <LoadingState Message="Loading projects..." />
@@ -61,6 +86,7 @@
     private string? _loadError;
     private bool _busy;
     private PagedQuery _query = new() { PageNumber = 1, PageSize = 10 };
+    private DraftSessionModel? _draftSession;
 
     private bool _deleteOpen;
     private Guid? _deleteId;
@@ -78,6 +104,40 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync(_query);
+        await CheckDraftSessionAsync();
+    }
+
+    private async Task CheckDraftSessionAsync()
+    {
+        try
+        {
+            var res = await ProjectApiClient.GetDraftSessionAsync(Guid.Empty, Guid.Empty);
+            if (res.IsSuccess && res.Data != null)
+            {
+                _draftSession = res.Data;
+            }
+        }
+        catch
+        {
+            // Ignored
+        }
+    }
+
+    private async Task DiscardDraftAsync()
+    {
+        try
+        {
+            var res = await ProjectApiClient.DeleteDraftSessionAsync(Guid.Empty, Guid.Empty);
+            if (res.IsSuccess)
+            {
+                _draftSession = null;
+                Notifications.ShowSuccess("Success", "Draft session discarded.");
+            }
+        }
+        catch
+        {
+            Notifications.ShowError("Error", "Failed to discard draft session.");
+        }
     }
 
     private async Task LoadAsync(PagedQuery query)
