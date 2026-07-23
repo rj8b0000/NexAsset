@@ -1,0 +1,186 @@
+@page "/projects/{Id:guid}"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Components
+@using NexAsset.Web.Features.Projects.Components
+@inject IProjectApiClient ProjectApiClient
+@inject INotificationService Notifications
+@inject NavigationManager Navigation
+
+<div class="animate-fade-in">
+    @if (_loading)
+    {
+        <LoadingState Message="Loading project workspace..." />
+    }
+    else if (_project == null)
+    {
+        <EmptyState Title="Project Not Found" Description="The requested project workspace could not be found or has been deleted."
+                    IconClass="lucide-alert-triangle" ActionLabel="Back to Projects" ActionIconClass="lucide-arrow-left"
+                    OnActionClick='() => Navigation.NavigateTo("/projects")' />
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <div class="d-flex align-items-center gap-3">
+                    <h1 class="h1-title">@_project.ProjectName</h1>
+                    <span class="badge bg-primary-custom">@_project.ProjectCode</span>
+                    <span class="badge bg-secondary-custom">@_project.Status</span>
+                </div>
+                <span class="text-caption text-secondary">Category: @_project.CategoryName | Manager: @(_project.ProjectManagerName ?? "Unassigned")</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn-custom btn-custom-secondary" @onclick="DuplicateProjectAsync">
+                    <i class="lucide-copy"></i> Duplicate
+                </button>
+                <button class="btn-custom btn-custom-secondary text-danger" @onclick="AskDelete">
+                    <i class="lucide-trash-2"></i> Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <StatCard Title="Status" Value="@_project.Status.ToString()" IconClass="lucide-activity" TrendText="Lifecycle State" />
+            </div>
+            <div class="col-md-3">
+                <StatCard Title="Priority" Value="@_project.Priority.ToString()" IconClass="lucide-flag" TrendText="Urgency Level" />
+            </div>
+            <div class="col-md-3">
+                <StatCard Title="Start Date" Value="@(_project.StartDate?.ToString("yyyy-MM-dd") ?? "-")" IconClass="lucide-calendar" TrendText="Target Start" />
+            </div>
+            <div class="col-md-3">
+                <StatCard Title="End Date" Value="@(_project.EndDate?.ToString("yyyy-MM-dd") ?? "-")" IconClass="lucide-clock" TrendText="Target End" />
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="border-bottom mb-4">
+            <ul class="nav nav-tabs border-0">
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "general" ? "active" : "")" @onclick='() => _activeTab = "general"'>General Info</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "parameters" ? "active" : "")" @onclick='() => _activeTab = "parameters"'>Dynamic Parameters</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link @(_activeTab == "documents" ? "active" : "")" @onclick='() => _activeTab = "documents"'>Documents</button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab Contents -->
+        @if (_activeTab == "general")
+        {
+            <div class="card-custom p-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h3 class="h3-title">General Information</h3>
+                    <span class="text-caption text-secondary">Project core attributes and metadata.</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <strong>Project Code:</strong> <p class="text-body-custom">@_project.ProjectCode</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Project Name:</strong> <p class="text-body-custom">@_project.ProjectName</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Category:</strong> <p class="text-body-custom">@_project.CategoryName</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Manager:</strong> <p class="text-body-custom">@(_project.ProjectManagerName ?? "Unassigned")</p>
+                    </div>
+                    <div class="col-12">
+                        <strong>Description:</strong> <p class="text-body-custom">@(_project.Description ?? "No description provided.")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Notes:</strong> <p class="text-body-custom">@(_project.Notes ?? "-")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Internal Remarks:</strong> <p class="text-body-custom">@(_project.InternalRemarks ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (_activeTab == "parameters")
+        {
+            <ProjectParametersBuilderComponent ProjectId="Id" />
+        }
+        else if (_activeTab == "documents")
+        {
+            <ProjectDocumentManagerComponent ProjectId="Id" />
+        }
+    }
+</div>
+
+<ConfirmDeleteDialog IsOpen="_deleteOpen" EntityLabel="project" OnClose="() => _deleteOpen = false" OnConfirm="ConfirmDeleteAsync" />
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ProjectDetailModel? _project;
+    private bool _loading = true;
+    private string _activeTab = "general";
+
+    private bool _deleteOpen;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadProjectAsync();
+    }
+
+    private async Task LoadProjectAsync()
+    {
+        _loading = true;
+        var res = await ProjectApiClient.GetByIdAsync(Id);
+        _loading = false;
+
+        if (res.IsSuccess && res.Data != null)
+        {
+            _project = res.Data;
+        }
+    }
+
+    private async Task DuplicateProjectAsync()
+    {
+        if (_project == null) return;
+        var res = await ProjectApiClient.DuplicateAsync(_project.Id, _project.OrganizationId);
+        if (res.IsSuccess && res.Data != null)
+        {
+            Notifications.ShowSuccess("Success", "Project duplicated successfully!");
+            Navigation.NavigateTo($"/projects/{res.Data.Id}");
+        }
+        else
+        {
+            Notifications.ShowError("Error", res.Error?.Message ?? "Failed to duplicate project.");
+        }
+    }
+
+    private void AskDelete()
+    {
+        _deleteOpen = true;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_project != null)
+        {
+            var res = await ProjectApiClient.DeleteAsync(_project.Id);
+            if (res.IsSuccess)
+            {
+                Notifications.ShowSuccess("Success", "Project deleted.");
+                Navigation.NavigateTo("/projects");
+            }
+            else
+            {
+                Notifications.ShowError("Error", res.Error?.Message ?? "Failed to delete project.");
+            }
+        }
+        _deleteOpen = false;
+    }
+}

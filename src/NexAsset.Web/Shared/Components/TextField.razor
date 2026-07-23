@@ -1,7 +1,6 @@
 @*
-    Small labeled text/textarea input for the foundation module forms. Two-way binds via
-    Value/ValueChanged and shows a per-field validation message when Error is set. Sits in a
-    Bootstrap grid column (default half width) so forms lay out as responsive two-column grids.
+    Small labeled text/textarea input for form views. Two-way binds via
+    Value/ValueChanged and shows a per-field validation message when Error is set.
 *@
 <div class="@ColumnClass">
     <label class="form-label-custom">
@@ -13,11 +12,11 @@
     </label>
     @if (Multiline)
     {
-        <textarea class="form-control-custom" rows="3" style="@BorderStyle" value="@Value" @oninput="HandleInput"></textarea>
+        <textarea class="form-control-custom" rows="@Rows" placeholder="@Placeholder" style="@BorderStyle" value="@Value" @oninput="HandleInput"></textarea>
     }
     else
     {
-        <input type="@Type" class="form-control-custom" style="@BorderStyle" value="@Value" @oninput="HandleInput" />
+        <input type="@Type" class="form-control-custom" placeholder="@Placeholder" style="@BorderStyle" value="@Value" @oninput="HandleInput" />
     }
     @if (HasError)
     {
@@ -29,14 +28,21 @@
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public EventCallback OnInput { get; set; }
     [Parameter] public bool Required { get; set; }
     [Parameter] public string Type { get; set; } = "text";
     [Parameter] public bool Multiline { get; set; }
+    [Parameter] public int Rows { get; set; } = 3;
+    [Parameter] public string? Placeholder { get; set; }
     [Parameter] public string? Error { get; set; }
     [Parameter] public string ColumnClass { get; set; } = "col-md-6";
 
     private bool HasError => !string.IsNullOrEmpty(Error);
     private string BorderStyle => HasError ? "border-color: var(--danger);" : "";
 
-    private Task HandleInput(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString() ?? "");
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        await ValueChanged.InvokeAsync(e.Value?.ToString() ?? "");
+        await OnInput.InvokeAsync();
+    }
 }

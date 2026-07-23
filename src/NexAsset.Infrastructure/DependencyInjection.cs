@@ -48,6 +48,12 @@ public static class DependencyInjection
         services.AddScoped<IAssetTransferRepository, AssetTransferRepository>();
         services.AddScoped<IAssetReturnRepository, AssetReturnRepository>();
         services.AddScoped<IEnterpriseOperationsRepository, EnterpriseOperationsRepository>();
+        services.AddScoped<IProjectCategoryRepository, Repository.ProjectCategoryRepository>();
+        services.AddScoped<IProjectRepository, Repository.ProjectRepository>();
+        services.AddScoped<IDraftSessionRepository, Repository.DraftSessionRepository>();
+        services.AddScoped<IProjectParameterRepository, Repository.ProjectParameterRepository>();
+        services.AddScoped<IProjectDocumentRepository, Repository.ProjectDocumentRepository>();
+        services.AddScoped<IFileStorageService, Services.LocalFileStorageService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Permission enforcement: cached role+designation permission resolution.

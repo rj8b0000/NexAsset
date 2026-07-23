@@ -1,0 +1,212 @@
+@page "/project-categories"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Components
+@using NexAsset.Web.Shared.Models
+@inject IProjectCategoryApiClient CategoryApiClient
+@inject INotificationService Notifications
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Project Categories</h1>
+            <span class="text-caption text-secondary">Manage industry categories for project classification.</span>
+        </div>
+        @if (Perms.HasPermission("ProjectCategories.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick="OpenCreate">
+                <i class="lucide-plus"></i> New Category
+            </button>
+        }
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card-custom p-3 mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <div class="position-relative">
+                    <i class="lucide-search position-absolute text-muted-custom" style="left: 12px; top: 50%; transform: translateY(-50%);"></i>
+                    <input type="text" class="form-control-custom ps-5" placeholder="Search category name or description..."
+                           @bind="_search" @bind:after="ApplyFilters" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select-custom" @bind="_statusFilter" @bind:after="ApplyFilters">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select-custom" @bind="_typeFilter" @bind:after="ApplyFilters">
+                    <option value="">All Category Types</option>
+                    <option value="suggested">Suggested Categories</option>
+                    <option value="custom">Custom Categories</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <button class="btn-custom btn-custom-secondary w-100" @onclick="ResetFilters">Reset Filters</button>
+            </div>
+        </div>
+    </div>
+
+    @if (_filteredItems is null && _loadError is null)
+    {
+        <LoadingState Message="Loading project categories..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load project categories" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="LoadAsync" />
+    }
+    else if (_filteredItems!.Count == 0)
+    {
+        <EmptyState Title="No project categories found" Description="Create a new category or adjust your search filters."
+                    IconClass="lucide-layers" ActionLabel="New Category" ActionIconClass="lucide-plus"
+                    OnActionClick="OpenCreate" />
+    }
+    else
+    {
+        <DataTable TItem="ProjectCategoryListItem"
+                   Items="_filteredItems"
+                   Columns="_columns"
+                   Type="Project Category"
+                   IdSelector="c => c.Id.ToString()"
+                   OnEdit="OpenEdit"
+                   EditPermission="ProjectCategories.Update"
+                   OnDelete="AskDelete"
+                   DeletePermission="ProjectCategories.Delete" />
+    }
+</div>
+
+<ProjectCategoryFormDialog IsOpen="_formOpen" EditId="_editId" OnClose="() => _formOpen = false" OnSaved="LoadAsync" />
+
+<ConfirmDeleteDialog IsOpen="_deleteOpen" EntityLabel="project category" OnClose="() => _deleteOpen = false" OnConfirm="ConfirmDelete" />
+
+@code {
+    private List<ProjectCategoryListItem>? _allItems;
+    private List<ProjectCategoryListItem>? _filteredItems;
+    private string? _loadError;
+
+    private string _search = string.Empty;
+    private string _statusFilter = string.Empty;
+    private string _typeFilter = string.Empty;
+
+    private bool _formOpen;
+    private Guid? _editId;
+
+    private bool _deleteOpen;
+    private Guid? _deleteId;
+
+    private static readonly string[] SuggestedCategories = new[]
+    {
+        "Solar EPC", "Utility Scale Solar", "Rooftop Solar", "Electrical Substation", "O&M",
+        "Electrical Testing", "Underground Cable", "HT/LT Panel", "Transmission Line",
+        "Distribution Line", "Industrial Electrical", "Commercial Electrical", "Mechanical",
+        "Civil Construction", "Infrastructure", "Water Treatment", "Manufacturing", "Facility Management"
+    };
+
+    private readonly List<ColumnDefinition<ProjectCategoryListItem>> _columns = new()
+    {
+        new() { Header = "Category Name", PropertySelector = x => x.Name, Sortable = true },
+        new() { Header = "Description", PropertySelector = x => x.Description ?? "-" },
+        new() { Header = "Suggested", PropertySelector = x => (x.IsSuggested || SuggestedCategories.Contains(x.Name, StringComparer.OrdinalIgnoreCase)) ? "Yes" : "No" },
+        new() { Header = "Active Status", PropertySelector = x => x.IsActive ? "Active" : "Inactive", Sortable = true },
+        new() { Header = "Total Projects", PropertySelector = x => x.TotalProjectsCount.ToString() },
+        new() { Header = "Created On", PropertySelector = x => x.CreatedAtUtc.ToString("yyyy-MM-dd") }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var res = await CategoryApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+        if (res.IsSuccess && res.Data != null)
+        {
+            _allItems = res.Data.Items.ToList();
+            foreach (var item in _allItems)
+            {
+                item.IsSuggested = SuggestedCategories.Contains(item.Name, StringComparer.OrdinalIgnoreCase);
+            }
+            ApplyFilters();
+            _loadError = null;
+        }
+        else
+        {
+            _loadError = res.Error?.Message;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        if (_allItems == null) return;
+
+        var query = _allItems.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            query = query.Where(x => x.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                                     (x.Description != null && x.Description.Contains(_search, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        if (_statusFilter == "active") query = query.Where(x => x.IsActive);
+        else if (_statusFilter == "inactive") query = query.Where(x => !x.IsActive);
+
+        if (_typeFilter == "suggested") query = query.Where(x => x.IsSuggested);
+        else if (_typeFilter == "custom") query = query.Where(x => !x.IsSuggested);
+
+        _filteredItems = query.ToList();
+    }
+
+    private void ResetFilters()
+    {
+        _search = string.Empty;
+        _statusFilter = string.Empty;
+        _typeFilter = string.Empty;
+        ApplyFilters();
+    }
+
+    private void OpenCreate()
+    {
+        _editId = null;
+        _formOpen = true;
+    }
+
+    private void OpenEdit(ProjectCategoryListItem item)
+    {
+        _editId = item.Id;
+        _formOpen = true;
+    }
+
+    private void AskDelete(ProjectCategoryListItem item)
+    {
+        _deleteId = item.Id;
+        _deleteOpen = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_deleteId.HasValue)
+        {
+            var res = await CategoryApiClient.DeleteAsync(_deleteId.Value);
+            if (res.IsSuccess)
+            {
+                Notifications.ShowSuccess("Success", "Category deleted.");
+                await LoadAsync();
+            }
+            else
+            {
+                Notifications.ShowError("Error", res.Error?.Message ?? "Failed to delete category.");
+            }
+        }
+        _deleteOpen = false;
+    }
+}

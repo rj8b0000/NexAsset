@@ -350,6 +350,11 @@
             new NavItem { Name = "Customers", Module = "Customers", Icon = "lucide-contact", Permission = "Customers.View" },
             new NavItem { Name = "Service Tickets", Module = "service-tickets", Icon = "lucide-headphones", Permission = "ServiceTickets.View" },
         }),
+        new NavSection("Project Workspace", new()
+        {
+            new NavItem { Name = "Projects", Module = "projects", Icon = "lucide-folder-kanban", Permission = "Projects.View" },
+            new NavItem { Name = "Project Categories", Module = "project-categories", Icon = "lucide-tag", Permission = "ProjectCategories.View" },
+        }),
         new NavSection("Finance", new()
         {
             new NavItem { Name = "Finance", Module = "Finance", Icon = "lucide-credit-card", Permission = "Finance.View" },

@@ -13,6 +13,8 @@ using NexAsset.API.Endpoints.Organizations;
 using NexAsset.API.Endpoints.Permissions;
 using NexAsset.API.Endpoints.Roles;
 using NexAsset.API.Endpoints.Users;
+using NexAsset.API.Endpoints.ProjectCategories;
+using NexAsset.API.Endpoints.Projects;
 using NexAsset.Api.Middlewares;
 using NexAsset.Application;
 using NexAsset.Infrastructure;
@@ -31,7 +33,7 @@ const string WasmCorsPolicy = "WasmClient";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(WasmCorsPolicy, policy => policy
-        .WithOrigins("http://localhost:5174", "https://localhost:7225")
+        .WithOrigins("http://localhost:5174", "https://localhost:7225", "http://localhost:5080")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials());
@@ -98,6 +100,10 @@ app.MapAssetAssignmentEndpoints();
 app.MapAssetTransferEndpoints();
 app.MapAssetReturnEndpoints();
 app.MapEnterpriseOperationsEndpoints();
+app.MapProjectCategoryEndpoints();
+app.MapProjectEndpoints();
+app.MapProjectParameterEndpoints();
+app.MapProjectDocumentEndpoints();
 app.MapControllers();
 await DatabaseInitializer.InitializeAsync(app.Services);
 app.Run();

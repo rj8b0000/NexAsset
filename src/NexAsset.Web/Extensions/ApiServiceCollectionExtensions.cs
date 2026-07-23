@@ -85,6 +85,12 @@ namespace NexAsset.Web.Extensions
             services.AddNexAssetApiClient<IAuditTrailApiClient, AuditTrailApiClient>(settings);
             services.AddNexAssetApiClient<ISystemSettingApiClient, SystemSettingApiClient>(settings);
 
+            // Project Workspace module clients (real HTTP, /api/project-categories, /api/projects/*).
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Projects.IProjectCategoryApiClient, NexAsset.Web.Infrastructure.Projects.ProjectCategoryApiClient>(settings);
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Projects.IProjectApiClient, NexAsset.Web.Infrastructure.Projects.ProjectApiClient>(settings);
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Projects.IProjectParameterApiClient, NexAsset.Web.Infrastructure.Projects.ProjectParameterApiClient>(settings);
+            services.AddNexAssetApiClient<NexAsset.Web.Infrastructure.Projects.IProjectDocumentApiClient, NexAsset.Web.Infrastructure.Projects.ProjectDocumentApiClient>(settings);
+
             return services;
         }
 

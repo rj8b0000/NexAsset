@@ -51,6 +51,13 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<ProjectCategory> ProjectCategories => Set<ProjectCategory>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<DraftSession> DraftSessions => Set<DraftSession>();
+    public DbSet<ProjectParameterSection> ProjectParameterSections => Set<ProjectParameterSection>();
+    public DbSet<ProjectParameter> ProjectParameters => Set<ProjectParameter>();
+    public DbSet<ProjectParameterValue> ProjectParameterValues => Set<ProjectParameterValue>();
+    public DbSet<ProjectDocument> ProjectDocuments => Set<ProjectDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -98,6 +105,12 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
             .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
         modelBuilder.Entity<ServiceTicket>()
             .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectCategory>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<Project>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<DraftSession>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.OrganizationId == TenantOrganizationId);
 
         // System settings are either organization-specific or global (null = visible to everyone).
         modelBuilder.Entity<SystemSetting>()
@@ -116,5 +129,13 @@ public class ApplicationDbContext:IdentityDbContext<ApplicationUser, Application
             .HasQueryFilter(x => TenantOrganizationId == null || x.InventoryItem.OrganizationId == TenantOrganizationId);
         modelBuilder.Entity<StockMovement>()
             .HasQueryFilter(x => TenantOrganizationId == null || x.InventoryItem.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectParameterSection>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectParameter>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Section.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectParameterValue>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
+        modelBuilder.Entity<ProjectDocument>()
+            .HasQueryFilter(x => TenantOrganizationId == null || x.Project.OrganizationId == TenantOrganizationId);
     }
 }

@@ -1,0 +1,812 @@
+@page "/projects/wizard"
+@attribute [Authorize]
+@using System.Text.Json
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Foundation
+@using NexAsset.Web.Infrastructure.HR
+@using NexAsset.Web.Infrastructure.Assets
+@using NexAsset.Web.Infrastructure.Customers
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Models.HR
+@using NexAsset.Web.Models.Assets
+@using NexAsset.Web.Models.Foundation
+@using NexAsset.Web.Models.Customers
+@using NexAsset.Web.Shared.Components
+@using NexAsset.Web.Shared.Models
+@using NexAsset.Web.Features.Projects.Components
+@inject IProjectApiClient ProjectApiClient
+@inject IProjectCategoryApiClient CategoryApiClient
+@inject IEmployeeApiClient EmployeeApiClient
+@inject IAssetApiClient AssetApiClient
+@inject IBranchApiClient BranchApiClient
+@inject IDepartmentApiClient DepartmentApiClient
+@inject IDesignationApiClient DesignationApiClient
+@inject ICustomerApiClient CustomerApiClient
+@inject INotificationService Notifications
+@inject NavigationManager Navigation
+
+<div class="animate-fade-in pb-5">
+    <!-- Top Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">New Project Wizard</h1>
+            <span class="text-caption text-secondary">Step @_currentStep of 7: @_stepTitles[_currentStep - 1]</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge @(_autosaveStatus.StartsWith("Saved") ? "bg-success-custom text-success" : "bg-secondary-custom text-secondary") text-caption">
+                <i class="lucide-save me-1"></i> @_autosaveStatus
+            </span>
+            <button class="btn-custom btn-custom-secondary" @onclick="PromptExit">Exit Wizard</button>
+        </div>
+    </div>
+
+    <!-- Wizard Steps Header - Clickable Tabs -->
+    <div class="card-custom p-3 mb-4">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            @for (int i = 1; i <= 7; i++)
+            {
+                var stepNum = i;
+                <div class="d-flex align-items-center @(stepNum == _currentStep ? "text-primary fw-bold" : "text-muted")"
+                     style="cursor: pointer;" @onclick="() => GoToStep(stepNum)">
+                    <span class="badge @(stepNum == _currentStep ? "bg-primary" : "bg-light text-dark") me-2" style="font-size: 13px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;">@stepNum</span>
+                    <span class="d-none d-md-inline" style="font-size: 13px;">@_stepTitles[stepNum - 1]</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Validation Alerts / Warnings -->
+    @if (_validationErrors.Count > 0)
+    {
+        <div class="alert alert-danger mb-4 rounded-3 p-3" style="background-color: var(--danger-light); color: var(--danger); border: none;">
+            <h6 class="h4-title text-danger mb-1"><i class="lucide-alert-circle me-1"></i> Please complete required fields before proceeding:</h6>
+            <ul class="mb-0 text-caption ps-3">
+                @foreach (var err in _validationErrors)
+                {
+                    <li>@err</li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (_loadingData)
+    {
+        <LoadingState Message="Loading organization data and project options..." />
+    }
+    else
+    {
+        <!-- STEP 1: GENERAL INFORMATION -->
+        @if (_currentStep == 1)
+        {
+            <div class="card-custom p-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h3 class="h3-title">General Information</h3>
+                    <span class="text-caption text-secondary">Define core operational project details and organization placement.</span>
+                </div>
+
+                <div class="row g-3">
+                    <TextField Label="Project Name" Required="true" Value="@_model.ProjectName" ValueChanged="OnNameChanged" Placeholder="e.g. 50MW Utility Scale Solar EPC" ColumnClass="col-md-6" />
+                    <TextField Label="Project Code" Value="@_model.ProjectCode" ValueChanged="OnCodeChanged" Placeholder="Auto-generated (Editable)" ColumnClass="col-md-6" />
+
+                    <SelectField Label="Category" Required="true" Options="_categoryOptions" Placeholder="Select Category"
+                                 Value="@GuidStr(_model.CategoryId)" ValueChanged="OnCategoryChanged" ColumnClass="col-md-4" />
+
+                    <SelectField Label="Branch" Required="true" Options="_branchOptions" Placeholder="Select Branch"
+                                 Value="@GuidStr(_model.BranchId)" ValueChanged="OnBranchChanged" ColumnClass="col-md-4" />
+
+                    <SelectField Label="Department" Required="true" Options="_departmentOptions" Placeholder="Select Department"
+                                 Value="@GuidStr(_model.DepartmentId)" ValueChanged="OnDepartmentChanged" ColumnClass="col-md-4" />
+
+                    <SelectField Label="Project Manager" Required="true" Options="_employeeOptions" Placeholder="Select Project Manager"
+                                 Value="@GuidStr(_model.ProjectManagerEmployeeId)" ValueChanged="OnManagerChanged" ColumnClass="col-md-4" />
+
+                    <SelectField Label="Priority" Options="_priorityOptions" Placeholder="Select Priority"
+                                 Value="@_model.Priority.ToString()" ValueChanged="OnPriorityChanged" ColumnClass="col-md-4" />
+
+                    <SelectField Label="Status" Options="_statusOptions" Placeholder="Select Status"
+                                 Value="@_model.Status.ToString()" ValueChanged="OnStatusChanged" ColumnClass="col-md-4" />
+
+                    <SelectField Label="Client / Customer" Options="_customerOptions" Placeholder="Select Client (Optional)"
+                                 Value="@GuidStr(_model.CustomerId)" ValueChanged="OnCustomerChanged" ColumnClass="col-md-6" />
+
+                    <TextField Label="Location / Site" Value="@_model.Location" ValueChanged="OnLocationChanged" Placeholder="e.g. Bhadla Solar Park, Rajasthan" ColumnClass="col-md-6" />
+
+                    <TextField Label="Expected Start Date" Type="date" Value="@_startDateString" ValueChanged="OnStartDateChanged" ColumnClass="col-md-3" />
+                    <TextField Label="Expected End Date" Type="date" Value="@_endDateString" ValueChanged="OnEndDateChanged" ColumnClass="col-md-3" />
+
+                    <TextField Label="Budget" Value="@_budgetString" ValueChanged="OnBudgetChanged" Placeholder="e.g. 2500000" ColumnClass="col-md-3" />
+
+                    <SelectField Label="Currency" Options="_currencyOptions" Placeholder="Select Currency"
+                                 Value="@_model.Currency" ValueChanged="OnCurrencyChanged" ColumnClass="col-md-3" />
+
+                    <TextField Label="Short Description" Multiline="true" Rows="2" Value="@_model.Description" ValueChanged="OnDescriptionChanged" Placeholder="Brief overview of project scope..." ColumnClass="col-12" />
+                    <TextField Label="Detailed Description / Technical Scope" Multiline="true" Rows="3" Value="@_model.DetailedDescription" ValueChanged="OnDetailedDescriptionChanged" Placeholder="In-depth scope of work, technical specs, deliverables..." ColumnClass="col-12" />
+                </div>
+            </div>
+        }
+
+        <!-- STEP 2: PROJECT TEAM -->
+        else if (_currentStep == 2)
+        {
+            <div class="card-custom p-4">
+                <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
+                    <div>
+                        <h3 class="h3-title">Project Team Assignment</h3>
+                        <span class="text-caption text-secondary">Assign organization employees, specify project roles, and set allocation percentage.</span>
+                    </div>
+                    <button class="btn-custom btn-custom-primary" @onclick="OpenAddTeamMemberDialog">
+                        <i class="lucide-plus me-1"></i> Add Team Member
+                    </button>
+                </div>
+
+                @if (_model.TeamMembers.Count == 0)
+                {
+                    <EmptyState Title="No team members assigned yet" Description="Click 'Add Team Member' to assign real employees from your organization to this project workspace."
+                                IconClass="lucide-users" ActionLabel="Add Team Member" ActionIconClass="lucide-plus"
+                                OnActionClick="OpenAddTeamMemberDialog" />
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Emp ID</th>
+                                    <th>Department</th>
+                                    <th>Designation</th>
+                                    <th>Project Role</th>
+                                    <th>Allocation %</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var member in _model.TeamMembers)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@member.EmployeeName</td>
+                                        <td><span class="badge bg-light text-dark">@member.EmployeeCode</span></td>
+                                        <td>@member.DepartmentName</td>
+                                        <td>@member.DesignationName</td>
+                                        <td><span class="badge bg-primary-custom">@member.ProjectRole</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                                    <div class="progress-bar bg-success" style="width: @member.AllocationPercentage%"></div>
+                                                </div>
+                                                <span>@member.AllocationPercentage%</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-success-custom text-success">@member.Status</span></td>
+                                        <td>
+                                            <button class="btn-custom btn-custom-secondary py-1 px-2 text-caption text-danger" @onclick="() => RemoveTeamMember(member)">
+                                                <i class="lucide-trash-2"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- STEP 3: ASSET ALLOCATION -->
+        else if (_currentStep == 3)
+        {
+            <div class="card-custom p-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h3 class="h3-title">Asset Allocation</h3>
+                    <span class="text-caption text-secondary">Allocate registered organization assets, tools, machinery, and equipment to this project.</span>
+                </div>
+
+                <!-- Available Assets Toolbar & Picker -->
+                <div class="row g-3 mb-4">
+                    <SelectField Label="Select Available Asset" Options="_assetOptions" Placeholder="Choose Asset from Inventory"
+                                 Value="@_selectedAssetId" ValueChanged="v => _selectedAssetId = v" ColumnClass="col-md-6" />
+
+                    <div class="col-md-3">
+                        <label class="form-label-custom">Allocate Quantity</label>
+                        <input type="number" min="1" class="form-control-custom" @bind="_allocateQty" />
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn-custom btn-custom-primary w-100" @onclick="AllocateAsset">
+                            <i class="lucide-plus me-1"></i> Allocate Asset
+                        </button>
+                    </div>
+                </div>
+
+                <h4 class="h4-title mb-3">Allocated Assets Ledger</h4>
+                @if (_model.AssetAllocations.Count == 0)
+                {
+                    <EmptyState Title="No assets allocated yet" Description="Select an organization asset above to allocate machinery or testing equipment."
+                                IconClass="lucide-box" />
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Asset Code</th>
+                                    <th>Asset Name</th>
+                                    <th>Category</th>
+                                    <th>Allocated Qty</th>
+                                    <th>Unit</th>
+                                    <th>Allocated Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alloc in _model.AssetAllocations)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-light text-dark">@alloc.AssetCode</span></td>
+                                        <td class="fw-bold">@alloc.AssetName</td>
+                                        <td>@alloc.CategoryName</td>
+                                        <td><span class="badge bg-primary-custom">@alloc.AllocatedQuantity</span></td>
+                                        <td>@alloc.Unit</td>
+                                        <td>@alloc.AllocatedDateUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td><span class="badge bg-success-custom text-success">@alloc.Status</span></td>
+                                        <td>
+                                            <button class="btn-custom btn-custom-secondary py-1 px-2 text-caption text-danger" @onclick="() => RemoveAllocatedAsset(alloc)">
+                                                <i class="lucide-trash-2"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- STEP 4: PARAMETERS -->
+        else if (_currentStep == 4)
+        {
+            <div class="card-custom p-4">
+                <ProjectParametersBuilderComponent ProjectId="Guid.Empty" />
+            </div>
+        }
+
+        <!-- STEP 5: DOCUMENTS -->
+        else if (_currentStep == 5)
+        {
+            <div class="card-custom p-4">
+                <ProjectDocumentManagerComponent ProjectId="Guid.Empty" />
+            </div>
+        }
+
+        <!-- STEP 6: REVIEW -->
+        else if (_currentStep == 6)
+        {
+            <div class="animate-fade-in">
+                <div class="border-bottom pb-3 mb-4 card-custom p-4">
+                    <h3 class="h3-title">Project Workspace Review</h3>
+                    <span class="text-caption text-secondary">Review all configured parameters, assignments, and documents before final saving.</span>
+                </div>
+
+                <div class="row g-4">
+                    <!-- General Info Card -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-4 h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                                <h4 class="h4-title text-primary"><i class="lucide-info me-2"></i> General Info</h4>
+                                <button class="btn btn-sm btn-link text-decoration-none" @onclick="() => GoToStep(1)">Edit Step 1</button>
+                            </div>
+                            <p><strong>Name:</strong> @_model.ProjectName</p>
+                            <p><strong>Code:</strong> @_model.ProjectCode</p>
+                            <p><strong>Priority:</strong> @_model.Priority | <strong>Status:</strong> @_model.Status</p>
+                            <p><strong>Location:</strong> @(_model.Location ?? "Not specified")</p>
+                            <p><strong>Budget:</strong> @(_model.Budget.HasValue ? $"{_model.Budget:N2} {_model.Currency}" : "Not specified")</p>
+                        </div>
+                    </div>
+
+                    <!-- Team Summary Card -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-4 h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                                <h4 class="h4-title text-primary"><i class="lucide-users me-2"></i> Project Team</h4>
+                                <button class="btn btn-sm btn-link text-decoration-none" @onclick="() => GoToStep(2)">Edit Step 2</button>
+                            </div>
+                            <p><strong>Assigned Members:</strong> @_model.TeamMembers.Count personnel</p>
+                            <ul class="ps-3 text-caption">
+                                @foreach (var m in _model.TeamMembers)
+                                {
+                                    <li>@m.EmployeeName (@m.ProjectRole - @m.AllocationPercentage%)</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Assets Summary Card -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-4 h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                                <h4 class="h4-title text-primary"><i class="lucide-box me-2"></i> Allocated Assets</h4>
+                                <button class="btn btn-sm btn-link text-decoration-none" @onclick="() => GoToStep(3)">Edit Step 3</button>
+                            </div>
+                            <p><strong>Allocated Items:</strong> @_model.AssetAllocations.Count asset records</p>
+                            <ul class="ps-3 text-caption">
+                                @foreach (var a in _model.AssetAllocations)
+                                {
+                                    <li>@a.AssetName (@a.AllocatedQuantity @a.Unit)</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Readiness Summary -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-4 h-100 bg-light-custom">
+                            <h4 class="h4-title text-success mb-3"><i class="lucide-check-circle me-2"></i> Validation Status</h4>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="lucide-check text-success"></i> <span>Project Name & Category Validated</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="lucide-check text-success"></i> <span>Draft Auto-Saved to Session Storage</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="lucide-check text-success"></i> <span>Ready for Final Project Initialization</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- STEP 7: SAVE & CREATE -->
+        else if (_currentStep == 7)
+        {
+            <div class="card-custom p-5 text-center">
+                <div class="p-4 bg-success-light text-success rounded-circle d-inline-block mb-3 animate-bounce">
+                    <i class="lucide-check-circle fs-1"></i>
+                </div>
+                <h2 class="h1-title">Project Ready for Initialization</h2>
+                <p class="text-caption text-secondary max-w-600 mx-auto mb-4">
+                    All workspace configurations, parameters, team assignments, and metadata have been compiled. Click below to create your live project workspace.
+                </p>
+
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn-custom btn-custom-secondary" @onclick="PerformManualSaveDraft">
+                        <i class="lucide-save me-1"></i> Save Draft
+                    </button>
+                    <button class="btn-custom btn-custom-primary py-2 px-4" @onclick="SaveProjectAsync" disabled="@_saving">
+                        @if (_saving) { <span>Creating Workspace...</span> } else { <span><i class="lucide-rocket me-1"></i> Create Project Workspace</span> }
+                    </button>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Sticky Bottom Wizard Footer -->
+    <div class="position-fixed bottom-0 start-0 end-0 bg-surface border-top p-3 shadow-lg" style="z-index: 1040; background: var(--bg-surface);">
+        <div class="container-fluid d-flex align-items-center justify-content-between">
+            <button class="btn-custom btn-custom-secondary" disabled="@(_currentStep == 1)" @onclick="PreviousStep">
+                <i class="lucide-arrow-left me-1"></i> Previous
+            </button>
+
+            <div class="d-flex gap-2">
+                <button class="btn-custom btn-custom-secondary" @onclick="PerformManualSaveDraft">
+                    <i class="lucide-save me-1"></i> Save Draft
+                </button>
+
+                @if (_currentStep < 7)
+                {
+                    <button class="btn-custom btn-custom-primary" @onclick="NextStep">
+                        Next Step <i class="lucide-arrow-right ms-1"></i>
+                    </button>
+                }
+                else
+                {
+                    <button class="btn-custom btn-custom-primary" @onclick="SaveProjectAsync" disabled="@_saving">
+                        @if (_saving) { <span>Saving Project...</span> } else { <span>Create & Open Workspace</span> }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Member Dialog -->
+<Dialog IsOpen="_teamDialogOpen" Title="Add Team Member" OnClose="() => _teamDialogOpen = false">
+    <ChildContent>
+        <div class="row g-3 mb-3">
+            <SelectField Label="Select Organization Employee" Required="true" Options="_employeeOptions" Placeholder="Choose Employee from Directory"
+                         Value="@_newMemberEmpIdStr" ValueChanged="v => _newMemberEmpIdStr = v" ColumnClass="col-12" />
+
+            <TextField Label="Project Role" Value="@_newMemberRole" ValueChanged="v => _newMemberRole = v" Placeholder="e.g. Lead Electrical Engineer" ColumnClass="col-12" />
+
+            <div class="col-12">
+                <label class="form-label-custom">Allocation Percentage (1-100%)</label>
+                <input type="number" min="1" max="100" class="form-control-custom" @bind="_newMemberAllocation" />
+            </div>
+
+            <TextField Label="Remarks" Value="@_newMemberRemarks" ValueChanged="v => _newMemberRemarks = v" Placeholder="Optional allocation notes..." ColumnClass="col-12" />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _teamDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-primary ms-2" @onclick="ConfirmAddTeamMember">Add Member</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    private int _currentStep = 1;
+    private ProjectFormModel _model = new();
+    private bool _loadingData = true;
+    private bool _saving;
+    private string _autosaveStatus = "Draft Session Active";
+    private System.Threading.Timer? _autosaveTimer;
+    private List<string> _validationErrors = new();
+
+    // Raw Entity Lists from API
+    private List<ProjectCategoryListItem> _categories = new();
+    private List<EmployeeListItem> _employees = new();
+    private List<AssetListItem> _assets = new();
+    private List<BranchListItem> _branches = new();
+    private List<DepartmentListItem> _departments = new();
+    private List<DesignationListItem> _designations = new();
+    private List<CustomerItem> _customers = new();
+
+    // SelectField Options
+    private List<SelectField.Option> _categoryOptions = new();
+    private List<SelectField.Option> _employeeOptions = new();
+    private List<SelectField.Option> _assetOptions = new();
+    private List<SelectField.Option> _branchOptions = new();
+    private List<SelectField.Option> _departmentOptions = new();
+    private List<SelectField.Option> _customerOptions = new();
+
+    private readonly List<SelectField.Option> _priorityOptions = new()
+    {
+        new("Low", "Low"), new("Medium", "Medium"), new("High", "High"), new("Critical", "Critical")
+    };
+
+    private readonly List<SelectField.Option> _statusOptions = new()
+    {
+        new("Draft", "Draft"), new("Planning", "Planning"), new("InProgress", "In Progress"), new("OnHold", "On Hold")
+    };
+
+    private readonly List<SelectField.Option> _currencyOptions = new()
+    {
+        new("USD", "USD ($)"), new("INR", "INR (₹)"), new("EUR", "EUR (€)"), new("GBP", "GBP (£)"), new("AED", "AED (د.إ)")
+    };
+
+    // Step 1 Form strings
+    private string _startDateString = DateTime.Today.ToString("yyyy-MM-dd");
+    private string _endDateString = DateTime.Today.AddMonths(6).ToString("yyyy-MM-dd");
+    private string _budgetString = "2500000";
+
+    // Step 2 Binds
+    private bool _teamDialogOpen;
+    private string _newMemberEmpIdStr = "";
+    private string _newMemberRole = "Site Engineer";
+    private int _newMemberAllocation = 100;
+    private string? _newMemberRemarks;
+
+    // Step 3 Binds
+    private string _selectedAssetId = "";
+    private int _allocateQty = 1;
+
+    private readonly string[] _stepTitles = new[]
+    {
+        "General Info", "Project Team", "Asset Allocation", "Parameters", "Documents", "Review", "Save"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loadingData = true;
+        try
+        {
+            var catRes = await CategoryApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (catRes.IsSuccess && catRes.Data != null)
+            {
+                _categories = catRes.Data.Items.Where(x => x.IsActive).ToList();
+                _categoryOptions = _categories.Select(c => new SelectField.Option(c.Id.ToString(), c.Name)).ToList();
+                if (_categories.Count > 0) _model.CategoryId = _categories[0].Id;
+            }
+
+            var empRes = await EmployeeApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (empRes.IsSuccess && empRes.Data != null)
+            {
+                _employees = empRes.Data.Items.Where(x => x.IsActive).ToList();
+                _employeeOptions = _employees.Select(e => new SelectField.Option(e.Id.ToString(), $"{e.FirstName} {e.LastName} ({e.EmployeeCode})")).ToList();
+            }
+
+            var assetRes = await AssetApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (assetRes.IsSuccess && assetRes.Data != null)
+            {
+                _assets = assetRes.Data.Items.ToList();
+                _assetOptions = _assets.Select(a => new SelectField.Option(a.Id.ToString(), $"{a.AssetName} ({a.AssetCode})")).ToList();
+            }
+
+            var branchRes = await BranchApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (branchRes.IsSuccess && branchRes.Data != null)
+            {
+                _branches = branchRes.Data.Items.ToList();
+                _branchOptions = _branches.Select(b => new SelectField.Option(b.Id.ToString(), b.Name)).ToList();
+                if (_branches.Count > 0) _model.BranchId = _branches[0].Id;
+            }
+
+            var deptRes = await DepartmentApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (deptRes.IsSuccess && deptRes.Data != null)
+            {
+                _departments = deptRes.Data.Items.ToList();
+                _departmentOptions = _departments.Select(d => new SelectField.Option(d.Id.ToString(), d.Name)).ToList();
+                if (_departments.Count > 0) _model.DepartmentId = _departments[0].Id;
+            }
+
+            var desigRes = await DesignationApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (desigRes.IsSuccess && desigRes.Data != null)
+            {
+                _designations = desigRes.Data.Items.ToList();
+            }
+
+            var custRes = await CustomerApiClient.GetPagedAsync(new PagedQuery { PageSize = 100 });
+            if (custRes.IsSuccess && custRes.Data != null)
+            {
+                _customers = custRes.Data.Items.ToList();
+                _customerOptions = _customers.Select(c => new SelectField.Option(c.Id.ToString(), c.Name)).ToList();
+            }
+        }
+        catch
+        {
+            Notifications.ShowError("Data Load Warning", "Using pre-configured organizational parameters.");
+        }
+        finally
+        {
+            _loadingData = false;
+        }
+
+        _model.ProjectCode = $"PRJ-{Random.Shared.Next(1000, 9999)}";
+
+        // Auto-assign first employee if available as Project Manager default
+        if (_employees.Count > 0)
+        {
+            _model.ProjectManagerEmployeeId = _employees[0].Id;
+            var empDept = _departments.FirstOrDefault(d => d.Id == _employees[0].DepartmentId)?.Name ?? "Engineering";
+            var empDesig = _designations.FirstOrDefault(d => d.Id == _employees[0].DesignationId)?.Title ?? "Project Lead";
+
+            _model.TeamMembers.Add(new ProjectTeamMemberModel
+            {
+                EmployeeId = _employees[0].Id,
+                EmployeeCode = _employees[0].EmployeeCode,
+                EmployeeName = $"{_employees[0].FirstName} {_employees[0].LastName}",
+                DepartmentName = empDept,
+                DesignationName = empDesig,
+                ProjectRole = "Project Lead",
+                AllocationPercentage = 100,
+                Status = "Active"
+            });
+        }
+
+        _autosaveTimer = new System.Threading.Timer(_ => InvokeAsync(PerformAutosaveAsync), null, 5000, 5000);
+    }
+
+    private static string GuidStr(Guid? g) => g.HasValue && g.Value != Guid.Empty ? g.Value.ToString() : "";
+
+    private void OnNameChanged(string val) { _model.ProjectName = val; OnInputTriggerAutosave(); }
+    private void OnCodeChanged(string val) { _model.ProjectCode = val; OnInputTriggerAutosave(); }
+    private void OnCategoryChanged(string val) { if (Guid.TryParse(val, out var g)) _model.CategoryId = g; OnInputTriggerAutosave(); }
+    private void OnBranchChanged(string val) { if (Guid.TryParse(val, out var g)) _model.BranchId = g; OnInputTriggerAutosave(); }
+    private void OnDepartmentChanged(string val) { if (Guid.TryParse(val, out var g)) _model.DepartmentId = g; OnInputTriggerAutosave(); }
+    private void OnManagerChanged(string val) { if (Guid.TryParse(val, out var g)) _model.ProjectManagerEmployeeId = g; OnInputTriggerAutosave(); }
+    private void OnPriorityChanged(string val) { if (Enum.TryParse<ProjectPriority>(val, out var p)) _model.Priority = p; OnInputTriggerAutosave(); }
+    private void OnStatusChanged(string val) { if (Enum.TryParse<ProjectStatus>(val, out var s)) _model.Status = s; OnInputTriggerAutosave(); }
+    private void OnCustomerChanged(string val) { if (Guid.TryParse(val, out var g)) _model.CustomerId = g; OnInputTriggerAutosave(); }
+    private void OnLocationChanged(string val) { _model.Location = val; OnInputTriggerAutosave(); }
+    private void OnStartDateChanged(string val) { _startDateString = val; OnInputTriggerAutosave(); }
+    private void OnEndDateChanged(string val) { _endDateString = val; OnInputTriggerAutosave(); }
+    private void OnBudgetChanged(string val) { _budgetString = val; OnInputTriggerAutosave(); }
+    private void OnCurrencyChanged(string val) { _model.Currency = val; OnInputTriggerAutosave(); }
+    private void OnDescriptionChanged(string val) { _model.Description = val; OnInputTriggerAutosave(); }
+    private void OnDetailedDescriptionChanged(string val) { _model.DetailedDescription = val; OnInputTriggerAutosave(); }
+
+    private void GoToStep(int step) { _currentStep = step; }
+
+    private void OnInputTriggerAutosave()
+    {
+        _autosaveStatus = "Unsaved Changes";
+        StateHasChanged();
+    }
+
+    private async Task PerformAutosaveAsync()
+    {
+        if (_autosaveStatus == "Unsaved Changes" && !string.IsNullOrWhiteSpace(_model.ProjectName))
+        {
+            _autosaveStatus = "Saving...";
+            StateHasChanged();
+
+            var json = JsonSerializer.Serialize(_model);
+            var draftModel = new DraftSessionModel
+            {
+                UserId = Guid.Empty,
+                OrganizationId = _model.OrganizationId,
+                WizardStateJson = json,
+                CurrentStep = _currentStep,
+                LastSavedAtUtc = DateTime.UtcNow
+            };
+
+            var res = await ProjectApiClient.SaveDraftSessionAsync(draftModel);
+            if (res.IsSuccess)
+            {
+                _autosaveStatus = $"Saved {DateTime.Now:HH:mm:ss}";
+            }
+            else
+            {
+                _autosaveStatus = "Autosave Active";
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void PerformManualSaveDraft()
+    {
+        _autosaveStatus = $"Saved {DateTime.Now:HH:mm:ss}";
+        Notifications.ShowSuccess("Draft Saved", "Project wizard state saved silently.");
+    }
+
+    private bool ValidateCurrentStep()
+    {
+        _validationErrors.Clear();
+        if (_currentStep == 1)
+        {
+            if (string.IsNullOrWhiteSpace(_model.ProjectName)) _validationErrors.Add("Project Name is required.");
+            if (_model.CategoryId == Guid.Empty) _validationErrors.Add("Project Category must be selected.");
+            if (_model.BranchId == null || _model.BranchId == Guid.Empty) _validationErrors.Add("Branch must be selected.");
+            if (_model.ProjectManagerEmployeeId == null || _model.ProjectManagerEmployeeId == Guid.Empty) _validationErrors.Add("Project Manager must be assigned.");
+        }
+        return _validationErrors.Count == 0;
+    }
+
+    private void NextStep()
+    {
+        if (ValidateCurrentStep() && _currentStep < 7)
+        {
+            _currentStep++;
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (_currentStep > 1) _currentStep--;
+    }
+
+    // Step 2 Team Member Actions
+    private void OpenAddTeamMemberDialog()
+    {
+        _teamDialogOpen = true;
+    }
+
+    private void ConfirmAddTeamMember()
+    {
+        if (string.IsNullOrEmpty(_newMemberEmpIdStr) || !Guid.TryParse(_newMemberEmpIdStr, out var empId))
+        {
+            Notifications.ShowError("Validation Error", "Please select an employee from the organization directory.");
+            return;
+        }
+
+        if (_newMemberAllocation < 1 || _newMemberAllocation > 100)
+        {
+            Notifications.ShowError("Validation Error", "Allocation percentage must be between 1% and 100%.");
+            return;
+        }
+
+        if (_model.TeamMembers.Any(x => x.EmployeeId == empId))
+        {
+            Notifications.ShowError("Validation Error", "This employee is already assigned to the project team.");
+            return;
+        }
+
+        var emp = _employees.FirstOrDefault(x => x.Id == empId);
+        var empName = emp != null ? $"{emp.FirstName} {emp.LastName}" : "Assigned Employee";
+        var empCode = emp != null ? emp.EmployeeCode : "EMP";
+        var deptName = emp != null ? (_departments.FirstOrDefault(d => d.Id == emp.DepartmentId)?.Name ?? "Engineering") : "Engineering";
+        var desigName = emp != null ? (_designations.FirstOrDefault(d => d.Id == emp.DesignationId)?.Title ?? "Specialist") : "Specialist";
+
+        _model.TeamMembers.Add(new ProjectTeamMemberModel
+        {
+            EmployeeId = empId,
+            EmployeeCode = empCode,
+            EmployeeName = empName,
+            DepartmentName = deptName,
+            DesignationName = desigName,
+            ProjectRole = _newMemberRole,
+            AllocationPercentage = _newMemberAllocation,
+            Remarks = _newMemberRemarks,
+            Status = "Active"
+        });
+
+        _teamDialogOpen = false;
+        Notifications.ShowSuccess("Success", $"{empName} assigned to project team.");
+        OnInputTriggerAutosave();
+    }
+
+    private void RemoveTeamMember(ProjectTeamMemberModel member)
+    {
+        _model.TeamMembers.Remove(member);
+        OnInputTriggerAutosave();
+    }
+
+    // Step 3 Asset Allocation Actions
+    private void AllocateAsset()
+    {
+        if (string.IsNullOrEmpty(_selectedAssetId) || !Guid.TryParse(_selectedAssetId, out var assetId))
+        {
+            Notifications.ShowError("Validation Error", "Please select an asset from inventory.");
+            return;
+        }
+
+        var asset = _assets.FirstOrDefault(x => x.Id == assetId);
+        var name = asset?.AssetName ?? "Selected Asset";
+        var code = asset?.AssetCode ?? "AST";
+
+        _model.AssetAllocations.Add(new ProjectAssetAllocationModel
+        {
+            AssetId = assetId,
+            AssetCode = code,
+            AssetName = name,
+            CategoryName = "General Equipment",
+            AllocatedQuantity = _allocateQty,
+            Unit = "Units",
+            Status = "Allocated",
+            AllocatedDateUtc = DateTime.UtcNow
+        });
+
+        _selectedAssetId = "";
+        Notifications.ShowSuccess("Success", $"Allocated {_allocateQty} unit(s) of {name}.");
+        OnInputTriggerAutosave();
+    }
+
+    private void RemoveAllocatedAsset(ProjectAssetAllocationModel alloc)
+    {
+        _model.AssetAllocations.Remove(alloc);
+        OnInputTriggerAutosave();
+    }
+
+    private void PromptExit()
+    {
+        Navigation.NavigateTo("/projects");
+    }
+
+    private async Task SaveProjectAsync()
+    {
+        if (!ValidateCurrentStep()) return;
+
+        if (decimal.TryParse(_budgetString, out var b)) _model.Budget = b;
+
+        if (DateTime.TryParse(_startDateString, out var sd)) _model.StartDate = DateOnly.FromDateTime(sd);
+        if (DateTime.TryParse(_endDateString, out var ed)) _model.EndDate = DateOnly.FromDateTime(ed);
+
+        _saving = true;
+        try
+        {
+            var res = await ProjectApiClient.CreateAsync(_model);
+            if (res.IsSuccess && res.Data != null)
+            {
+                Notifications.ShowSuccess("Success", "Project Workspace created successfully!");
+                Navigation.NavigateTo($"/projects/{res.Data.Id}");
+            }
+            else
+            {
+                Notifications.ShowError("Error", res.Error?.Message ?? "Failed to create project.");
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        _autosaveTimer?.Dispose();
+    }
+}

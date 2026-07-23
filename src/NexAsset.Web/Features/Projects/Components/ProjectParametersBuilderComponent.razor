@@ -1,0 +1,360 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Components
+@inject IProjectParameterApiClient ParameterApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h3 class="h3-title">Dynamic Project Parameters</h3>
+            <span class="text-caption text-secondary">Configure section accordions and parameters for engineering, paperwork, and technical specs.</span>
+        </div>
+        <button class="btn-custom btn-custom-secondary" @onclick="OpenAddSection">
+            <i class="lucide-plus me-1"></i> Add Section
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingState Message="Loading project parameters..." />
+    }
+    else if (_sections.Count == 0)
+    {
+        <EmptyState Title="No parameter sections defined" Description="Add a section to begin defining dynamic technical parameters for this project."
+                    IconClass="lucide-layers" ActionLabel="Add First Section" ActionIconClass="lucide-plus"
+                    OnActionClick="OpenAddSection" />
+    }
+    else
+    {
+        @foreach (var sec in _sections)
+        {
+            <div class="card-custom p-4 mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <h4 class="h4-title text-primary"><i class="lucide-folder me-2"></i>@sec.Name</h4>
+                    <div class="d-flex gap-2">
+                        <button class="btn-custom btn-custom-secondary py-1 px-2 text-caption" @onclick="() => OpenAddField(sec.Id)">
+                            <i class="lucide-plus me-1"></i> Add Field
+                        </button>
+                        <button class="btn-custom btn-custom-secondary py-1 px-2 text-caption text-danger" @onclick="() => DeleteSectionAsync(sec.Id)">
+                            <i class="lucide-trash-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                @if (sec.Parameters.Count == 0)
+                {
+                    <p class="text-caption text-muted">No fields added to this section yet. Click 'Add Field' above to define dynamic fields.</p>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var param in sec.Parameters)
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label text-body-custom">
+                                    @param.ParameterName
+                                    @if (!string.IsNullOrWhiteSpace(param.Unit)) { <span class="text-muted">(@param.Unit)</span> }
+                                    @if (param.IsRequired) { <span class="text-danger">*</span> }
+                                </label>
+
+                                @if (param.InputType == ParameterInputType.Textarea)
+                                {
+                                    <textarea class="form-control-custom" rows="2" @bind="param.CurrentValue"></textarea>
+                                }
+                                else if (param.InputType == ParameterInputType.Checkbox)
+                                {
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" checked="@(param.CurrentValue == "true")" @onchange="@(e => param.CurrentValue = ((bool)e.Value!).ToString().ToLower())" />
+                                        <label class="form-check-label text-caption">Enabled / Yes</label>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <input type="@GetHtmlInputType(param.InputType)" class="form-control-custom" @bind="param.CurrentValue" placeholder="Enter @param.ParameterName..." />
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn-custom btn-custom-primary" @onclick="SaveValuesAsync" disabled="@_saving">
+                @if (_saving) { <span>Saving Values...</span> } else { <span><i class="lucide-save me-1"></i> Save Parameter Values</span> }
+            </button>
+        </div>
+    }
+</div>
+
+<!-- Section Dialog -->
+<Dialog IsOpen="_sectionDialogOpen" Title="Add Parameter Section" OnClose="() => _sectionDialogOpen = false">
+    <ChildContent>
+        <div class="mb-3">
+            <TextField Label="Section Name" @bind-Value="_newSectionName" Required="true" Placeholder="e.g. Electrical Parameters, Warranty Details" />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _sectionDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-primary ms-2" @onclick="CreateSectionAsync">Add Section</button>
+    </FooterContent>
+</Dialog>
+
+<!-- Field Dialog -->
+<Dialog IsOpen="_fieldDialogOpen" Title="Add Parameter Field" OnClose="() => _fieldDialogOpen = false">
+    <ChildContent>
+        <div class="mb-3">
+            <TextField Label="Parameter Name" @bind-Value="_newField.ParameterName" Required="true" Placeholder="e.g. Operating Voltage" />
+            <div class="mb-3">
+                <label class="form-label text-body-custom">Input Type</label>
+                <select class="form-select-custom" @bind="_newField.InputType">
+                    <option value="@ParameterInputType.Text">Text</option>
+                    <option value="@ParameterInputType.Textarea">Textarea</option>
+                    <option value="@ParameterInputType.Number">Number</option>
+                    <option value="@ParameterInputType.Decimal">Decimal</option>
+                    <option value="@ParameterInputType.Date">Date</option>
+                    <option value="@ParameterInputType.Checkbox">Checkbox</option>
+                    <option value="@ParameterInputType.Email">Email</option>
+                    <option value="@ParameterInputType.Phone">Phone</option>
+                    <option value="@ParameterInputType.URL">URL</option>
+                </select>
+            </div>
+            <TextField Label="Unit (Optional)" @bind-Value="_newField.Unit" Placeholder="e.g. kV, MW, Acres, kg" />
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="reqCheck" @bind="_newField.IsRequired" />
+                <label class="form-check-label text-caption" for="reqCheck">Is Required</label>
+            </div>
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _fieldDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-primary ms-2" @onclick="AddFieldAsync">Add Field</button>
+    </FooterContent>
+</Dialog>
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    private List<ParameterSectionModel> _sections = new();
+    private bool _loading = true;
+    private bool _saving;
+
+    private bool _sectionDialogOpen;
+    private string _newSectionName = string.Empty;
+
+    private bool _fieldDialogOpen;
+    private Guid _activeSectionId;
+    private ParameterFieldModel _newField = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ProjectId != Guid.Empty)
+        {
+            await LoadAsync();
+        }
+        else
+        {
+            if (_sections.Count == 0)
+            {
+                InitializeDefaultSectionsInMemory();
+            }
+            _loading = false;
+        }
+    }
+
+    private void InitializeDefaultSectionsInMemory()
+    {
+        var sec1Id = Guid.NewGuid();
+        var sec2Id = Guid.NewGuid();
+        var sec3Id = Guid.NewGuid();
+
+        _sections = new List<ParameterSectionModel>
+        {
+            new ParameterSectionModel
+            {
+                Id = sec1Id,
+                Name = "Technical Details",
+                DisplayOrder = 1,
+                Parameters = new List<ParameterFieldModel>
+                {
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec1Id, ParameterName = "Power Capacity", Unit = "MW", CurrentValue = "25", InputType = ParameterInputType.Number },
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec1Id, ParameterName = "Grid Operating Voltage", Unit = "kV", CurrentValue = "33", InputType = ParameterInputType.Decimal },
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec1Id, ParameterName = "Inverter Manufacturer", CurrentValue = "ABB / Schneider", InputType = ParameterInputType.Text }
+                }
+            },
+            new ParameterSectionModel
+            {
+                Id = sec2Id,
+                Name = "Civil Details",
+                DisplayOrder = 2,
+                Parameters = new List<ParameterFieldModel>
+                {
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec2Id, ParameterName = "Land Plot Area", Unit = "Acres", CurrentValue = "120", InputType = ParameterInputType.Decimal },
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec2Id, ParameterName = "Site Access Road Length", Unit = "KM", CurrentValue = "4.5", InputType = ParameterInputType.Decimal }
+                }
+            },
+            new ParameterSectionModel
+            {
+                Id = sec3Id,
+                Name = "Paperwork & Government Approvals",
+                DisplayOrder = 3,
+                Parameters = new List<ParameterFieldModel>
+                {
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec3Id, ParameterName = "GST Registration Number", CurrentValue = "08AABCN1234D1Z5", InputType = ParameterInputType.Text },
+                    new ParameterFieldModel { Id = Guid.NewGuid(), SectionId = sec3Id, ParameterName = "State Nodal Agency Approval Ref", CurrentValue = "SNA/2026/SOL-882", InputType = ParameterInputType.Text }
+                }
+            }
+        };
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var res = await ParameterApiClient.GetSectionsAsync(ProjectId);
+        _loading = false;
+
+        if (res.IsSuccess && res.Data != null)
+        {
+            _sections = res.Data;
+        }
+    }
+
+    private void OpenAddSection()
+    {
+        _newSectionName = string.Empty;
+        _sectionDialogOpen = true;
+    }
+
+    private async Task CreateSectionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newSectionName)) return;
+
+        if (ProjectId == Guid.Empty)
+        {
+            var secId = Guid.NewGuid();
+            _sections.Add(new ParameterSectionModel
+            {
+                Id = secId,
+                Name = _newSectionName,
+                DisplayOrder = _sections.Count + 1,
+                Parameters = new List<ParameterFieldModel>()
+            });
+            _sectionDialogOpen = false;
+            Notifications.ShowSuccess("Success", "Section created in draft.");
+            return;
+        }
+
+        var sec = new ParameterSectionModel { ProjectId = ProjectId, Name = _newSectionName, DisplayOrder = _sections.Count + 1 };
+        var res = await ParameterApiClient.CreateSectionAsync(ProjectId, sec);
+        if (res.IsSuccess)
+        {
+            Notifications.ShowSuccess("Success", "Section created.");
+            _sectionDialogOpen = false;
+            await LoadAsync();
+        }
+        else
+        {
+            Notifications.ShowError("Error", res.Error?.Message ?? "Failed to create section.");
+        }
+    }
+
+    private async Task DeleteSectionAsync(Guid sectionId)
+    {
+        if (ProjectId == Guid.Empty)
+        {
+            _sections.RemoveAll(x => x.Id == sectionId);
+            Notifications.ShowSuccess("Success", "Section removed.");
+            return;
+        }
+
+        var res = await ParameterApiClient.DeleteSectionAsync(ProjectId, sectionId);
+        if (res.IsSuccess)
+        {
+            Notifications.ShowSuccess("Success", "Section deleted.");
+            await LoadAsync();
+        }
+    }
+
+    private void OpenAddField(Guid sectionId)
+    {
+        _activeSectionId = sectionId;
+        _newField = new ParameterFieldModel { SectionId = sectionId };
+        _fieldDialogOpen = true;
+    }
+
+    private async Task AddFieldAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newField.ParameterName)) return;
+
+        if (ProjectId == Guid.Empty)
+        {
+            var sec = _sections.FirstOrDefault(x => x.Id == _activeSectionId);
+            if (sec != null)
+            {
+                _newField.Id = Guid.NewGuid();
+                _newField.SectionId = _activeSectionId;
+                sec.Parameters.Add(_newField);
+                Notifications.ShowSuccess("Success", "Parameter field added to draft.");
+            }
+            _fieldDialogOpen = false;
+            return;
+        }
+
+        var res = await ParameterApiClient.AddFieldAsync(ProjectId, _activeSectionId, _newField);
+        if (res.IsSuccess)
+        {
+            Notifications.ShowSuccess("Success", "Parameter field added.");
+            _fieldDialogOpen = false;
+            await LoadAsync();
+        }
+        else
+        {
+            Notifications.ShowError("Error", res.Error?.Message ?? "Failed to add field.");
+        }
+    }
+
+    private async Task SaveValuesAsync()
+    {
+        if (ProjectId == Guid.Empty)
+        {
+            Notifications.ShowSuccess("Success", "Parameter values saved to draft session.");
+            return;
+        }
+
+        _saving = true;
+        var items = new List<ParameterValueItemModel>();
+        foreach (var sec in _sections)
+        {
+            foreach (var p in sec.Parameters)
+            {
+                items.Add(new ParameterValueItemModel { ParameterId = p.Id, Value = p.CurrentValue });
+            }
+        }
+
+        var res = await ParameterApiClient.SaveValuesAsync(ProjectId, items);
+        _saving = false;
+
+        if (res.IsSuccess)
+        {
+            Notifications.ShowSuccess("Success", "Parameter values saved.");
+        }
+        else
+        {
+            Notifications.ShowError("Error", res.Error?.Message ?? "Failed to save values.");
+        }
+    }
+
+    private string GetHtmlInputType(ParameterInputType type) => type switch
+    {
+        ParameterInputType.Number => "number",
+        ParameterInputType.Decimal => "number",
+        ParameterInputType.Date => "date",
+        ParameterInputType.Email => "email",
+        ParameterInputType.Phone => "tel",
+        ParameterInputType.URL => "url",
+        _ => "text"
+    };
+}

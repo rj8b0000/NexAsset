@@ -1,0 +1,129 @@
+@page "/projects"
+@attribute [Authorize]
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Components
+@using NexAsset.Web.Shared.Models
+@inject IProjectApiClient ProjectApiClient
+@inject INotificationService Notifications
+@inject NavigationManager Navigation
+@inject NexAsset.Web.Infrastructure.Authentication.IPermissionChecker Perms
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h1-title">Project Workspace</h1>
+            <span class="text-caption text-secondary">Manage projects, parameters, and documentation.</span>
+        </div>
+        @if (Perms.HasPermission("Projects.Create"))
+        {
+            <button class="btn-custom btn-custom-primary" @onclick='() => Navigation.NavigateTo("/projects/wizard")'>
+                <i class="lucide-plus"></i> Create Project
+            </button>
+        }
+    </div>
+
+    @if (_page is null && _loadError is null)
+    {
+        <LoadingState Message="Loading projects..." />
+    }
+    else if (_loadError is not null)
+    {
+        <EmptyState Title="Couldn't load projects" Description="@_loadError"
+                    IconClass="lucide-alert-triangle" ActionLabel="Retry" ActionIconClass="lucide-rotate-cw"
+                    OnActionClick="() => LoadAsync(_query)" />
+    }
+    else
+    {
+        <DataTable TItem="ProjectListItem"
+                   Items="_page!.Items"
+                   Columns="_columns"
+                   Type="Project"
+                   ServerMode="true"
+                   ServerTotalCount="_page.TotalCount"
+                   ServerPageNumber="_page.PageNumber"
+                   ServerPageSize="_page.PageSize"
+                   IsLoading="_busy"
+                   OnQueryChanged="LoadAsync"
+                   IdSelector="p => p.Id.ToString()"
+                   OnViewDetails="ViewProject"
+                   OnDelete="AskDelete"
+                   DeletePermission="Projects.Delete" />
+    }
+</div>
+
+<ConfirmDeleteDialog IsOpen="_deleteOpen" EntityLabel="project" OnClose="() => _deleteOpen = false" OnConfirm="ConfirmDelete" />
+
+@code {
+    private PagedResult<ProjectListItem>? _page;
+    private string? _loadError;
+    private bool _busy;
+    private PagedQuery _query = new() { PageNumber = 1, PageSize = 10 };
+
+    private bool _deleteOpen;
+    private Guid? _deleteId;
+
+    private readonly List<ColumnDefinition<ProjectListItem>> _columns = new()
+    {
+        new() { Header = "Code", PropertySelector = x => x.ProjectCode, Sortable = true },
+        new() { Header = "Project Name", PropertySelector = x => x.ProjectName, Sortable = true },
+        new() { Header = "Category", PropertySelector = x => x.CategoryName },
+        new() { Header = "Priority", PropertySelector = x => x.Priority.ToString() },
+        new() { Header = "Status", PropertySelector = x => x.Status.ToString() },
+        new() { Header = "Manager", PropertySelector = x => x.ProjectManagerName ?? "-" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync(_query);
+    }
+
+    private async Task LoadAsync(PagedQuery query)
+    {
+        _busy = true;
+        _query = query;
+        var res = await ProjectApiClient.GetPagedAsync(query);
+        _busy = false;
+
+        if (res.IsSuccess)
+        {
+            _page = res.Data;
+            _loadError = null;
+        }
+        else
+        {
+            _loadError = res.Error?.Message;
+        }
+    }
+
+    private void ViewProject(ProjectListItem item)
+    {
+        Navigation.NavigateTo($"/projects/{item.Id}");
+    }
+
+    private void AskDelete(ProjectListItem item)
+    {
+        _deleteId = item.Id;
+        _deleteOpen = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_deleteId.HasValue)
+        {
+            var res = await ProjectApiClient.DeleteAsync(_deleteId.Value);
+            if (res.IsSuccess)
+            {
+                Notifications.ShowSuccess("Success", "Project deleted.");
+                await LoadAsync(_query);
+            }
+            else
+            {
+                Notifications.ShowError("Error", res.Error?.Message ?? "Failed to delete project.");
+            }
+        }
+        _deleteOpen = false;
+    }
+}

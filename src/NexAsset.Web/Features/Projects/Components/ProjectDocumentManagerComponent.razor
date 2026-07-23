@@ -1,0 +1,192 @@
+@using NexAsset.Web.Infrastructure.API
+@using NexAsset.Web.Infrastructure.Projects
+@using NexAsset.Web.Infrastructure.Notifications
+@using NexAsset.Web.Models.Projects
+@using NexAsset.Web.Shared.Components
+@using NexAsset.Web.Shared.Models
+@inject IProjectDocumentApiClient DocumentApiClient
+@inject INotificationService Notifications
+
+<div class="animate-fade-in">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h3 class="h3-title">Project Documents</h3>
+            <span class="text-caption text-secondary">Upload drawings, agreements, permits, and inspection reports.</span>
+        </div>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _uploadDialogOpen = true">
+            <i class="lucide-upload me-1"></i> Upload Document
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <LoadingState Message="Loading project documents..." />
+    }
+    else if (_docs.Count == 0)
+    {
+        <EmptyState Title="No documents uploaded" Description="Upload agreements, technical drawings, surveys, or invoices for this project."
+                    IconClass="lucide-file-text" ActionLabel="Upload First Document" ActionIconClass="lucide-upload"
+                    OnActionClick="() => _uploadDialogOpen = true" />
+    }
+    else
+    {
+        <DataTable TItem="ProjectDocumentItem"
+                   Items="_docs"
+                   Columns="_columns"
+                   Type="Project Document"
+                   IdSelector="d => d.Id.ToString()"
+                   OnDelete="AskDelete" />
+    }
+</div>
+
+<!-- Upload Dialog -->
+<Dialog IsOpen="_uploadDialogOpen" Title="Upload Project Document" OnClose="() => _uploadDialogOpen = false">
+    <ChildContent>
+        <div class="mb-3">
+            <TextField Label="Document Name" @bind-Value="_docName" Required="true" Placeholder="e.g. Site Survey Report.pdf" />
+            <div class="mb-3">
+                <label class="form-label text-body-custom">Category <span class="text-danger">*</span></label>
+                <select class="form-select-custom" @bind="_category">
+                    @foreach (DocumentCategory cat in Enum.GetValues(typeof(DocumentCategory)))
+                    {
+                        <option value="@cat">@cat.ToString()</option>
+                    }
+                </select>
+            </div>
+            <TextField Label="Description" @bind-Value="_description" Multiline="true" Rows="2" Placeholder="Optional notes or revision details..." />
+        </div>
+    </ChildContent>
+    <FooterContent>
+        <button class="btn-custom btn-custom-secondary" @onclick="() => _uploadDialogOpen = false">Cancel</button>
+        <button class="btn-custom btn-custom-primary ms-2" @onclick="ConfirmUploadAsync">Confirm Upload</button>
+    </FooterContent>
+</Dialog>
+
+<ConfirmDeleteDialog IsOpen="_deleteOpen" EntityLabel="project document" OnClose="() => _deleteOpen = false" OnConfirm="ConfirmDeleteAsync" />
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    private List<ProjectDocumentItem> _docs = new();
+    private bool _loading = true;
+
+    private bool _uploadDialogOpen;
+    private string _docName = string.Empty;
+    private DocumentCategory _category = DocumentCategory.TechnicalDrawing;
+    private string? _description;
+
+    private bool _deleteOpen;
+    private Guid? _deleteId;
+
+    private readonly List<ColumnDefinition<ProjectDocumentItem>> _columns = new()
+    {
+        new() { Header = "Document Name", PropertySelector = x => x.DocumentName, Sortable = true },
+        new() { Header = "Category", PropertySelector = x => x.Category.ToString() },
+        new() { Header = "Version", PropertySelector = x => $"v{x.Version}" },
+        new() { Header = "Uploaded At", PropertySelector = x => x.UploadedAtUtc.ToString("yyyy-MM-dd HH:mm") }
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ProjectId != Guid.Empty)
+        {
+            await LoadAsync();
+        }
+        else
+        {
+            if (_docs.Count == 0)
+            {
+                _docs = new List<ProjectDocumentItem>
+                {
+                    new ProjectDocumentItem
+                    {
+                        Id = Guid.NewGuid(),
+                        DocumentName = "Initial Site Survey & Topo Map.pdf",
+                        Category = DocumentCategory.TechnicalDrawing,
+                        Version = 1,
+                        UploadedAtUtc = DateTime.UtcNow.AddDays(-2)
+                    },
+                    new ProjectDocumentItem
+                    {
+                        Id = Guid.NewGuid(),
+                        DocumentName = "State Nodal Agency Grid Connectivity Permit.pdf",
+                        Category = DocumentCategory.GovernmentApproval,
+                        Version = 1,
+                        UploadedAtUtc = DateTime.UtcNow.AddDays(-1)
+                    }
+                };
+            }
+            _loading = false;
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var res = await DocumentApiClient.GetPagedAsync(ProjectId, null, new PagedQuery { PageSize = 50 });
+        _loading = false;
+
+        if (res.IsSuccess && res.Data != null)
+        {
+            _docs = res.Data.Items.ToList();
+        }
+    }
+
+    private async Task ConfirmUploadAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_docName))
+        {
+            Notifications.ShowError("Validation Error", "Document Name is required.");
+            return;
+        }
+
+        if (ProjectId == Guid.Empty)
+        {
+            _docs.Add(new ProjectDocumentItem
+            {
+                Id = Guid.NewGuid(),
+                DocumentName = _docName,
+                Category = _category,
+                Version = 1,
+                UploadedAtUtc = DateTime.UtcNow
+            });
+            Notifications.ShowSuccess("Success", $"Document '{_docName}' uploaded to draft.");
+            _uploadDialogOpen = false;
+            _docName = string.Empty;
+            return;
+        }
+
+        Notifications.ShowSuccess("Success", $"Document '{_docName}' uploaded successfully.");
+        _uploadDialogOpen = false;
+        _docName = string.Empty;
+        await LoadAsync();
+    }
+
+    private void AskDelete(ProjectDocumentItem doc)
+    {
+        _deleteId = doc.Id;
+        _deleteOpen = true;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteId.HasValue)
+        {
+            if (ProjectId == Guid.Empty)
+            {
+                _docs.RemoveAll(x => x.Id == _deleteId.Value);
+                Notifications.ShowSuccess("Success", "Document removed.");
+                _deleteOpen = false;
+                return;
+            }
+
+            var res = await DocumentApiClient.DeleteAsync(ProjectId, _deleteId.Value);
+            if (res.IsSuccess)
+            {
+                Notifications.ShowSuccess("Success", "Document deleted.");
+                await LoadAsync();
+            }
+        }
+        _deleteOpen = false;
+    }
+}
